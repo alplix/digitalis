@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Digitalis — Yüksük Otu</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        dg: {
+          50: '#faf5f7',
+          100: '#f3e8ee',
+          200: '#e7d3df',
+          300: '#d4b0c4',
+          400: '#b985a0',
+          500: '#a05f82',
+          600: '#884667',
+          700: '#713955',
+          800: '#5c2f49',
+          900: '#4a2740',
+          950: '#2b1322'
+        }
+      }
+    }
+  }
+}
+</script>
+<style>
+  body { background: linear-gradient(160deg, #1a0f1c 0%, #2b1322 40%, #3a1120 75%, #1f0d1d 100%); }
+  .card { background: rgba(46, 19, 38, 0.75); border: 1px solid rgba(212, 176, 196, 0.18); backdrop-filter: blur(6px); }
+  .dg-input { background: rgba(0,0,0,0.35); border: 1px solid rgba(212,176,196,0.25); }
+  select.dg-input option { background: #2b1322; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: #1a0f1c; }
+  ::-webkit-scrollbar-thumb { background: #713955; border-radius: 4px; }
+</style>
+</head>
+<body class="text-dg-100 min-h-screen font-sans">
+
+  <div class="max-w-6xl mx-auto p-4 md:p-6">
+
+    <!-- Header -->
+    <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-dg-400 to-dg-800 flex items-center justify-center shadow-lg shadow-dg-900/50">
+          <svg class="w-7 h-7 text-dg-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 17l6-6 4 4 8-8M3 21h18M21 7V3h-4"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-dg-100">Digitalis</h1>
+          <p class="text-sm text-dg-400">Yüksük Otu — sıfırdan yazılmış BitTorrent istemcisi</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 text-sm">
+        <span class="px-3 py-1 rounded-full bg-dg-800/60 border border-dg-500/30 text-dg-300">Docker yok</span>
+        <span class="px-3 py-1 rounded-full bg-dg-800/60 border border-dg-500/30 text-dg-300" id="peerPort">Port —</span>
+      </div>
+    </header>
+
+    <!-- Global stats -->
+    <section class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div class="card rounded-2xl p-4">
+        <p class="text-xs uppercase tracking-widest text-dg-400 mb-1">Toplam Torrent</p>
+        <p class="text-2xl font-semibold text-dg-100" id="statTotal">0</p>
+      </div>
+      <div class="card rounded-2xl p-4">
+        <p class="text-xs uppercase tracking-widest text-dg-400 mb-1">Indiriliyor</p>
+        <p class="text-2xl font-semibold text-dg-200" id="statDownloading">0</p>
+      </div>
+      <div class="card rounded-2xl p-4">
+        <p class="text-xs uppercase tracking-widest text-dg-400 mb-1">Seeding</p>
+        <p class="text-2xl font-semibold text-emerald-300" id="statSeeding">0</p>
+      </div>
+      <div class="card rounded-2xl p-4">
+        <p class="text-xs uppercase tracking-widest text-dg-400 mb-1">Toplam Yükleme</p>
+        <p class="text-xl font-semibold text-dg-100" id="statUp"><span id="statUploaded">0</span></p>
+      </div>
+    </section>
+
+    <!-- Add torrent -->
+    <section class="card rounded-2xl p-4 md:p-5 mb-6">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-lg font-semibold text-dg-100">Torrent Ekle</h2>
+        <span class="text-xs text-dg-400">magnet:, http(s): veya ham .torrent</span>
+      </div>
+      <textarea id="sourceInput" rows="3" placeholder="Toplu magnet linkleri veya tek bir kaynak (her satıra bir tane)&#10;magnet:?xt=urn:btih:...&#10;https://example.com/file.torrent"
+        class="w-full rounded-xl p-3 dg-input text-dg-100 text-sm placeholder-dg-500 focus:outline-none focus:ring-2 focus:ring-dg-400"></textarea>
+      <div class="flex flex-wrap gap-3 mt-3">
+        <button onclick="addFromInput()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-dg-500 to-dg-700 hover:from-dg-400 hover:to-dg-600 text-white font-medium shadow-lg shadow-dg-900/50 transition">
+          Ekle
+        </button>
+        <label class="px-5 py-2.5 rounded-xl dg-input text-dg-200 cursor-pointer hover:border-dg-400 transition text-sm flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 17l6-6m0 0l6 6m-6-6v12M3 21h18M5 3h14M5 8h14"/></svg>
+          .torrent Dosyası
+          <input type="file" id="torrentFile" accept=".torrent" class="hidden" onchange="addFromFile(this)"> 
+        </label>
+      </div>
+      <div id="addStatus" class="mt-3 text-sm text-dg-300"></div>
+    </section>
+
+    <!-- Torrent list -->
+    <section>
+      <h2 class="text-lg font-semibold text-dg-100 mb-3">Torrentler</h2>
+      <div id="torrentList" class="space-y-3">
+        <div class="card rounded-2xl p-6 text-center text-dg-400 text-sm">Yükleniyor...</div>
+      </div>
+    </section>
+
+  </div>
+
+<script>
+const API = '/api';
+
+function fmtBytes(b) {
+  if (!b) return '0 B';
+  const units = ['B','KB','MB','GB','TB'];
+  let i = 0, v = b;
+  while (v >= 1024 && i < units.length-1) { v /= 1024; i++; }
+  return v.toFixed(v >= 10 || i === 0 ? 0 : 1) + ' ' + units[i];
+}
+
+function fmtSpeed(bps) {
+  if (!bps) return '—';
+  return fmtBytes(bps) + '/s';
+}
+
+function stateBadge(state) {
+  const map = {
+    'seeding':    ['bg-emerald-500/15 text-emerald-300 border-emerald-400/30', 'Seeding'],
+    'downloading':['bg-sky-500/15 text-sky-300 border-sky-400/30', 'İndiriliyor'],
+    'paused':     ['bg-amber-500/15 text-amber-300 border-amber-400/30', 'Duraklatıldı'],
+    'queued':     ['bg-dg-500/15 text-dg-300 border-dg-400/30', 'Sırada'],
+    'stopped':    ['bg-rose-500/15 text-rose-300 border-rose-400/30', 'Durduruldu'],
+    'error':      ['bg-rose-500/15 text-rose-300 border-rose-400/30', 'Hata']
+  };
+  const [cls, label] = map[state] || ['bg-dg-800 text-dg-400 border-dg-500/40', state];
+  return `<span class="px-2.5 py-0.5 rounded-full text-xs font-medium border ${cls}">${label}</span>`;
+}
+
+function progressBar(t) {
+  const pct = Math.round((t.progress||0)*100);
+  const active = t.state === 'seeding';
+  const color = active ? 'from-emerald-500 to-teal-400' : 'from-dg-500 to-dg-300';
+  return `
+    <div class="flex items-center gap-3">
+      <div class="flex-1 h-2.5 rounded-full bg-dg-900/60 overflow-hidden">
+        <div class="h-full rounded-full bg-gradient-to-r ${color} transition-all duration-700" style="width:${pct}%"></div>
+      </div>
+      <span class="text-xs font-mono text-dg-200 w-12 text-right">${pct}%</span>
+    </div>`;
+}
+
+function renderTorrent(t) {
+  const have = t.pieces_total > 0 ? `${t.pieces_have}/${t.pieces_total}` : '—';
+  return `
+  <div class="card rounded-2xl p-4 md:p-5">
+    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+      <div class="min-w-0 flex-1">
+        <div class="flex items-start gap-2 flex-wrap">
+          <h3 class="font-semibold text-dg-100 truncate">${esc(t.name)}</h3>
+          ${stateBadge(t.state)}
+        </div>
+        <p class="text-xs text-dg-500 font-mono truncate mt-0.5">${t.info_hash}</p>
+        <div class="mt-3">${progressBar(t)}</div>
+        <div class="flex flex-wrap gap-x-5 gap-y-1 mt-3 text-xs text-dg-300">
+          <span>↓ <span class="text-dg-200 font-mono">${fmtSpeed(t.download_speed)}</span></span>
+          <span>↑ <span class="text-dg-200 font-mono">${fmtSpeed(t.upload_speed)}</span></span>
+          <span>${fmtBytes(t.downloaded)} / ${fmtBytes(t.size)}</span>
+          <span>↑ ${fmtBytes(t.uploaded)}</span>
+          <span>Peer: <span class="text-dg-200 font-mono">${t.peers_connected}</span></span>
+          <span>Seed/Leech: <span class="text-dg-200 font-mono">${t.seeders}/${t.leechers}</span></span>
+          <span>Piece: <span class="text-dg-200 font-mono">${have}</span></span>
+        </div>
+      </div>
+      <div class="flex gap-2 md:flex-col xl:flex-row md:items-end shrink-0">
+        ${t.state === 'paused'
+          ? `<button onclick="act('${t.id}','resume')" class="px-3 py-1.5 rounded-lg bg-emerald-600/30 border border-emerald-400/40 text-emerald-200 text-xs hover:bg-emerald-500/40 transition">Devam</button>`
+          : `<button onclick="act('${t.id}','pause')" class="px-3 py-1.5 rounded-lg dg-input text-dg-200 text-xs hover:border-dg-300 transition">Duraklat</button>`}
+        <button onclick="act('${t.id}','delete')" class="px-3 py-1.5 rounded-lg bg-rose-600/25 border border-rose-400/40 text-rose-200 text-xs hover:bg-rose-500/40 transition">Sil</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function api(path, opts) {
+  const r = await fetch(API + path, opts);
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || ('HTTP ' + r.status));
+  return data;
+}
+
+async function refresh() {
+  try {
+    const list = await api('/torrents');
+    const el = document.getElementById('torrentList');
+    const sum = {};
+    if (!list.length) {
+      el.innerHTML = `<div class="card rounded-2xl p-8 text-center text-dg-400 text-sm">
+        Henüz torrent yok. Yukarıdan magnet linki veya .torrent dosyası ekleyin.
+      </div>`;
+    } else {
+      el.innerHTML = list.map(renderTorrent).join('');
+    }
+    document.getElementById('statTotal').textContent = list.length;
+    document.getElementById('statSeeding').textContent = list.filter(x=>x.state==='seeding').length;
+    document.getElementById('statDownloading').textContent = list.filter(x=>x.state==='downloading').length;
+    let up = 0, dl = 0;
+    list.forEach(t => { up += t.uploaded; dl += t.download_speed; });
+    document.getElementById('statUploaded').textContent = fmtBytes(up);
+  } catch (e) {
+    document.getElementById('torrentList').innerHTML =
+      `<div class="card rounded-2xl p-6 text-center text-rose-300 text-sm">Bağlantı hatası: ${esc(e.message)}</div>`;
+  }
+}
+
+async function addFromInput() {
+  const ta = document.getElementById('sourceInput');
+  const lines = ta.value.split('\n').map(s=>s.trim()).filter(Boolean);
+  if (!lines.length) return;
+  const status = document.getElementById('addStatus');
+  let ok = 0, fail = 0;
+  for (const line of lines) {
+    try {
+      await api('/torrents', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({source: line}) });
+      ok++;
+    } catch (e) {
+      fail++;
+      status.innerHTML = `<span class="text-rose-300">${esc(line.slice(0,60))}: ${esc(e.message)}</span><br>`;
+    }
+  }
+  ta.value = '';
+  status.innerHTML = `<span class="text-emerald-300">${ok} eklendi${fail ? `, ${fail} hata` : ''}</span>`;
+  refresh();
+}
+
+async function addFromFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const buf = new Uint8Array(await file.arrayBuffer());
+  const b64 = btoa(String.fromCharCode(...buf));
+  const status = document.getElementById('addStatus');
+  try {
+    await api('/torrents', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({source: b64}) });
+    status.innerHTML = '<span class="text-emerald-300">Dosya eklendi</span>';
+  } catch (e) {
+    status.innerHTML = `<span class="text-rose-300">${esc(e.message)}</span>`;
+  }
+  input.value = '';
+  refresh();
+}
+
+async function act(id, action) {
+  try {
+    await api(`/torrents/${id}/${action}`, { method:'POST' });
+    refresh();
+  } catch (e) { alert(e.message); }
+}
+
+setInterval(refresh, 2500);
+refresh();
+</script>
+</body>
+</html>
