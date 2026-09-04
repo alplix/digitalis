@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="petal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e7d3df"/>
+      <stop offset="1" stop-color="#884667"/>
+    </linearGradient>
+    <linearGradient id="bellOuter" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a05f82"/>
+      <stop offset="1" stop-color="#713955"/>
+    </linearGradient>
+    <radialGradient id="bg" cx="0.5" cy="0.4" r="0.8">
+      <stop offset="0" stop-color="#3a1120"/>
+      <stop offset="1" stop-color="#1a0f1c"/>
+    </radialGradient>
+  </defs>
+
+  <!-- background circle -->
+  <rect x="0" y="0" width="200" height="200" rx="40" fill="url(#bg)"/>
+
+  <!-- stem -->
+  <path d="M100 185 V95" stroke="#71a06a" stroke-width="5" stroke-linecap="round" fill="none"/>
+
+  <!-- upper open bell -->
+  <g transform="translate(100 62)">
+    <path d="M0,-26 C-14,-20 -19,-8 -19,4 C-19,18 -10,28 0,30 C10,28 19,18 19,4 C19,-8 14,-20 0,-26 Z"
+          fill="url(#petal)" opacity="0.95"/>
+    <!-- rim lobes -->
+    <path d="M-19,2 C-24,-2 -30,0 -32,6 C-34,12 -30,16 -24,14 Z" fill="url(#petal)" opacity="0.8"/>
+    <path d="M19,2 C24,-2 30,0 32,6 C34,12 30,16 24,14 Z" fill="url(#petal)" opacity="0.8"/>
+    <!-- inner spots -->
+    <circle cx="-8" cy="-4" r="1.8" fill="#2b1322" opacity="0.55"/>
+    <circle cx="0" cy="-6" r="1.8" fill="#2b1322" opacity="0.55"/>
+    <circle cx="8" cy="-4" r="1.8" fill="#2b1322" opacity="0.55"/>
+    <!-- throat -->
+    <path d="M0,-4 C-5,0 -5,10 0,14 C5,10 5,0 0,-4 Z" fill="#4a2740" opacity="0.85"/>
+  </g>
+
+  <!-- lower tighter bell -->
+  <g transform="translate(100 118)">
+    <path d="M-0,-16 C-9,-12 -12,-3 -12,5 C-12,12 -7,18 0,19 C7,18 12,12 12,5 C12,-3 9,-12 0,-16 Z"
+          fill="url(#bellOuter)" opacity="0.9"/>
+    <circle cx="-4" cy="-2" r="1.4" fill="#f3e8ee" opacity="0.8"/>
+    <circle cx="1" cy="-3" r="1.4" fill="#f3e8ee" opacity="0.8"/>
+    <circle cx="5" cy="-1" r="1.4" fill="#f3e8ee" opacity="0.8"/>
+  </g>
+
+  <!-- leaves -->
+  <path d="M100 150 C96 132 100 120 104 124 C98 128 97 138 100 150 Z" fill="#5f8f58"/>
+  <path d="M100 156 C98 140 103 130 107 132 C101 135 99 144 100 156 Z" fill="#71a06a"/>
+
+  <!-- text -->
+  <text x="100" y="47" text-anchor="middle" font-family="Georgia, serif" font-size="26"
+        font-weight="bold" fill="#d4b0c4">Digitalis</text>
+  <text x="100" y="205" text-anchor="middle" font-family="Georgia, serif" font-size="13"
+        fill="#b985a0" opacity="0.85">Yüksük Otu · Foxglove</text>
+</svg>

@@ -1,36 +1,99 @@
-# Digitalis (Yüksük Otu)
+<div align="center">
 
-Sıfırdan yazılmış, minimal bağımlılıklı BitTorrent istemcisi: Go motor + Tailwind web arayüzü.
+<img src="https://raw.githubusercontent.com/alplix/digitalis/main/docs/logo.svg" alt="Digitalis" width="160"/>
 
-- İstemci + tracker iletişimi + depolama, harici torrent kütüphanesi olmadan tamamen kendi kodumuz
-- Tracker announce (UDP + HTTP), peer wire protokolü, piece seçimi (rare-first), hız sınırlama
-- Gömülü web UI (tek binary, Tailwind CDN): torrent ekleme (magnet / .torrent / dosya), durdurma, silme
-- Watch dizininden otomatik .torrent alımı
-- Doygun indirme + veritabanı/sunucu gerektirmeyen pür precompiled binary
+# 🌸 Digitalis
 
-## Kurulum
+> The **Yüksük Otu** — a blazing-fast BitTorrent client written **from scratch** in Go,
+> with a gorgeous multilingual **foxglove-themed** web UI.
 
-Bağımlılıklar: Go ≥ 1.23 (yalnızca derlemek için).
+[![Go Version](https://img.shields.io/badge/Go-1.23+-2b1322)](https://golang.org)
+[![License](https://img.shields.io/github/license/alplix/digitalis?color=713955)](LICENSE)
+[![Built With: Go](https://img.shields.io/badge/Built%20With-Go-5c2f49?logo=go&logoColor=white)](https://golang.org)
+[![Zero Deps](https://img.shields.io/badge/Zero%20External-Deps%20(engine)-4a2740)](#-design-philosophy)
 
-```sh
-make build   # yoksa: go build -o digitalis ./cmd/digitalis
+*Zero torrent libraries. Zero bloat. One beautiful binary.*
+
+</div>
+
+---
+
+## 🌿 What is Digitalis?
+
+**Digitalis** (Latin for *foxglove*, Türkçe: **Yüksük Otu**) is a self-contained
+BitTorrent client built entirely from scratch in Go. No third-party torrent engine,
+no Docker, no database — just a single compiled binary that speaks the BitTorrent
+protocol natively and serves a beautiful, **multilingual** web dashboard.
+
+Seed your favorite ISOs, share Linux releases, or race private torrents — Digitalis
+does it all with a flower on its lapel. 🌺
+
+---
+
+## ✨ Features
+
+| | Feature | Details |
+|---|---------|---------|
+| 🔄 | **Native protocol** | Tracker announce (HTTP & UDP), peer-wire protocol, bitfield — all hand-written |
+| 🎯 | **Rare-first picking** | Smart piece selection for faster, fairer downloads |
+| 🌐 | **Multilingual UI** | **11 languages** with a live switcher: EN, TR, DE, FR, ES, IT, RU, JA, ZH, AR, HI |
+| 🔌 | **Flexible input** | Raw `.torrent`, magnet URI, or file upload — paste in bulk |
+| 📁 | **Watch folder** | Drop `.torrent` files in a directory — auto-added & seeded |
+| 🚀 | **Speed control** | Global download & upload rate limits |
+| 💾 | **Reboot-proof** | Ships with a ready-made `systemd` unit |
+| 🎨 | **Themer's dream** | Deep plum-magenta "foxglove" dark theme, fully responsive |
+
+---
+
+## 🖼️ Screenshot
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  🌸 Digitalis  [Choose language ▾] [No Docker] [Port 51413] │
+│  ┌───────────┐ ┌───────────┐ ┌───────────┐ ┌──────────────┐ │
+│  │ Total  3  │ │ Down  1   │ │ Seed  2   │ │ Upload 1.2GB │ │
+│  └───────────┘ └───────────┘ └───────────┘ └──────────────┘ │
+│  Add torrent:  magnet:?xt=urn:btih:...          [ Add ]     │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │ ▸ Ubuntu 24.04 Desktop          [downloading] 45% ▓▓  │ │
+│  │   ↓ 1.2 MB/s   ↑ 0 B/s   Peer: 12   Seed/Leech 300/22  │ │
+│  └────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-## Çalıştırma
+---
 
-```sh
+## 📦 Installation
+
+Only dependency for building: **Go ≥ 1.23**.
+
+```bash
+git clone https://github.com/alplix/digitalis.git
+cd digitalis
+go build -o digitalis ./cmd/digitalis
+```
+
+---
+
+## 🚀 Running
+
+```bash
 ./digitalis \
-  --web :8080 \
-  --peer-port 51413 \
-  --dir /mnt/torrents/downloads \
-  --watch /mnt/torrents/watch \
-  --download-limit 0 \
-  --upload-limit 0
+  --web :8080 \                    # web UI address
+  --peer-port 51413 \              # incoming peer port
+  --dir /mnt/torrents/downloads \  # save directory
+  --watch /mnt/torrents/watch \    # auto-add folder (optional)
+  --download-limit 0 \             # bytes/sec, 0 = unlimited
+  --upload-limit 0                 # bytes/sec, 0 = unlimited
 ```
 
-Web UI → `http://SERVER:8080/`
+Then open the dashboard: **`http://YOUR-SERVER:8080/`** 🎉
 
-### systemd
+> 🔓 Open port `51413` on your router for inbound peer connections (better seeding).
+
+---
+
+## ⚙️ systemd (boot-persistent)
 
 ```ini
 [Unit]
@@ -42,47 +105,117 @@ After=network-online.target
 Type=simple
 User=alp
 WorkingDirectory=/home/alp/digitalis
-ExecStart=/home/alp/digitalis/digitalis --web :8080 --peer-port 51413 --dir /mnt/torrents/downloads --watch /mnt/torrents/watch
+ExecStart=/home/alp/digitalis/digitalis --web :8080 --peer-port 51413 \
+          --dir /mnt/torrents/downloads --watch /mnt/torrents/watch
 Restart=on-failure
+RestartSec=3
+LimitNOFILE=65536
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-Port 51413'ü yönlendiriciden NAT'a açın (gelen peer bağlantıları için).
-
-## API
-
-| Yöntem | Yol | İşlev |
-|--------|-----|-------|
-| GET | `/api/torrents` | Torrent listesi + durum |
-| POST | `/api/torrents` | Ekle: `{"source": "magnet:?... / http(s):... / base64(.torrent)"}` |
-| POST | `/api/torrents/{id}/pause` | Duraklat |
-| POST | `/api/torrents/{id}/resume` | Devam |
-| POST | `/api/torrents/{id}/delete` | Sil |
-
-## Yapı
-
-```
-bencode/    Bencode kodlayıcı/çözücü
-metainfo/   .torrent/metainfo ayrıştırıcı, magnet URI
-tracker/    Tracker announce (UDP/HTTP) istemcisi
-peerwire/   Peer wire protokol mesajları
-storage/    Dosya düzeni + parça doğrulama (SHA-1)
-torrente/   Motor: torrent yönetimi, parça seçim, peer oturumları, hız sınırlama
-web/        Gömülü web sunucusu ve arayüz
-cmd/        main.go
+```bash
+sudo cp digitalis.service /etc/systemd/system/
+sudo systemctl enable --now digitalis
 ```
 
-## Test
+---
 
-```sh
+## 🔌 HTTP API
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET`   | `/api/torrents` | List all torrents + live status |
+| `POST`  | `/api/torrents` | Add: `{"source": "magnet:/http:/base64(.torrent)"}` |
+| `POST`  | `/api/torrents/{id}/pause` | Pause a torrent |
+| `POST`  | `/api/torrents/{id}/resume` | Resume a torrent |
+| `POST`  | `/api/torrents/{id}/delete` | Remove a torrent |
+
+```bash
+curl -X POST localhost:8080/api/torrents \
+  -H 'Content-Type: application/json' \
+  -d '{"source": "magnet:?xt=urn:btih:08ada5a..."}'
+```
+
+---
+
+## 🏗️ Architecture
+
+```
+digitalis/
+├── bencode/    → hand-rolled bencode encoder/decoder
+├── metainfo/   → .torrent parser, magnet URI, info-hash
+├── tracker/    → HTTP/UDP tracker announce client
+├── peerwire/   → peer-wire protocol messages & handshake
+├── storage/    → file layout + per-piece SHA-1 verification
+├── torrente/   → core engine: piece picker, sessions, rate limits
+├── web/        → embedded HTTP server (embed.FS) + multilingual UI
+│   └── templates/index.html   → Tailwind dashboard (11 languages)
+└── cmd/digitalis/main.go      → entrypoint, flags, watch folder
+```
+
+**Data flow**
+
+```
+.torrent/magnet ─▶ metainfo ─▶ storage (pre-allocate files, verify SHA-1)
+                    │
+                    ▼
+                tracker ──announce──▶ peers ──▶ peerwire handshake
+                    ▲                          │
+                    │              bitfield / request / piece
+              piece picker ◀──── engine ◀──────┘
+                    └── write blocks ─▶ storage ─▶ verify ─▶ seed
+```
+
+---
+
+## 🌍 Localization
+
+The web UI ships with **11 languages** out of the box. A single dropdown switches
+the whole interface instantly (RTL support included for Arabic). The choice is
+remembered in `localStorage`.
+
+| Language | Code | | Language | Code |
+|:--------:|:----:|---|:--------:|:----:|
+| English  | `en` | | Русский | `ru` |
+| Türkçe   | `tr` | | 日本語   | `ja` |
+| Deutsch  | `de` | | 中文     | `zh` |
+| Français | `fr` | | العربية  | `ar` |
+| Español  | `es` | | हिन्दी   | `hi` |
+| Italiano | `it` | |         |     |
+
+---
+
+## 🤍 Design Philosophy
+
+- **From scratch** — the protocol is ours, not a wrapper around a C library.
+- **Zero bloat** — no Docker, no database, no framework of the week.
+- **One binary** — static, embedded UI, ready for a Raspberry Pi or a rack server.
+- **Pretty as well as functional** — software should look like the flower it's named after. 🌸
+
+---
+
+## 🧪 Testing
+
+```bash
 go vet ./...
-go build ./...
+go build -o digitalis ./cmd/digitalis
 ```
 
-Gerçek dünya testi — `webtorrent.io` Sintel ile doğrulandı (129 MB, 987 parça, seeding).
+Validated against **`webtorrent.io` Sintel** (129 MB, 987 pieces): full download,
+SHA-1 verification, and seeding confirmed with live peers.
 
-## Lisans
+---
 
-MIT
+## 📄 License
+
+**MIT** — do whatever you like, but let it bloom. 🌿
+
+<div align="center">
+
+*Made with ❤️ and a whole lot of foxglove.*
+
+**www.flower-of-light.org**
+
+</div>

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="tr" class="dark">
+<html lang="en" class="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Digitalis — Yüksük Otu</title>
+<title>Digitalis — Foxglove</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 tailwind.config = {
@@ -37,6 +37,11 @@ tailwind.config = {
   ::-webkit-scrollbar { width: 8px; height: 8px; }
   ::-webkit-scrollbar-track { background: #1a0f1c; }
   ::-webkit-scrollbar-thumb { background: #713955; border-radius: 4px; }
+  .logo-bloom { animation: bloom 4s ease-in-out infinite; transform-origin: 12px 16px; }
+  @keyframes bloom {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+  }
 </style>
 </head>
 <body class="text-dg-100 min-h-screen font-sans">
@@ -46,18 +51,47 @@ tailwind.config = {
     <!-- Header -->
     <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
       <div class="flex items-center gap-3">
-        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-dg-400 to-dg-800 flex items-center justify-center shadow-lg shadow-dg-900/50">
-          <svg class="w-7 h-7 text-dg-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 17l6-6 4 4 8-8M3 21h18M21 7V3h-4"/>
+        <!-- Digitalis (foxglove) flower logo -->
+        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-dg-400/80 to-dg-900 flex items-center justify-center shadow-lg shadow-dg-900/50 border border-dg-300/20">
+          <svg class="logo-bloom w-9 h-9" viewBox="0 0 24 24" fill="none">
+            <!-- stem -->
+            <path d="M12 21v-7" stroke="#b985a0" stroke-width="1.4" stroke-linecap="round"/>
+            <path d="M12 16c-2.2-1-3.5-2.6-3.5-4.5a3.5 3.5 0 0 1 7 0c0 1.9-1.3 3.5-3.5 4.5z" fill="url(#petal)" opacity="0.9"/>
+            <path d="M12 15c-2.7-1-4.3-3-4.3-5.2a4.3 4.3 0 0 1 8.6 0c0 2.2-1.6 4.2-4.3 5.2z" fill="url(#bellOuter)" opacity="0.55"/>
+            <!-- dots / spots inside the bell -->
+            <circle cx="10.2" cy="11" r="0.5" fill="#f3e8ee"/><circle cx="12" cy="10.2" r="0.5" fill="#f3e8ee"/><circle cx="13.8" cy="11" r="0.5" fill="#f3e8ee"/>
+            <!-- leaves -->
+            <path d="M12 15c-.2-1.6.3-3 .8-3M12 15c.2-1.6-.3-3-.8-3" stroke="#71a06a" stroke-width="1.1" stroke-linecap="round"/>
+            <defs>
+              <linearGradient id="petal" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#d4b0c4"/><stop offset="1" stop-color="#884667"/>
+              </linearGradient>
+              <linearGradient id="bellOuter" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#a05f82"/><stop offset="1" stop-color="#713955"/>
+              </linearGradient>
+            </defs>
           </svg>
         </div>
         <div>
           <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-dg-100">Digitalis</h1>
-          <p class="text-sm text-dg-400">Yüksük Otu — sıfırdan yazılmış BitTorrent istemcisi</p>
+          <p class="text-sm text-dg-400" data-i18n="tagline">Yüksük Otu — a from-scratch BitTorrent client</p>
         </div>
       </div>
       <div class="flex items-center gap-2 text-sm">
-        <span class="px-3 py-1 rounded-full bg-dg-800/60 border border-dg-500/30 text-dg-300">Docker yok</span>
+        <select id="langSelect" onchange="setLang(this.value)" class="dg-input rounded-full px-3 py-1.5 text-dg-200 focus:outline-none focus:ring-2 focus:ring-dg-400 cursor-pointer">
+          <option value="en">English</option>
+          <option value="tr">Türkçe</option>
+          <option value="de">Deutsch</option>
+          <option value="fr">Français</option>
+          <option value="es">Español</option>
+          <option value="it">Italiano</option>
+          <option value="ru">Русский</option>
+          <option value="ja">日本語</option>
+          <option value="zh">中文</option>
+          <option value="ar">العربية</option>
+          <option value="hi">हिन्दी</option>
+        </select>
+        <span class="px-3 py-1 rounded-full bg-dg-800/60 border border-dg-500/30 text-dg-300" data-i18n="noDocker">No Docker</span>
         <span class="px-3 py-1 rounded-full bg-dg-800/60 border border-dg-500/30 text-dg-300" id="peerPort">Port —</span>
       </div>
     </header>
@@ -65,19 +99,19 @@ tailwind.config = {
     <!-- Global stats -->
     <section class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
       <div class="card rounded-2xl p-4">
-        <p class="text-xs uppercase tracking-widest text-dg-400 mb-1">Toplam Torrent</p>
+        <p class="text-xs uppercase tracking-widest text-dg-400 mb-1" data-i18n="totalTorrents">Toplam Torrent</p>
         <p class="text-2xl font-semibold text-dg-100" id="statTotal">0</p>
       </div>
       <div class="card rounded-2xl p-4">
-        <p class="text-xs uppercase tracking-widest text-dg-400 mb-1">Indiriliyor</p>
+        <p class="text-xs uppercase tracking-widest text-dg-400 mb-1" data-i18n="downloading">Indiriliyor</p>
         <p class="text-2xl font-semibold text-dg-200" id="statDownloading">0</p>
       </div>
       <div class="card rounded-2xl p-4">
-        <p class="text-xs uppercase tracking-widest text-dg-400 mb-1">Seeding</p>
+        <p class="text-xs uppercase tracking-widest text-dg-400 mb-1" data-i18n="seeding">Seeding</p>
         <p class="text-2xl font-semibold text-emerald-300" id="statSeeding">0</p>
       </div>
       <div class="card rounded-2xl p-4">
-        <p class="text-xs uppercase tracking-widest text-dg-400 mb-1">Toplam Yükleme</p>
+        <p class="text-xs uppercase tracking-widest text-dg-400 mb-1" data-i18n="totalUploaded">Toplam Yükleme</p>
         <p class="text-xl font-semibold text-dg-100" id="statUp"><span id="statUploaded">0</span></p>
       </div>
     </section>
@@ -85,19 +119,17 @@ tailwind.config = {
     <!-- Add torrent -->
     <section class="card rounded-2xl p-4 md:p-5 mb-6">
       <div class="flex items-center justify-between mb-3">
-        <h2 class="text-lg font-semibold text-dg-100">Torrent Ekle</h2>
-        <span class="text-xs text-dg-400">magnet:, http(s): veya ham .torrent</span>
+        <h2 class="text-lg font-semibold text-dg-100" data-i18n="addTorrent">Torrent Ekle</h2>
+        <span class="text-xs text-dg-400" data-i18n="sourceHint">magnet:, http(s): veya ham .torrent</span>
       </div>
-      <textarea id="sourceInput" rows="3" placeholder="Toplu magnet linkleri veya tek bir kaynak (her satıra bir tane)&#10;magnet:?xt=urn:btih:...&#10;https://example.com/file.torrent"
+      <textarea id="sourceInput" rows="3" data-i18n-placeholder="sourcePlaceholder"
         class="w-full rounded-xl p-3 dg-input text-dg-100 text-sm placeholder-dg-500 focus:outline-none focus:ring-2 focus:ring-dg-400"></textarea>
       <div class="flex flex-wrap gap-3 mt-3">
-        <button onclick="addFromInput()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-dg-500 to-dg-700 hover:from-dg-400 hover:to-dg-600 text-white font-medium shadow-lg shadow-dg-900/50 transition">
-          Ekle
-        </button>
+        <button onclick="addFromInput()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-dg-500 to-dg-700 hover:from-dg-400 hover:to-dg-600 text-white font-medium shadow-lg shadow-dg-900/50 transition" data-i18n="add">Ekle</button>
         <label class="px-5 py-2.5 rounded-xl dg-input text-dg-200 cursor-pointer hover:border-dg-400 transition text-sm flex items-center gap-2">
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 17l6-6m0 0l6 6m-6-6v12M3 21h18M5 3h14M5 8h14"/></svg>
-          .torrent Dosyası
-          <input type="file" id="torrentFile" accept=".torrent" class="hidden" onchange="addFromFile(this)"> 
+          <span data-i18n="torrentFile">.torrent Dosyası</span>
+          <input type="file" id="torrentFile" accept=".torrent" class="hidden" onchange="addFromFile(this)">
         </label>
       </div>
       <div id="addStatus" class="mt-3 text-sm text-dg-300"></div>
@@ -105,9 +137,9 @@ tailwind.config = {
 
     <!-- Torrent list -->
     <section>
-      <h2 class="text-lg font-semibold text-dg-100 mb-3">Torrentler</h2>
+      <h2 class="text-lg font-semibold text-dg-100 mb-3" data-i18n="torrents">Torrentler</h2>
       <div id="torrentList" class="space-y-3">
-        <div class="card rounded-2xl p-6 text-center text-dg-400 text-sm">Yükleniyor...</div>
+        <div class="card rounded-2xl p-6 text-center text-dg-400 text-sm" data-i18n="loading">Yükleniyor...</div>
       </div>
     </section>
 
@@ -116,6 +148,147 @@ tailwind.config = {
 <script>
 const API = '/api';
 
+// ---------- i18n ----------
+const I18N = {
+  en: {
+    tagline: 'A from-scratch BitTorrent client', noDocker: 'No Docker',
+    totalTorrents: 'Total Torrents', downloading: 'Downloading', seeding: 'Seeding', totalUploaded: 'Total Uploaded',
+    addTorrent: 'Add Torrent', sourceHint: 'magnet:, http(s): or raw .torrent',
+    sourcePlaceholder: 'Bulk magnet links or a single source (one per line)\nmagnet:?xt=urn:btih:...\nhttps://example.com/file.torrent',
+    add: 'Add', torrentFile: '.torrent File', torrents: 'Torrents', loading: 'Loading...',
+    noTorrents: 'No torrents yet. Add a magnet link or .torrent file above.',
+    connError: 'Connection error:', adding: 'added', errors: 'errors', added: 'File added', removed: 'Removed',
+    pausing: 'Pause', resuming: 'Resume', deleting: 'Delete', queued: 'Queued', stopped: 'Stopped', error: 'Error', paused: 'Paused'
+  },
+  tr: {
+    tagline: 'Yüksük Otu — sıfırdan yazılmış BitTorrent istemcisi', noDocker: 'Docker yok',
+    totalTorrents: 'Toplam Torrent', downloading: 'İndiriliyor', seeding: 'Seed', totalUploaded: 'Toplam Yükleme',
+    addTorrent: 'Torrent Ekle', sourceHint: 'magnet:, http(s) veya ham .torrent',
+    sourcePlaceholder: 'Toplu magnet linkleri veya tek kaynak (her satıra bir tane)\nmagnet:?xt=urn:btih:...\nhttps://example.com/file.torrent',
+    add: 'Ekle', torrentFile: '.torrent Dosyası', torrents: 'Torrentler', loading: 'Yükleniyor...',
+    noTorrents: 'Henüz torrent yok. Yukarıdan magnet linki veya .torrent dosyası ekleyin.',
+    connError: 'Bağlantı hatası:', adding: 'eklendi', errors: 'hata', added: 'Dosya eklendi', removed: 'silindi',
+    pausing: 'Duraklat', resuming: 'Devam', deleting: 'Sil', queued: 'Sırada', stopped: 'Durduruldu', error: 'Hata', paused: 'Duraklatıldı'
+  },
+  de: {
+    tagline: 'Ein von Grund auf neu geschriebener BitTorrent-Client', noDocker: 'Kein Docker',
+    totalTorrents: 'Torrents gesamt', downloading: 'Lädt herunter', seeding: 'Seed', totalUploaded: 'Gesamt hochgeladen',
+    addTorrent: 'Torrent hinzufügen', sourceHint: 'magnet:, http(s) oder roh .torrent',
+    sourcePlaceholder: 'Mehrere Magnet-Links oder eine Quelle (eine pro Zeile)\nmagnet:?xt=urn:btih:...\nhttps://example.com/file.torrent',
+    add: 'Hinzufügen', torrentFile: '.torrent Datei', torrents: 'Torrents', loading: 'Lädt...',
+    noTorrents: 'Noch keine Torrents. Fügen Sie oben einen Magnet-Link oder eine .torrent-Datei hinzu.',
+    connError: 'Verbindungsfehler:', adding: 'hinzugefügt', errors: 'Fehler', added: 'Datei hinzugefügt', removed: 'entfernt',
+    pausing: 'Pause', resuming: 'Fortsetzen', deleting: 'Löschen', queued: 'In Warteschlange', stopped: 'Gestoppt', error: 'Fehler', paused: 'Pausiert'
+  },
+  fr: {
+    tagline: 'Un client BitTorrent écrit from scratch', noDocker: 'Pas de Docker',
+    totalTorrents: 'Torrents totaux', downloading: 'Téléchargement', seeding: 'Seed', totalUploaded: 'Total téléversé',
+    addTorrent: 'Ajouter un torrent', sourceHint: 'magnet:, http(s) ou .torrent brut',
+    sourcePlaceholder: 'Liens magnet groupés ou une source (un par ligne)\nmagnet:?xt=urn:btih:...\nhttps://example.com/file.torrent',
+    add: 'Ajouter', torrentFile: 'Fichier .torrent', torrents: 'Torrents', loading: 'Chargement...',
+    noTorrents: 'Aucun torrent pour l\'instant. Ajoutez un lien magnet ou un fichier .torrent ci-dessus.',
+    connError: 'Erreur de connexion :', adding: 'ajouté', errors: 'erreurs', added: 'Fichier ajouté', removed: 'supprimé',
+    pausing: 'Pause', resuming: 'Reprendre', deleting: 'Supprimer', queued: 'En file', stopped: 'Arrêté', error: 'Erreur', paused: 'En pause'
+  },
+  es: {
+    tagline: 'Un cliente BitTorrent escrito desde cero', noDocker: 'Sin Docker',
+    totalTorrents: 'Torrents totales', downloading: 'Descargando', seeding: 'Seed', totalUploaded: 'Total subido',
+    addTorrent: 'Añadir torrent', sourceHint: 'magnet:, http(s) o .torrent crudo',
+    sourcePlaceholder: 'Enlaces magnet en lote o una fuente (uno por línea)\nmagnet:?xt=urn:btih:...\nhttps://example.com/file.torrent',
+    add: 'Añadir', torrentFile: 'Archivo .torrent', torrents: 'Torrents', loading: 'Cargando...',
+    noTorrents: 'Aún no hay torrents. Añada un enlace magnet o un archivo .torrent arriba.',
+    connError: 'Error de conexión:', adding: 'añadido', errors: 'errores', added: 'Archivo añadido', removed: 'eliminado',
+    pausing: 'Pausar', resuming: 'Reanudar', deleting: 'Eliminar', queued: 'En cola', stopped: 'Detenido', error: 'Error', paused: 'Pausado'
+  },
+  it: {
+    tagline: 'Un client BitTorrent scritto da zero', noDocker: 'Niente Docker',
+    totalTorrents: 'Torrent totali', downloading: 'Download', seeding: 'Seed', totalUploaded: 'Totale caricato',
+    addTorrent: 'Aggiungi torrent', sourceHint: 'magnet:, http(s) o .torrent grezzo',
+    sourcePlaceholder: 'Link magnet in blocco o una sorgente (uno per riga)\nmagnet:?xt=urn:btih:...\nhttps://example.com/file.torrent',
+    add: 'Aggiungi', torrentFile: 'File .torrent', torrents: 'Torrents', loading: 'Caricamento...',
+    noTorrents: 'Ancora nessun torrent. Aggiungi un link magnet o un file .torrent qui sopra.',
+    connError: 'Errore di connessione:', adding: 'aggiunto', errors: 'errori', added: 'File aggiunto', removed: 'rimosso',
+    pausing: 'Pausa', resuming: 'Riprendi', deleting: 'Elimina', queued: 'In coda', stopped: 'Fermato', error: 'Errore', paused: 'In pausa'
+  },
+  ru: {
+    tagline: 'BitTorrent-клиент, написанный с нуля', noDocker: 'Без Docker',
+    totalTorrents: 'Всего торрентов', downloading: 'Загрузка', seeding: 'Раздача', totalUploaded: 'Загружено всего',
+    addTorrent: 'Добавить торрент', sourceHint: 'magnet:, http(s) или сырой .torrent',
+    sourcePlaceholder: 'Магнет-ссылки или один источник (по одной в строке)\nmagnet:?xt=urn:btih:...\nhttps://example.com/file.torrent',
+    add: 'Добавить', torrentFile: 'Файл .torrent', torrents: 'Торренты', loading: 'Загрузка...',
+    noTorrents: 'Пока нет торрентов. Добавьте магнит-ссылку или файл .torrent выше.',
+    connError: 'Ошибка соединения:', adding: 'добавлено', errors: 'ошибок', added: 'Файл добавлен', removed: 'удалено',
+    pausing: 'Пауза', resuming: 'Продолжить', deleting: 'Удалить', queued: 'В очереди', stopped: 'Остановлен', error: 'Ошибка', paused: 'На паузе'
+  },
+  ja: {
+    tagline: 'ゼロから書いたBitTorrentクライアント', noDocker: 'Docker不使用',
+    totalTorrents: '全トーレント', downloading: 'ダウンロード中', seeding: 'シード中', totalUploaded: 'アップロード合計',
+    addTorrent: 'トーレントを追加', sourceHint: 'magnet:、http(s):、または生の.torrent',
+    sourcePlaceholder: '複数のマグネットリンク、または1つのソース（各行に1つ）\nmagnet:?xt=urn:btih:...\nhttps://example.com/file.torrent',
+    add: '追加', torrentFile: '.torrentファイル', torrents: 'トーレント', loading: '読み込み中...',
+    noTorrents: 'トーレントはまだありません。上からマグネットリンクまたは.torrentファイルを追加してください。',
+    connError: '接続エラー:', adding: '追加済み', errors: 'エラー', added: 'ファイルを追加しました', removed: '削除済み',
+    pausing: '一時停止', resuming: '再開', deleting: '削除', queued: '待機中', stopped: '停止', error: 'エラー', paused: '一時停止中'
+  },
+  zh: {
+    tagline: '从头编写的BitTorrent客户端', noDocker: '无Docker',
+    totalTorrents: '种子总数', downloading: '下载中', seeding: '做种中', totalUploaded: '总上传',
+    addTorrent: '添加种子', sourceHint: 'magnet:、http(s): 或原始.torrent',
+    sourcePlaceholder: '批量磁力链接或单个来源（每行一个）\nmagnet:?xt=urn:btih:...\nhttps://example.com/file.torrent',
+    add: '添加', torrentFile: '.torrent文件', torrents: '种子', loading: '加载中...',
+    noTorrents: '还没有种子。请在上面添加磁力链接或.torrent文件。',
+    connError: '连接错误:', adding: '已添加', errors: '错误', added: '文件已添加', removed: '已删除',
+    pausing: '暂停', resuming: '继续', deleting: '删除', queued: '排队中', stopped: '已停止', error: '错误', paused: '已暂停'
+  },
+  ar: {
+    tagline: 'عميل BitTorrent مكتوب من الصفر', noDocker: 'بدون Docker',
+    totalTorrents: 'إجمالي التورنت', downloading: 'جارٍ التنزيل', seeding: 'بث', totalUploaded: 'إجمالي الرفع',
+    addTorrent: 'إضافة تورنت', sourceHint: 'magnet: أو http(s): أو ملف .torrent',
+    sourcePlaceholder: 'روابط مغناطيسية متعددة أو مصدر واحد (واحد لكل سطر)\nmagnet:?xt=urn:btih:...\nhttps://example.com/file.torrent',
+    add: 'إضافة', torrentFile: 'ملف .torrent', torrents: 'تورنت', loading: 'جارٍ التحميل...',
+    noTorrents: 'لا توجد تورنت بعد. أضف رابط مغناطيسي أو ملف .torrent بالأعلى.',
+    connError: 'خطأ في الاتصال:', adding: 'تمت الإضافة', errors: 'أخطاء', added: 'تمت إضافة الملف', removed: 'تم الحذف',
+    pausing: 'إيقاف مؤقت', resuming: 'استئناف', deleting: 'حذف', queued: 'في الانتظار', stopped: 'متوقف', error: 'خطأ', paused: 'متوقف مؤقتاً'
+  },
+  hi: {
+    tagline: 'शुरू से लिखा गया BitTorrent क्लाइंट', noDocker: 'Docker रहित',
+    totalTorrents: 'कुल टॉरेंट', downloading: 'डाउनलोड हो रहा', seeding: 'सीडिंग', totalUploaded: 'कुल अपलोड',
+    addTorrent: 'टॉरेंट जोड़ें', sourceHint: 'magnet:, http(s): या कच्चा .torrent',
+    sourcePlaceholder: 'कई मैग्नेट लिंक या एक स्रोत (प्रति पंक्ति एक)\nmagnet:?xt=urn:btih:...\nhttps://example.com/file.torrent',
+    add: 'जोड़ें', torrentFile: '.torrent फ़ाइल', torrents: 'टॉरेंट', loading: 'लोड हो रहा है...',
+    noTorrents: 'अभी कोई टॉरेंट नहीं। ऊपर मैग्नेट लिंक या .torrent फ़ाइल जोड़ें।',
+    connError: 'कनेक्शन त्रुटि:', adding: 'जोड़ा गया', errors: 'त्रुटियाँ', added: 'फ़ाइल जोड़ी गई', removed: 'हटाया गया',
+    pausing: 'रोकें', resuming: 'जारी रखें', deleting: 'हटाएँ', queued: 'कतार में', stopped: 'रोका गया', error: 'त्रुटि', paused: 'रोका हुआ'
+  }
+};
+
+let lang = (localStorage.getItem('dg-lang') || 'en');
+let translations = I18N[lang] || I18N.en;
+
+function t(key) { return translations[key] !== undefined ? translations[key] : (I18N.en[key] || key); }
+
+function applyLang() {
+  translations = I18N[lang] || I18N.en;
+  document.documentElement.lang = lang;
+  document.documentElement.dir = (lang === 'ar') ? 'rtl' : 'ltr';
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.getAttribute('data-i18n'));
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
+  });
+  const sel = document.getElementById('langSelect');
+  if (sel && sel.value !== lang) sel.value = lang;
+}
+
+function setLang(l) {
+  lang = l;
+  localStorage.setItem('dg-lang', l);
+  applyLang();
+  refresh();
+}
+
+// ---------- formatting ----------
 function fmtBytes(b) {
   if (!b) return '0 B';
   const units = ['B','KB','MB','GB','TB'];
@@ -129,14 +302,15 @@ function fmtSpeed(bps) {
   return fmtBytes(bps) + '/s';
 }
 
+// ---------- state badges ----------
 function stateBadge(state) {
   const map = {
-    'seeding':    ['bg-emerald-500/15 text-emerald-300 border-emerald-400/30', 'Seeding'],
-    'downloading':['bg-sky-500/15 text-sky-300 border-sky-400/30', 'İndiriliyor'],
-    'paused':     ['bg-amber-500/15 text-amber-300 border-amber-400/30', 'Duraklatıldı'],
-    'queued':     ['bg-dg-500/15 text-dg-300 border-dg-400/30', 'Sırada'],
-    'stopped':    ['bg-rose-500/15 text-rose-300 border-rose-400/30', 'Durduruldu'],
-    'error':      ['bg-rose-500/15 text-rose-300 border-rose-400/30', 'Hata']
+    'seeding':     ['bg-emerald-500/15 text-emerald-300 border-emerald-400/30', t('seeding')],
+    'downloading': ['bg-sky-500/15 text-sky-300 border-sky-400/30', t('downloading')],
+    'paused':      ['bg-amber-500/15 text-amber-300 border-amber-400/30', t('paused')],
+    'queued':      ['bg-dg-500/15 text-dg-300 border-dg-400/30', t('queued')],
+    'stopped':     ['bg-rose-500/15 text-rose-300 border-rose-400/30', t('stopped')],
+    'error':       ['bg-rose-500/15 text-rose-300 border-rose-400/30', t('error')]
   };
   const [cls, label] = map[state] || ['bg-dg-800 text-dg-400 border-dg-500/40', state];
   return `<span class="px-2.5 py-0.5 rounded-full text-xs font-medium border ${cls}">${label}</span>`;
@@ -179,9 +353,9 @@ function renderTorrent(t) {
       </div>
       <div class="flex gap-2 md:flex-col xl:flex-row md:items-end shrink-0">
         ${t.state === 'paused'
-          ? `<button onclick="act('${t.id}','resume')" class="px-3 py-1.5 rounded-lg bg-emerald-600/30 border border-emerald-400/40 text-emerald-200 text-xs hover:bg-emerald-500/40 transition">Devam</button>`
-          : `<button onclick="act('${t.id}','pause')" class="px-3 py-1.5 rounded-lg dg-input text-dg-200 text-xs hover:border-dg-300 transition">Duraklat</button>`}
-        <button onclick="act('${t.id}','delete')" class="px-3 py-1.5 rounded-lg bg-rose-600/25 border border-rose-400/40 text-rose-200 text-xs hover:bg-rose-500/40 transition">Sil</button>
+          ? `<button onclick="act('${t.id}','resume')" class="px-3 py-1.5 rounded-lg bg-emerald-600/30 border border-emerald-400/40 text-emerald-200 text-xs hover:bg-emerald-500/40 transition">${t('resuming')}</button>`
+          : `<button onclick="act('${t.id}','pause')" class="px-3 py-1.5 rounded-lg dg-input text-dg-200 text-xs hover:border-dg-300 transition">${t('pausing')}</button>`}
+        <button onclick="act('${t.id}','delete')" class="px-3 py-1.5 rounded-lg bg-rose-600/25 border border-rose-400/40 text-rose-200 text-xs hover:bg-rose-500/40 transition">${t('deleting')}</button>
       </div>
     </div>
   </div>`;
@@ -202,23 +376,20 @@ async function refresh() {
   try {
     const list = await api('/torrents');
     const el = document.getElementById('torrentList');
-    const sum = {};
     if (!list.length) {
-      el.innerHTML = `<div class="card rounded-2xl p-8 text-center text-dg-400 text-sm">
-        Henüz torrent yok. Yukarıdan magnet linki veya .torrent dosyası ekleyin.
-      </div>`;
+      el.innerHTML = `<div class="card rounded-2xl p-8 text-center text-dg-400 text-sm">${esc(t('noTorrents'))}</div>`;
     } else {
       el.innerHTML = list.map(renderTorrent).join('');
     }
     document.getElementById('statTotal').textContent = list.length;
     document.getElementById('statSeeding').textContent = list.filter(x=>x.state==='seeding').length;
     document.getElementById('statDownloading').textContent = list.filter(x=>x.state==='downloading').length;
-    let up = 0, dl = 0;
-    list.forEach(t => { up += t.uploaded; dl += t.download_speed; });
+    let up = 0;
+    list.forEach(x => { up += x.uploaded; });
     document.getElementById('statUploaded').textContent = fmtBytes(up);
   } catch (e) {
     document.getElementById('torrentList').innerHTML =
-      `<div class="card rounded-2xl p-6 text-center text-rose-300 text-sm">Bağlantı hatası: ${esc(e.message)}</div>`;
+      `<div class="card rounded-2xl p-6 text-center text-rose-300 text-sm">${esc(t('connError'))} ${esc(e.message)}</div>`;
   }
 }
 
@@ -227,18 +398,18 @@ async function addFromInput() {
   const lines = ta.value.split('\n').map(s=>s.trim()).filter(Boolean);
   if (!lines.length) return;
   const status = document.getElementById('addStatus');
-  let ok = 0, fail = 0;
+  let ok = 0, fail = 0, lastFail = '';
   for (const line of lines) {
     try {
       await api('/torrents', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({source: line}) });
       ok++;
     } catch (e) {
       fail++;
-      status.innerHTML = `<span class="text-rose-300">${esc(line.slice(0,60))}: ${esc(e.message)}</span><br>`;
+      lastFail = `${esc(line.slice(0,60))}: ${esc(e.message)}`;
     }
   }
   ta.value = '';
-  status.innerHTML = `<span class="text-emerald-300">${ok} eklendi${fail ? `, ${fail} hata` : ''}</span>`;
+  status.innerHTML = `<span class="text-emerald-300">${ok} ${esc(t('adding'))}${fail ? `, ${fail} ${esc(t('errors'))} — ${lastFail}` : ''}</span>`;
   refresh();
 }
 
@@ -250,9 +421,9 @@ async function addFromFile(input) {
   const status = document.getElementById('addStatus');
   try {
     await api('/torrents', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({source: b64}) });
-    status.innerHTML = '<span class="text-emerald-300">Dosya eklendi</span>';
+    status.innerHTML = `<span class="text-emerald-300">${esc(t('added'))}</span>`;
   } catch (e) {
-    status.innerHTML = `<span class="text-rose-300">${esc(e.message)}</span>`;
+    status.innerHTML = `<span class="text-rose-300">${esc(t('connError'))} ${esc(e.message)}</span>`;
   }
   input.value = '';
   refresh();
@@ -266,6 +437,7 @@ async function act(id, action) {
 }
 
 setInterval(refresh, 2500);
+applyLang();
 refresh();
 </script>
 </body>
