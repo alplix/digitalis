@@ -12,36 +12,72 @@ tailwind.config = {
     extend: {
       colors: {
         dg: {
-          50: '#faf5f7',
-          100: '#f3e8ee',
-          200: '#e7d3df',
-          300: '#d4b0c4',
-          400: '#b985a0',
-          500: '#a05f82',
-          600: '#884667',
-          700: '#713955',
-          800: '#5c2f49',
-          900: '#4a2740',
-          950: '#2b1322'
-        }
+          50: '#fff7fa', 100: '#ffd9e8', 200: '#ffb3d4', 300: '#ff8fc0',
+          400: '#f76ab0', 500: '#e0409a', 600: '#c21f7e', 700: '#9c1264',
+          800: '#72104b', 900: '#4a1033', 950: '#2b0a1f'
+        },
+        leaf: { 300: '#9ee07a', 400: '#6fc956', 500: '#4fae3c', 700: '#2f7d2a' }
       }
     }
   }
 }
 </script>
 <style>
-  body { background: linear-gradient(160deg, #1a0f1c 0%, #2b1322 40%, #3a1120 75%, #1f0d1d 100%); }
-  .card { background: rgba(46, 19, 38, 0.75); border: 1px solid rgba(212, 176, 196, 0.18); backdrop-filter: blur(6px); }
-  .dg-input { background: rgba(0,0,0,0.35); border: 1px solid rgba(212,176,196,0.25); }
-  select.dg-input option { background: #2b1322; }
-  ::-webkit-scrollbar { width: 8px; height: 8px; }
-  ::-webkit-scrollbar-track { background: #1a0f1c; }
-  ::-webkit-scrollbar-thumb { background: #713955; border-radius: 4px; }
-  .logo-bloom { animation: bloom 4s ease-in-out infinite; transform-origin: 12px 16px; }
-  @keyframes bloom {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.06); }
+  body {
+    background:
+      radial-gradient(1100px 600px at 15% -10%, rgba(199, 31, 126, 0.35), transparent 60%),
+      radial-gradient(900px 500px at 90% 0%, rgba(146, 64, 154, 0.4), transparent 55%),
+      radial-gradient(1000px 600px at 50% 110%, rgba(79, 174, 60, 0.22), transparent 60%),
+      linear-gradient(160deg, #1a0a1c 0%, #3a1030 40%, #4a1033 70%, #200a22 100%);
   }
+  .card {
+    background: linear-gradient(135deg, rgba(255, 143, 192, 0.10), rgba(114, 16, 75, 0.35) 45%, rgba(43, 10, 31, 0.8));
+    border: 1px solid rgba(255, 179, 212, 0.25);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 24px rgba(194, 31, 126, 0.12);
+  }
+  .dg-input { background: rgba(0,0,0,0.35); border: 1px solid rgba(255,143,192,0.35); }
+  select.dg-input option { background: #2b0a1f; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: #1a0a1c; }
+  ::-webkit-scrollbar-thumb { background: linear-gradient(#e0409a, #f76ab0); border-radius: 4px; }
+
+  .rainbow-text {
+    background: linear-gradient(90deg, #ff8fc0, #f76ab0, #c084fc, #818cf8, #38bdf8, #9ee07a, #fbbf24, #fb7185, #ff8fc0);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shine 6s linear infinite;
+  }
+  @keyframes shine { to { background-position: 200% center; } }
+
+  .rainbow-border {
+    background: linear-gradient(90deg, #ff8fc0, #c084fc, #38bdf8, #9ee07a, #fbbf24, #fb7185);
+    background-size: 300% auto;
+    animation: borderShift 8s linear infinite;
+  }
+  @keyframes borderShift { to { background-position: 300% center; } }
+
+  .grad-btn {
+    background: linear-gradient(135deg, #e0409a, #a855f7 50%, #38bdf8);
+    background-size: 200% auto;
+    transition: background-position .4s ease, transform .15s ease;
+  }
+  .grad-btn:hover { background-position: right center; transform: translateY(-1px); }
+
+  .logo-bloom { animation: bloom 4s ease-in-out infinite; transform-origin: 12px 16px; }
+  @keyframes bloom { 0%,100%{transform:scale(1)} 50%{transform:scale(1.07)} }
+
+  .stat-label { color: #ffb3d4; }
+  .glow { text-shadow: 0 0 14px rgba(247,106,176,0.55); }
+
+  .cat-row { transition: background .15s ease, transform .1s ease; border-radius: .5rem; }
+  .cat-row:hover { background: rgba(255,143,192,0.08); }
+  .cat-row.selected { background: rgba(247,106,176,0.16); outline: 1px solid rgba(247,106,176,0.4); }
+
+  .acc-open { animation: acc .35s ease; }
+  @keyframes acc { from { opacity:0; transform: translateY(-6px);} to {opacity:1; transform:none;} }
 </style>
 </head>
 <body class="text-dg-100 min-h-screen font-sans">
@@ -51,40 +87,39 @@ tailwind.config = {
     <!-- Header -->
     <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
       <div class="flex items-center gap-3">
-        <!-- Digitalis (foxglove) flower logo -->
-        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-dg-400/80 to-dg-900 flex items-center justify-center shadow-lg shadow-dg-900/50 border border-dg-300/20">
-          <svg class="logo-bloom w-9 h-9" viewBox="0 0 24 24" fill="none">
-            <!-- stem -->
-            <path d="M12 21v-7" stroke="#b985a0" stroke-width="1.4" stroke-linecap="round"/>
-            <path d="M12 16c-2.2-1-3.5-2.6-3.5-4.5a3.5 3.5 0 0 1 7 0c0 1.9-1.3 3.5-3.5 4.5z" fill="url(#petal)" opacity="0.9"/>
-            <path d="M12 15c-2.7-1-4.3-3-4.3-5.2a4.3 4.3 0 0 1 8.6 0c0 2.2-1.6 4.2-4.3 5.2z" fill="url(#bellOuter)" opacity="0.55"/>
-            <!-- dots / spots inside the bell -->
-            <circle cx="10.2" cy="11" r="0.5" fill="#f3e8ee"/><circle cx="12" cy="10.2" r="0.5" fill="#f3e8ee"/><circle cx="13.8" cy="11" r="0.5" fill="#f3e8ee"/>
-            <!-- leaves -->
-            <path d="M12 15c-.2-1.6.3-3 .8-3M12 15c.2-1.6-.3-3-.8-3" stroke="#71a06a" stroke-width="1.1" stroke-linecap="round"/>
-            <defs>
-              <linearGradient id="petal" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#d4b0c4"/><stop offset="1" stop-color="#884667"/>
-              </linearGradient>
-              <linearGradient id="bellOuter" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#a05f82"/><stop offset="1" stop-color="#713955"/>
-              </linearGradient>
-            </defs>
-          </svg>
+        <div class="w-14 h-14 rounded-2xl p-[2px] rainbow-border flex items-center justify-center shadow-lg shadow-dg-900/50">
+          <div class="w-full h-full rounded-2xl bg-gradient-to-br from-dg-800 to-dg-950 flex items-center justify-center">
+            <svg class="logo-bloom w-9 h-9" viewBox="0 0 24 24" fill="none">
+              <path d="M12 21v-7" stroke="#ff8fc0" stroke-width="1.4" stroke-linecap="round"/>
+              <path d="M12 16c-2.2-1-3.5-2.6-3.5-4.5a3.5 3.5 0 0 1 7 0c0 1.9-1.3 3.5-3.5 4.5z" fill="url(#petal)" opacity="0.95"/>
+              <path d="M12 15c-2.7-1-4.3-3-4.3-5.2a4.3 4.3 0 0 1 8.6 0c0 2.2-1.6 4.2-4.3 5.2z" fill="url(#bellOuter)" opacity="0.6"/>
+              <circle cx="10.2" cy="11" r="0.5" fill="#fff7fa"/><circle cx="12" cy="10.2" r="0.5" fill="#fff7fa"/><circle cx="13.8" cy="11" r="0.5" fill="#fff7fa"/>
+              <path d="M12 15c-.2-1.6.3-3 .8-3M12 15c.2-1.6-.3-3-.8-3" stroke="#6fc956" stroke-width="1.1" stroke-linecap="round"/>
+              <defs>
+                <linearGradient id="petal" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#ffb3d4"/><stop offset="1" stop-color="#e0409a"/>
+                </linearGradient>
+                <linearGradient id="bellOuter" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#f76ab0"/><stop offset="1" stop-color="#9c1264"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
         </div>
         <div>
-          <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-dg-100">Digitalis</h1>
-          <p class="text-sm text-dg-400" data-i18n="tagline">Yüksük Otu — a from-scratch BitTorrent client</p>
+          <h1 class="text-2xl md:text-3xl font-bold tracking-tight rainbow-text glow">Digitalis</h1>
+          <p class="text-sm text-dg-300" data-i18n="tagline">A from-scratch BitTorrent client</p>
         </div>
       </div>
-      <div class="flex items-center gap-2 text-sm">
-        <select id="langSelect" onchange="setLang(this.value)" class="dg-input rounded-full px-3 py-1.5 text-dg-200 focus:outline-none focus:ring-2 focus:ring-dg-400 cursor-pointer">
+      <div class="flex flex-wrap items-center gap-2 text-sm">
+        <select id="langSelect" onchange="setLang(this.value)" class="dg-input rounded-full px-3 py-1.5 text-dg-100 focus:outline-none focus:ring-2 focus:ring-dg-400 cursor-pointer">
           <option value="en">English</option>
           <option value="tr">Türkçe</option>
           <option value="de">Deutsch</option>
           <option value="fr">Français</option>
           <option value="es">Español</option>
           <option value="it">Italiano</option>
+          <option value="pt">Português</option>
           <option value="ru">Русский</option>
           <option value="ja">日本語</option>
           <option value="zh">中文</option>
@@ -92,54 +127,78 @@ tailwind.config = {
           <option value="hi">हिन्दी</option>
         </select>
         <span class="px-3 py-1 rounded-full bg-dg-800/60 border border-dg-500/30 text-dg-300" data-i18n="noDocker">No Docker</span>
-        <span class="px-3 py-1 rounded-full bg-dg-800/60 border border-dg-500/30 text-dg-300" id="peerPort">Port —</span>
       </div>
     </header>
 
     <!-- Global stats -->
-    <section class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <section class="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4 mb-6">
       <div class="card rounded-2xl p-4">
-        <p class="text-xs uppercase tracking-widest text-dg-400 mb-1" data-i18n="totalTorrents">Toplam Torrent</p>
+        <p class="text-xs uppercase tracking-widest stat-label mb-1" data-i18n="totalTorrents">Total Torrents</p>
         <p class="text-2xl font-semibold text-dg-100" id="statTotal">0</p>
       </div>
       <div class="card rounded-2xl p-4">
-        <p class="text-xs uppercase tracking-widest text-dg-400 mb-1" data-i18n="downloading">Indiriliyor</p>
-        <p class="text-2xl font-semibold text-dg-200" id="statDownloading">0</p>
+        <p class="text-xs uppercase tracking-widest stat-label mb-1" data-i18n="downloading">Downloading</p>
+        <p class="text-2xl font-semibold text-sky-300" id="statDownloading">0</p>
       </div>
       <div class="card rounded-2xl p-4">
-        <p class="text-xs uppercase tracking-widest text-dg-400 mb-1" data-i18n="seeding">Seeding</p>
+        <p class="text-xs uppercase tracking-widest stat-label mb-1" data-i18n="seeding">Seeding</p>
         <p class="text-2xl font-semibold text-emerald-300" id="statSeeding">0</p>
       </div>
       <div class="card rounded-2xl p-4">
-        <p class="text-xs uppercase tracking-widest text-dg-400 mb-1" data-i18n="totalUploaded">Toplam Yükleme</p>
-        <p class="text-xl font-semibold text-dg-100" id="statUp"><span id="statUploaded">0</span></p>
+        <p class="text-xs uppercase tracking-widest stat-label mb-1" data-i18n="totalUploaded">Total Uploaded</p>
+        <p class="text-xl font-semibold text-dg-100"><span id="statUploaded">0</span></p>
+      </div>
+      <div class="card rounded-2xl p-4">
+        <p class="text-xs uppercase tracking-widest stat-label mb-1" data-i18n="peersServed">Peers Served</p>
+        <p class="text-xl font-semibold text-emerald-300" id="statServed">0</p>
       </div>
     </section>
 
     <!-- Add torrent -->
     <section class="card rounded-2xl p-4 md:p-5 mb-6">
       <div class="flex items-center justify-between mb-3">
-        <h2 class="text-lg font-semibold text-dg-100" data-i18n="addTorrent">Torrent Ekle</h2>
-        <span class="text-xs text-dg-400" data-i18n="sourceHint">magnet:, http(s): veya ham .torrent</span>
+        <h2 class="text-lg font-semibold text-dg-100" data-i18n="addTorrent">Add Torrent</h2>
+        <span class="text-xs text-dg-400" data-i18n="sourceHint">magnet:, http(s): or raw .torrent</span>
       </div>
       <textarea id="sourceInput" rows="3" data-i18n-placeholder="sourcePlaceholder"
         class="w-full rounded-xl p-3 dg-input text-dg-100 text-sm placeholder-dg-500 focus:outline-none focus:ring-2 focus:ring-dg-400"></textarea>
-      <div class="flex flex-wrap gap-3 mt-3">
-        <button onclick="addFromInput()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-dg-500 to-dg-700 hover:from-dg-400 hover:to-dg-600 text-white font-medium shadow-lg shadow-dg-900/50 transition" data-i18n="add">Ekle</button>
-        <label class="px-5 py-2.5 rounded-xl dg-input text-dg-200 cursor-pointer hover:border-dg-400 transition text-sm flex items-center gap-2">
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 17l6-6m0 0l6 6m-6-6v12M3 21h18M5 3h14M5 8h14"/></svg>
-          <span data-i18n="torrentFile">.torrent Dosyası</span>
-          <input type="file" id="torrentFile" accept=".torrent" class="hidden" onchange="addFromFile(this)">
-        </label>
+      <div class="flex flex-col md:flex-row gap-3 mt-3">
+        <div class="flex-1">
+          <input id="dirInput" list="catList" data-i18n-placeholder="targetFolder"
+            class="w-full rounded-xl px-3 py-2.5 dg-input text-dg-100 text-sm placeholder-dg-500 focus:outline-none focus:ring-2 focus:ring-dg-400" spellcheck="false">
+          <datalist id="catList"></datalist>
+          <p class="text-[11px] text-dg-500 mt-1" data-i18n="createFolders">Nested folders, e.g. unix/linux/debian</p>
+        </div>
+        <div class="flex flex-wrap gap-3 items-center">
+          <button onclick="addFromInput()" class="px-5 py-2.5 rounded-xl grad-btn text-white font-medium shadow-lg shadow-dg-900/50 transition" data-i18n="add">Add</button>
+          <label class="px-5 py-2.5 rounded-xl dg-input text-dg-100 cursor-pointer hover:border-dg-300 transition text-sm flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 17l6-6m0 0l6 6m-6-6v12M3 21h18M5 3h14M5 8h14"/></svg>
+            <span data-i18n="torrentFile">.torrent File</span>
+            <input type="file" id="torrentFile" accept=".torrent" class="hidden" onchange="addFromFile(this)">
+          </label>
+        </div>
       </div>
       <div id="addStatus" class="mt-3 text-sm text-dg-300"></div>
     </section>
 
+    <!-- Categories -->
+    <section class="card rounded-2xl p-4 md:p-5 mb-6">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-lg font-semibold text-dg-100" data-i18n="categories">Categories</h2>
+        <div class="flex gap-2">
+          <button onclick="newCategory()" class="px-3 py-1.5 rounded-lg grad-btn text-white text-xs font-medium shadow transition" data-i18n="newFolder">New folder</button>
+        </div>
+      </div>
+      <div id="catListBox" class="space-y-1 text-sm">
+        <div class="text-dg-400" data-i18n="loading">Loading...</div>
+      </div>
+    </section>
+
     <!-- Torrent list -->
     <section>
-      <h2 class="text-lg font-semibold text-dg-100 mb-3" data-i18n="torrents">Torrentler</h2>
+      <h2 class="text-lg font-semibold text-dg-100 mb-3" data-i18n="torrents">Torrents</h2>
       <div id="torrentList" class="space-y-3">
-        <div class="card rounded-2xl p-6 text-center text-dg-400 text-sm" data-i18n="loading">Yükleniyor...</div>
+        <div class="card rounded-2xl p-6 text-center text-dg-400 text-sm" data-i18n="loading">Loading...</div>
       </div>
     </section>
 
@@ -153,140 +212,239 @@ const I18N = {
   en: {
     tagline: 'A from-scratch BitTorrent client', noDocker: 'No Docker',
     totalTorrents: 'Total Torrents', downloading: 'Downloading', seeding: 'Seeding', totalUploaded: 'Total Uploaded',
+    peersServed: 'Peers Served',
     addTorrent: 'Add Torrent', sourceHint: 'magnet:, http(s): or raw .torrent',
     sourcePlaceholder: 'Bulk magnet links or a single source (one per line)\nmagnet:?xt=urn:btih:...\nhttps://example.com/file.torrent',
     add: 'Add', torrentFile: '.torrent File', torrents: 'Torrents', loading: 'Loading...',
     noTorrents: 'No torrents yet. Add a magnet link or .torrent file above.',
-    connError: 'Connection error:', adding: 'added', errors: 'errors', added: 'File added', removed: 'Removed',
-    pausing: 'Pause', resuming: 'Resume', deleting: 'Delete', queued: 'Queued', stopped: 'Stopped', error: 'Error', paused: 'Paused'
+    connError: 'Connection error:', adding: 'added', errors: 'errors', added: 'File added',
+    pausing: 'Pause', resuming: 'Resume', deleting: 'Delete', queued: 'Queued', stopped: 'Stopped', error: 'Error', paused: 'Paused',
+    ratio: 'Ratio', seededTo: 'Uploaded to', peers: 'peers', trackers: 'Trackers', working: 'working', down: 'down',
+    announce: 'Announces', ok: 'ok', fail: 'fail', seeders: 'Seeders', leechers: 'Leechers',
+    lastSuccess: 'Last success', never: 'never', details: 'Details',
+    categories: 'Categories', targetFolder: 'Destination folder (optional)', createFolders: 'Nested folders, e.g. unix/linux/debian',
+    newFolder: 'New folder', create: 'Create', move: 'Move', root: 'Root', empty: 'empty',
+    deleteFolder: 'Delete folder', catCreated: 'Category created', catEmpty: 'Category must be empty to delete', targetSet: 'Target set',
+    moved: 'moved'
   },
   tr: {
     tagline: 'Yüksük Otu — sıfırdan yazılmış BitTorrent istemcisi', noDocker: 'Docker yok',
     totalTorrents: 'Toplam Torrent', downloading: 'İndiriliyor', seeding: 'Seed', totalUploaded: 'Toplam Yükleme',
+    peersServed: 'Ulaşılan Peer',
     addTorrent: 'Torrent Ekle', sourceHint: 'magnet:, http(s) veya ham .torrent',
     sourcePlaceholder: 'Toplu magnet linkleri veya tek kaynak (her satıra bir tane)\nmagnet:?xt=urn:btih:...\nhttps://example.com/file.torrent',
     add: 'Ekle', torrentFile: '.torrent Dosyası', torrents: 'Torrentler', loading: 'Yükleniyor...',
     noTorrents: 'Henüz torrent yok. Yukarıdan magnet linki veya .torrent dosyası ekleyin.',
-    connError: 'Bağlantı hatası:', adding: 'eklendi', errors: 'hata', added: 'Dosya eklendi', removed: 'silindi',
-    pausing: 'Duraklat', resuming: 'Devam', deleting: 'Sil', queued: 'Sırada', stopped: 'Durduruldu', error: 'Hata', paused: 'Duraklatıldı'
+    connError: 'Bağlantı hatası:', adding: 'eklendi', errors: 'hata', added: 'Dosya eklendi',
+    pausing: 'Duraklat', resuming: 'Devam', deleting: 'Sil', queued: 'Sırada', stopped: 'Durduruldu', error: 'Hata', paused: 'Duraklatıldı',
+    ratio: 'Oran', seededTo: 'Yükleme yapılan', peers: 'peer', trackers: 'Trackerlar', working: 'çalışıyor', down: 'çalışmıyor',
+    announce: 'Anounce', ok: 'başarılı', fail: 'hata', seeders: 'Seed', leechers: 'Leech',
+    lastSuccess: 'Son başarı', never: 'hiç', details: 'Detaylar',
+    categories: 'Kategoriler', targetFolder: 'Hedef klasör (isteğe bağlı)', createFolders: 'İç içe klasörler, ör. unix/linux/debian',
+    newFolder: 'Yeni klasör', create: 'Oluştur', move: 'Taşı', root: 'Ana dizin', empty: 'boş',
+    deleteFolder: 'Klasörü sil', catCreated: 'Kategori oluşturuldu', catEmpty: 'Silinecek kategori boş olmalı', targetSet: 'Hedef seçildi',
+    moved: 'taşındı'
   },
   de: {
-    tagline: 'Ein von Grund auf neu geschriebener BitTorrent-Client', noDocker: 'Kein Docker',
-    totalTorrents: 'Torrents gesamt', downloading: 'Lädt herunter', seeding: 'Seed', totalUploaded: 'Gesamt hochgeladen',
+    tagline: 'Ein von Grund auf geschriebener BitTorrent-Client', noDocker: 'Kein Docker',
+    totalTorrents: 'Torrents gesamt', downloading: 'Lädt', seeding: 'Seed', totalUploaded: 'Gesamt hochgeladen',
+    peersServed: 'Peers beliefert',
     addTorrent: 'Torrent hinzufügen', sourceHint: 'magnet:, http(s) oder roh .torrent',
     sourcePlaceholder: 'Mehrere Magnet-Links oder eine Quelle (eine pro Zeile)\nmagnet:?xt=urn:btih:...\nhttps://example.com/file.torrent',
     add: 'Hinzufügen', torrentFile: '.torrent Datei', torrents: 'Torrents', loading: 'Lädt...',
     noTorrents: 'Noch keine Torrents. Fügen Sie oben einen Magnet-Link oder eine .torrent-Datei hinzu.',
-    connError: 'Verbindungsfehler:', adding: 'hinzugefügt', errors: 'Fehler', added: 'Datei hinzugefügt', removed: 'entfernt',
-    pausing: 'Pause', resuming: 'Fortsetzen', deleting: 'Löschen', queued: 'In Warteschlange', stopped: 'Gestoppt', error: 'Fehler', paused: 'Pausiert'
+    connError: 'Verbindungsfehler:', adding: 'hinzugefügt', errors: 'Fehler', added: 'Datei hinzugefügt',
+    pausing: 'Pause', resuming: 'Fortsetzen', deleting: 'Löschen', queued: 'Warteschlange', stopped: 'Gestoppt', error: 'Fehler', paused: 'Pausiert',
+    ratio: 'Verhältnis', seededTo: 'Hochgeladen an', peers: 'Peers', trackers: 'Tracker', working: 'aktiv', down: 'inaktiv',
+    announce: 'Announces', ok: 'ok', fail: 'Fehler', seeders: 'Seeds', leechers: 'Leeches',
+    lastSuccess: 'Letzter Erfolg', never: 'nie', details: 'Details',
+    categories: 'Kategorien', targetFolder: 'Zielordner (optional)', createFolders: 'Verschachtelte Ordner, z. B. unix/linux/debian',
+    newFolder: 'Neuer Ordner', create: 'Erstellen', move: 'Verschieben', root: 'Stamm', empty: 'leer',
+    deleteFolder: 'Ordner löschen', catCreated: 'Kategorie erstellt', catEmpty: 'Kategorie muss zum Löschen leer sein', targetSet: 'Ziel gesetzt',
+    moved: 'verschoben'
   },
   fr: {
     tagline: 'Un client BitTorrent écrit from scratch', noDocker: 'Pas de Docker',
     totalTorrents: 'Torrents totaux', downloading: 'Téléchargement', seeding: 'Seed', totalUploaded: 'Total téléversé',
+    peersServed: 'Pairs servis',
     addTorrent: 'Ajouter un torrent', sourceHint: 'magnet:, http(s) ou .torrent brut',
     sourcePlaceholder: 'Liens magnet groupés ou une source (un par ligne)\nmagnet:?xt=urn:btih:...\nhttps://example.com/file.torrent',
     add: 'Ajouter', torrentFile: 'Fichier .torrent', torrents: 'Torrents', loading: 'Chargement...',
     noTorrents: 'Aucun torrent pour l\'instant. Ajoutez un lien magnet ou un fichier .torrent ci-dessus.',
-    connError: 'Erreur de connexion :', adding: 'ajouté', errors: 'erreurs', added: 'Fichier ajouté', removed: 'supprimé',
-    pausing: 'Pause', resuming: 'Reprendre', deleting: 'Supprimer', queued: 'En file', stopped: 'Arrêté', error: 'Erreur', paused: 'En pause'
+    connError: 'Erreur de connexion :', adding: 'ajouté', errors: 'erreurs', added: 'Fichier ajouté',
+    pausing: 'Pause', resuming: 'Reprendre', deleting: 'Supprimer', queued: 'En file', stopped: 'Arrêté', error: 'Erreur', paused: 'En pause',
+    ratio: 'Ratio', seededTo: 'Téléversé vers', peers: 'pairs', trackers: 'Trackers', working: 'actif', down: 'inactif',
+    announce: 'Annonces', ok: 'ok', fail: 'échec', seeders: 'Seeds', leechers: 'Leeches',
+    lastSuccess: 'Dernier succès', never: 'jamais', details: 'Détails',
+    categories: 'Catégories', targetFolder: 'Dossier de destination (optionnel)', createFolders: 'Dossiers imbriqués, ex. unix/linux/debian',
+    newFolder: 'Nouveau dossier', create: 'Créer', move: 'Déplacer', root: 'Racine', empty: 'vide',
+    deleteFolder: 'Supprimer le dossier', catCreated: 'Catégorie créée', catEmpty: 'La catégorie doit être vide pour la supprimer', targetSet: 'Cible définie',
+    moved: 'déplacé'
   },
   es: {
     tagline: 'Un cliente BitTorrent escrito desde cero', noDocker: 'Sin Docker',
     totalTorrents: 'Torrents totales', downloading: 'Descargando', seeding: 'Seed', totalUploaded: 'Total subido',
+    peersServed: 'Pares atendidos',
     addTorrent: 'Añadir torrent', sourceHint: 'magnet:, http(s) o .torrent crudo',
     sourcePlaceholder: 'Enlaces magnet en lote o una fuente (uno por línea)\nmagnet:?xt=urn:btih:...\nhttps://example.com/file.torrent',
     add: 'Añadir', torrentFile: 'Archivo .torrent', torrents: 'Torrents', loading: 'Cargando...',
     noTorrents: 'Aún no hay torrents. Añada un enlace magnet o un archivo .torrent arriba.',
-    connError: 'Error de conexión:', adding: 'añadido', errors: 'errores', added: 'Archivo añadido', removed: 'eliminado',
-    pausing: 'Pausar', resuming: 'Reanudar', deleting: 'Eliminar', queued: 'En cola', stopped: 'Detenido', error: 'Error', paused: 'Pausado'
+    connError: 'Error de conexión:', adding: 'añadido', errors: 'errores', added: 'Archivo añadido',
+    pausing: 'Pausar', resuming: 'Reanudar', deleting: 'Eliminar', queued: 'En cola', stopped: 'Detenido', error: 'Error', paused: 'Pausado',
+    ratio: 'Proporción', seededTo: 'Subido a', peers: 'pares', trackers: 'Trackers', working: 'activo', down: 'inactivo',
+    announce: 'Anuncios', ok: 'ok', fail: 'fallo', seeders: 'Seeds', leechers: 'Leeches',
+    lastSuccess: 'Último éxito', never: 'nunca', details: 'Detalles',
+    categories: 'Categorías', targetFolder: 'Carpeta de destino (opcional)', createFolders: 'Carpetas anidadas, p. ej. unix/linux/debian',
+    newFolder: 'Nueva carpeta', create: 'Crear', move: 'Mover', root: 'Raíz', empty: 'vacío',
+    deleteFolder: 'Eliminar carpeta', catCreated: 'Categoría creada', catEmpty: 'La categoría debe estar vacía para eliminarla', targetSet: 'Destino fijado',
+    moved: 'movido'
   },
   it: {
     tagline: 'Un client BitTorrent scritto da zero', noDocker: 'Niente Docker',
     totalTorrents: 'Torrent totali', downloading: 'Download', seeding: 'Seed', totalUploaded: 'Totale caricato',
+    peersServed: 'Peer serviti',
     addTorrent: 'Aggiungi torrent', sourceHint: 'magnet:, http(s) o .torrent grezzo',
     sourcePlaceholder: 'Link magnet in blocco o una sorgente (uno per riga)\nmagnet:?xt=urn:btih:...\nhttps://example.com/file.torrent',
     add: 'Aggiungi', torrentFile: 'File .torrent', torrents: 'Torrents', loading: 'Caricamento...',
     noTorrents: 'Ancora nessun torrent. Aggiungi un link magnet o un file .torrent qui sopra.',
-    connError: 'Errore di connessione:', adding: 'aggiunto', errors: 'errori', added: 'File aggiunto', removed: 'rimosso',
-    pausing: 'Pausa', resuming: 'Riprendi', deleting: 'Elimina', queued: 'In coda', stopped: 'Fermato', error: 'Errore', paused: 'In pausa'
+    connError: 'Errore di connessione:', adding: 'aggiunto', errors: 'errori', added: 'File aggiunto',
+    pausing: 'Pausa', resuming: 'Riprendi', deleting: 'Elimina', queued: 'In coda', stopped: 'Fermato', error: 'Errore', paused: 'In pausa',
+    ratio: 'Rapporto', seededTo: 'Caricato a', peers: 'peer', trackers: 'Tracker', working: 'attivo', down: 'inattivo',
+    announce: 'Annunci', ok: 'ok', fail: 'errore', seeders: 'Seed', leechers: 'Leech',
+    lastSuccess: 'Ultimo successo', never: 'mai', details: 'Dettagli',
+    categories: 'Categorie', targetFolder: 'Cartella di destinazione (opzionale)', createFolders: 'Cartelle annidate, es. unix/linux/debian',
+    newFolder: 'Nuova cartella', create: 'Crea', move: 'Sposta', root: 'Radice', empty: 'vuota',
+    deleteFolder: 'Elimina cartella', catCreated: 'Categoria creata', catEmpty: 'La categoria deve essere vuota per essere eliminata', targetSet: 'Destinazione impostata',
+    moved: 'spostato'
+  },
+  pt: {
+    tagline: 'Um cliente BitTorrent escrito do zero', noDocker: 'Sem Docker',
+    totalTorrents: 'Total de Torrents', downloading: 'Baixando', seeding: 'Seed', totalUploaded: 'Total enviado',
+    peersServed: 'Peers atendidos',
+    addTorrent: 'Adicionar torrent', sourceHint: 'magnet:, http(s) ou .torrent cru',
+    sourcePlaceholder: 'Links magnet em lote ou uma fonte (um por linha)\nmagnet:?xt=urn:btih:...\nhttps://example.com/file.torrent',
+    add: 'Adicionar', torrentFile: 'Arquivo .torrent', torrents: 'Torrents', loading: 'Carregando...',
+    noTorrents: 'Nenhum torrent ainda. Adicione um link magnet ou arquivo .torrent acima.',
+    connError: 'Erro de conexão:', adding: 'adicionado', errors: 'erros', added: 'Arquivo adicionado',
+    pausing: 'Pausar', resuming: 'Continuar', deleting: 'Excluir', queued: 'Na fila', stopped: 'Parado', error: 'Erro', paused: 'Pausado',
+    ratio: 'Proporção', seededTo: 'Enviado para', peers: 'peers', trackers: 'Trackers', working: 'ativo', down: 'inativo',
+    announce: 'Anúncios', ok: 'ok', fail: 'falha', seeders: 'Seeds', leechers: 'Leeches',
+    lastSuccess: 'Último sucesso', never: 'nunca', details: 'Detalhes',
+    categories: 'Categorias', targetFolder: 'Pasta de destino (opcional)', createFolders: 'Pastas aninhadas, ex. unix/linux/debian',
+    newFolder: 'Nova pasta', create: 'Criar', move: 'Mover', root: 'Raiz', empty: 'vazia',
+    deleteFolder: 'Excluir pasta', catCreated: 'Categoria criada', catEmpty: 'A categoria precisa estar vazia para ser excluída', targetSet: 'Destino definido',
+    moved: 'movido'
   },
   ru: {
     tagline: 'BitTorrent-клиент, написанный с нуля', noDocker: 'Без Docker',
     totalTorrents: 'Всего торрентов', downloading: 'Загрузка', seeding: 'Раздача', totalUploaded: 'Загружено всего',
+    peersServed: 'Обслужено пиров',
     addTorrent: 'Добавить торрент', sourceHint: 'magnet:, http(s) или сырой .torrent',
     sourcePlaceholder: 'Магнет-ссылки или один источник (по одной в строке)\nmagnet:?xt=urn:btih:...\nhttps://example.com/file.torrent',
     add: 'Добавить', torrentFile: 'Файл .torrent', torrents: 'Торренты', loading: 'Загрузка...',
     noTorrents: 'Пока нет торрентов. Добавьте магнит-ссылку или файл .torrent выше.',
-    connError: 'Ошибка соединения:', adding: 'добавлено', errors: 'ошибок', added: 'Файл добавлен', removed: 'удалено',
-    pausing: 'Пауза', resuming: 'Продолжить', deleting: 'Удалить', queued: 'В очереди', stopped: 'Остановлен', error: 'Ошибка', paused: 'На паузе'
+    connError: 'Ошибка соединения:', adding: 'добавлено', errors: 'ошибок', added: 'Файл добавлен',
+    pausing: 'Пауза', resuming: 'Продолжить', deleting: 'Удалить', queued: 'В очереди', stopped: 'Остановлен', error: 'Ошибка', paused: 'На паузе',
+    ratio: 'Ратио', seededTo: 'Раздано', peers: 'пиров', trackers: 'Трекеры', working: 'работает', down: 'недоступен',
+    announce: 'Анонсы', ok: 'ок', fail: 'сбой', seeders: 'Сиды', leechers: 'Личи',
+    lastSuccess: 'Последний успех', never: 'никогда', details: 'Детали',
+    categories: 'Категории', targetFolder: 'Папка назначения (необязательно)', createFolders: 'Вложенные папки, напр. unix/linux/debian',
+    newFolder: 'Новая папка', create: 'Создать', move: 'Переместить', root: 'Корень', empty: 'пусто',
+    deleteFolder: 'Удалить папку', catCreated: 'Категория создана', catEmpty: 'Категория должна быть пустой для удаления', targetSet: 'Цель выбрана',
+    moved: 'перемещено'
   },
   ja: {
     tagline: 'ゼロから書いたBitTorrentクライアント', noDocker: 'Docker不使用',
     totalTorrents: '全トーレント', downloading: 'ダウンロード中', seeding: 'シード中', totalUploaded: 'アップロード合計',
+    peersServed: '配信したピア',
     addTorrent: 'トーレントを追加', sourceHint: 'magnet:、http(s):、または生の.torrent',
     sourcePlaceholder: '複数のマグネットリンク、または1つのソース（各行に1つ）\nmagnet:?xt=urn:btih:...\nhttps://example.com/file.torrent',
     add: '追加', torrentFile: '.torrentファイル', torrents: 'トーレント', loading: '読み込み中...',
     noTorrents: 'トーレントはまだありません。上からマグネットリンクまたは.torrentファイルを追加してください。',
-    connError: '接続エラー:', adding: '追加済み', errors: 'エラー', added: 'ファイルを追加しました', removed: '削除済み',
-    pausing: '一時停止', resuming: '再開', deleting: '削除', queued: '待機中', stopped: '停止', error: 'エラー', paused: '一時停止中'
+    connError: '接続エラー:', adding: '追加済み', errors: 'エラー', added: 'ファイルを追加しました',
+    pausing: '一時停止', resuming: '再開', deleting: '削除', queued: '待機中', stopped: '停止', error: 'エラー', paused: '一時停止中',
+    ratio: 'レシオ', seededTo: 'アップロード先', peers: 'ピア', trackers: 'トラッカー', working: '動作中', down: '停止中',
+    announce: 'アナウンス', ok: '成功', fail: '失敗', seeders: 'シーダー', leechers: 'リーチャー',
+    lastSuccess: '最後の成功', never: 'なし', details: '詳細',
+    categories: 'カテゴリ', targetFolder: '保存先フォルダ（任意）', createFolders: '入れ子フォルダ。例: unix/linux/debian',
+    newFolder: '新規フォルダ', create: '作成', move: '移動', root: 'ルート', empty: '空',
+    deleteFolder: 'フォルダを削除', catCreated: 'カテゴリを作成しました', catEmpty: '削除するにはカテゴリを空にする必要があります', targetSet: '保存先を設定',
+    moved: '移動しました'
   },
   zh: {
     tagline: '从头编写的BitTorrent客户端', noDocker: '无Docker',
     totalTorrents: '种子总数', downloading: '下载中', seeding: '做种中', totalUploaded: '总上传',
+    peersServed: '服务过的对等方',
     addTorrent: '添加种子', sourceHint: 'magnet:、http(s): 或原始.torrent',
     sourcePlaceholder: '批量磁力链接或单个来源（每行一个）\nmagnet:?xt=urn:btih:...\nhttps://example.com/file.torrent',
     add: '添加', torrentFile: '.torrent文件', torrents: '种子', loading: '加载中...',
     noTorrents: '还没有种子。请在上面添加磁力链接或.torrent文件。',
-    connError: '连接错误:', adding: '已添加', errors: '错误', added: '文件已添加', removed: '已删除',
-    pausing: '暂停', resuming: '继续', deleting: '删除', queued: '排队中', stopped: '已停止', error: '错误', paused: '已暂停'
+    connError: '连接错误:', adding: '已添加', errors: '错误', added: '文件已添加',
+    pausing: '暂停', resuming: '继续', deleting: '删除', queued: '排队中', stopped: '已停止', error: '错误', paused: '已暂停',
+    ratio: '比率', seededTo: '上传给', peers: '个对等方', trackers: 'Tracker', working: '正常', down: '失效',
+    announce: '通告', ok: '成功', fail: '失败', seeders: '做种者', leechers: '下载者',
+    lastSuccess: '最后成功', never: '从未', details: '详情',
+    categories: '分类', targetFolder: '目标文件夹（可选）', createFolders: '嵌套文件夹，例如 unix/linux/debian',
+    newFolder: '新建文件夹', create: '创建', move: '移动', root: '根目录', empty: '空',
+    deleteFolder: '删除文件夹', catCreated: '分类已创建', catEmpty: '分类必须为空才能删除', targetSet: '目标已设置',
+    moved: '已移动'
   },
   ar: {
     tagline: 'عميل BitTorrent مكتوب من الصفر', noDocker: 'بدون Docker',
     totalTorrents: 'إجمالي التورنت', downloading: 'جارٍ التنزيل', seeding: 'بث', totalUploaded: 'إجمالي الرفع',
+    peersServed: 'أقران تمت خدمتهم',
     addTorrent: 'إضافة تورنت', sourceHint: 'magnet: أو http(s): أو ملف .torrent',
     sourcePlaceholder: 'روابط مغناطيسية متعددة أو مصدر واحد (واحد لكل سطر)\nmagnet:?xt=urn:btih:...\nhttps://example.com/file.torrent',
     add: 'إضافة', torrentFile: 'ملف .torrent', torrents: 'تورنت', loading: 'جارٍ التحميل...',
     noTorrents: 'لا توجد تورنت بعد. أضف رابط مغناطيسي أو ملف .torrent بالأعلى.',
-    connError: 'خطأ في الاتصال:', adding: 'تمت الإضافة', errors: 'أخطاء', added: 'تمت إضافة الملف', removed: 'تم الحذف',
-    pausing: 'إيقاف مؤقت', resuming: 'استئناف', deleting: 'حذف', queued: 'في الانتظار', stopped: 'متوقف', error: 'خطأ', paused: 'متوقف مؤقتاً'
+    connError: 'خطأ في الاتصال:', adding: 'تمت الإضافة', errors: 'أخطاء', added: 'تمت إضافة الملف',
+    pausing: 'إيقاف مؤقت', resuming: 'استئناف', deleting: 'حذف', queued: 'في الانتظار', stopped: 'متوقف', error: 'خطأ', paused: 'متوقف مؤقتاً',
+    ratio: 'النسبة', seededTo: 'تم الرفع إلى', peers: 'أقران', trackers: 'التراكرات', working: 'يعمل', down: 'معطل',
+    announce: 'إعلانات', ok: 'ناجح', fail: 'فشل', seeders: 'سيد', leechers: 'ليتش',
+    lastSuccess: 'آخر نجاح', never: 'أبداً', details: 'التفاصيل',
+    categories: 'الفئات', targetFolder: 'مجلد الوجهة (اختياري)', createFolders: 'مجلدات متداخلة، مثل unix/linux/debian',
+    newFolder: 'مجلد جديد', create: 'إنشاء', move: 'نقل', root: 'الجذر', empty: 'فارغ',
+    deleteFolder: 'حذف المجلد', catCreated: 'تم إنشاء الفئة', catEmpty: 'يجب أن تكون الفئة فارغة للحذف', targetSet: 'تم تحديد الهدف',
+    moved: 'تم النقل'
   },
   hi: {
     tagline: 'शुरू से लिखा गया BitTorrent क्लाइंट', noDocker: 'Docker रहित',
     totalTorrents: 'कुल टॉरेंट', downloading: 'डाउनलोड हो रहा', seeding: 'सीडिंग', totalUploaded: 'कुल अपलोड',
+    peersServed: 'सेवित पीयर',
     addTorrent: 'टॉरेंट जोड़ें', sourceHint: 'magnet:, http(s): या कच्चा .torrent',
     sourcePlaceholder: 'कई मैग्नेट लिंक या एक स्रोत (प्रति पंक्ति एक)\nmagnet:?xt=urn:btih:...\nhttps://example.com/file.torrent',
     add: 'जोड़ें', torrentFile: '.torrent फ़ाइल', torrents: 'टॉरेंट', loading: 'लोड हो रहा है...',
     noTorrents: 'अभी कोई टॉरेंट नहीं। ऊपर मैग्नेट लिंक या .torrent फ़ाइल जोड़ें।',
-    connError: 'कनेक्शन त्रुटि:', adding: 'जोड़ा गया', errors: 'त्रुटियाँ', added: 'फ़ाइल जोड़ी गई', removed: 'हटाया गया',
-    pausing: 'रोकें', resuming: 'जारी रखें', deleting: 'हटाएँ', queued: 'कतार में', stopped: 'रोका गया', error: 'त्रुटि', paused: 'रोका हुआ'
+    connError: 'कनेक्शन त्रुटि:', adding: 'जोड़ा गया', errors: 'त्रुटियाँ', added: 'फ़ाइल जोड़ी गई',
+    pausing: 'रोकें', resuming: 'जारी रखें', deleting: 'हटाएँ', queued: 'कतार में', stopped: 'रोका गया', error: 'त्रुटि', paused: 'रोका हुआ',
+    ratio: 'अनुपात', seededTo: 'अपलोड किया', peers: 'पीयर', trackers: 'ट्रैकर्स', working: 'सक्रिय', down: 'निष्क्रिय',
+    announce: 'एनाउंस', ok: 'ठीक', fail: 'विफल', seeders: 'सीडर्स', leechers: 'लीचर्स',
+    lastSuccess: 'अंतिम सफलता', never: 'कभी नहीं', details: 'विवरण',
+    categories: 'श्रेणियाँ', targetFolder: 'गंतव्य फ़ोल्डर (वैकल्पिक)', createFolders: 'नेस्टेड फ़ोल्डर, जैसे unix/linux/debian',
+    newFolder: 'नया फ़ोल्डर', create: 'बनाएँ', move: 'स्थानांतरित करें', root: 'रूट', empty: 'खाली',
+    deleteFolder: 'फ़ोल्डर हटाएँ', catCreated: 'श्रेणी बनाई गई', catEmpty: 'हटाने के लिए श्रेणी खाली होनी चाहिए', targetSet: 'लक्ष्य निर्धारित',
+    moved: 'स्थानांतरित'
   }
 };
 
 let lang = (localStorage.getItem('dg-lang') || 'en');
 let translations = I18N[lang] || I18N.en;
+let cats = [];
+let openT = {};
+let targetCat = '';
 
 function t(key) { return translations[key] !== undefined ? translations[key] : (I18N.en[key] || key); }
-
 function applyLang() {
   translations = I18N[lang] || I18N.en;
   document.documentElement.lang = lang;
   document.documentElement.dir = (lang === 'ar') ? 'rtl' : 'ltr';
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    el.textContent = t(el.getAttribute('data-i18n'));
-  });
-  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-    el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
-  });
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.getAttribute('data-i18n')); });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.placeholder = t(el.getAttribute('data-i18n-placeholder')); });
   const sel = document.getElementById('langSelect');
   if (sel && sel.value !== lang) sel.value = lang;
+  refreshCats();
 }
-
-function setLang(l) {
-  lang = l;
-  localStorage.setItem('dg-lang', l);
-  applyLang();
-  refresh();
-}
+function setLang(l) { lang = l; localStorage.setItem('dg-lang', l); applyLang(); refresh(); }
 
 // ---------- formatting ----------
 function fmtBytes(b) {
@@ -296,73 +454,126 @@ function fmtBytes(b) {
   while (v >= 1024 && i < units.length-1) { v /= 1024; i++; }
   return v.toFixed(v >= 10 || i === 0 ? 0 : 1) + ' ' + units[i];
 }
+function fmtSpeed(bps) { if (!bps) return '—'; return fmtBytes(bps) + '/s'; }
+function fmtRatio(r) {
+  if (!r || r < 0.001) return '—';
+  return r >= 10 ? r.toFixed(1) : r.toFixed(3);
+}
+function fmtTime(iso) {
+  if (!iso) return t('never');
+  const then = new Date(iso), now = Date.now();
+  const diff = Math.max(0, Math.floor((now - then.getTime())/1000));
+  if (diff < 5) return 'now';
+  if (diff < 60) return diff + 's';
+  if (diff < 3600) return Math.floor(diff/60) + 'm';
+  if (diff < 86400) return Math.floor(diff/3600) + 'h';
+  return Math.floor(diff/86400) + 'd';
+}
 
-function fmtSpeed(bps) {
-  if (!bps) return '—';
-  return fmtBytes(bps) + '/s';
+function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // ---------- state badges ----------
 function stateBadge(state) {
   const map = {
-    'seeding':     ['bg-emerald-500/15 text-emerald-300 border-emerald-400/30', t('seeding')],
-    'downloading': ['bg-sky-500/15 text-sky-300 border-sky-400/30', t('downloading')],
-    'paused':      ['bg-amber-500/15 text-amber-300 border-amber-400/30', t('paused')],
-    'queued':      ['bg-dg-500/15 text-dg-300 border-dg-400/30', t('queued')],
-    'stopped':     ['bg-rose-500/15 text-rose-300 border-rose-400/30', t('stopped')],
-    'error':       ['bg-rose-500/15 text-rose-300 border-rose-400/30', t('error')]
+    'seeding':     ['bg-emerald-500/20 text-emerald-200 border-emerald-400/40', t('seeding')],
+    'downloading': ['bg-sky-500/20 text-sky-200 border-sky-400/40', t('downloading')],
+    'paused':      ['bg-amber-500/20 text-amber-200 border-amber-400/40', t('paused')],
+    'queued':      ['bg-fuchsia-500/20 text-fuchsia-200 border-fuchsia-400/40', t('queued')],
+    'stopped':     ['bg-rose-500/20 text-rose-200 border-rose-400/40', t('stopped')],
+    'error':       ['bg-rose-500/20 text-rose-200 border-rose-400/40', t('error')]
   };
-  const [cls, label] = map[state] || ['bg-dg-800 text-dg-400 border-dg-500/40', state];
+  const [cls, label] = map[state] || ['bg-dg-700 text-dg-200 border-dg-500/40', state];
   return `<span class="px-2.5 py-0.5 rounded-full text-xs font-medium border ${cls}">${label}</span>`;
 }
 
-function progressBar(t) {
-  const pct = Math.round((t.progress||0)*100);
-  const active = t.state === 'seeding';
-  const color = active ? 'from-emerald-500 to-teal-400' : 'from-dg-500 to-dg-300';
+function colorGrad(tr) {
+  if (tr.state === 'seeding') return 'from-emerald-400 via-teal-300 to-sky-400';
+  return 'from-dg-400 via-fuchsia-400 to-sky-400';
+}
+
+function progressBar(tr) {
+  const pct = Math.round((tr.progress||0)*100);
   return `
     <div class="flex items-center gap-3">
-      <div class="flex-1 h-2.5 rounded-full bg-dg-900/60 overflow-hidden">
-        <div class="h-full rounded-full bg-gradient-to-r ${color} transition-all duration-700" style="width:${pct}%"></div>
+      <div class="flex-1 h-2.5 rounded-full bg-dg-950/70 overflow-hidden">
+        <div class="h-full rounded-full bg-gradient-to-r ${colorGrad(tr)} transition-all duration-700" style="width:${pct}%"></div>
       </div>
       <span class="text-xs font-mono text-dg-200 w-12 text-right">${pct}%</span>
     </div>`;
 }
 
-function renderTorrent(t) {
-  const have = t.pieces_total > 0 ? `${t.pieces_have}/${t.pieces_total}` : '—';
-  return `
-  <div class="card rounded-2xl p-4 md:p-5">
-    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
-      <div class="min-w-0 flex-1">
-        <div class="flex items-start gap-2 flex-wrap">
-          <h3 class="font-semibold text-dg-100 truncate">${esc(t.name)}</h3>
-          ${stateBadge(t.state)}
-        </div>
-        <p class="text-xs text-dg-500 font-mono truncate mt-0.5">${t.info_hash}</p>
-        <div class="mt-3">${progressBar(t)}</div>
-        <div class="flex flex-wrap gap-x-5 gap-y-1 mt-3 text-xs text-dg-300">
-          <span>↓ <span class="text-dg-200 font-mono">${fmtSpeed(t.download_speed)}</span></span>
-          <span>↑ <span class="text-dg-200 font-mono">${fmtSpeed(t.upload_speed)}</span></span>
-          <span>${fmtBytes(t.downloaded)} / ${fmtBytes(t.size)}</span>
-          <span>↑ ${fmtBytes(t.uploaded)}</span>
-          <span>Peer: <span class="text-dg-200 font-mono">${t.peers_connected}</span></span>
-          <span>Seed/Leech: <span class="text-dg-200 font-mono">${t.seeders}/${t.leechers}</span></span>
-          <span>Piece: <span class="text-dg-200 font-mono">${have}</span></span>
-        </div>
-      </div>
-      <div class="flex gap-2 md:flex-col xl:flex-row md:items-end shrink-0">
-        ${t.state === 'paused'
-          ? `<button onclick="act('${t.id}','resume')" class="px-3 py-1.5 rounded-lg bg-emerald-600/30 border border-emerald-400/40 text-emerald-200 text-xs hover:bg-emerald-500/40 transition">${t('resuming')}</button>`
-          : `<button onclick="act('${t.id}','pause')" class="px-3 py-1.5 rounded-lg dg-input text-dg-200 text-xs hover:border-dg-300 transition">${t('pausing')}</button>`}
-        <button onclick="act('${t.id}','delete')" class="px-3 py-1.5 rounded-lg bg-rose-600/25 border border-rose-400/40 text-rose-200 text-xs hover:bg-rose-500/40 transition">${t('deleting')}</button>
-      </div>
-    </div>
-  </div>`;
+function trackerTable(trs) {
+  if (!trs || !trs.length) return `<span class="text-dg-500">—</span>`;
+  return trs.map(tr => `
+    <div class="flex items-center justify-between gap-3 py-1 border-b border-dg-800/40 text-xs">
+      <span class="truncate text-dg-200 max-w-[40%] break-all">${esc(tr.url)}</span>
+      <span class="${tr.working ? 'text-emerald-300' : 'text-rose-300'} shrink-0">${tr.working ? '● ' + t('working') : '○ ' + t('down')}</span>
+      <span class="shrink-0 text-dg-300">${t('seeders')} ${tr.last_seeders} / ${t('leechers')} ${tr.last_leechers}</span>
+      <span class="shrink-0 text-dg-300">${t('announce')} ${tr.announces} (${tr.successes}${t('ok')}/${tr.failures}${t('fail')})</span>
+      <span class="shrink-0 text-dg-400">${t('lastSuccess')}: ${fmtTime(tr.last_success)}</span>
+    </div>`).join('');
 }
 
-function esc(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function moveOptions(tr) {
+  return `<option value="">${esc(t('root'))}</option>` +
+    cats.map(c => `<option value="${esc(c.path)}" ${tr.category === c.path ? 'selected' : ''}>${'\u00A0'.repeat(c.depth*4)}${esc(c.path)}</option>`).join('');
+}
+
+function renderTorrent(tr, open) {
+  const have = tr.pieces_total > 0 ? `${tr.pieces_have}/${tr.pieces_total}` : '—';
+  const trs = tr.trackers || [];
+  const catLabel = tr.category ? '📁 ' + tr.category : t('root');
+  return `
+  <div class="card rounded-2xl overflow-hidden">
+    <div class="p-4 md:p-5 flex flex-col gap-3">
+      <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+        <div class="min-w-0 flex-1 cursor-pointer" onclick="toggleDet('${tr.id}')">
+          <div class="flex items-start gap-2 flex-wrap">
+            <h3 class="font-semibold text-dg-100 truncate">${esc(tr.name)}</h3>
+            ${stateBadge(tr.state)}
+            <span class="px-2 py-0.5 rounded-full bg-dg-800/70 border border-dg-500/30 text-dg-300 text-xs">${catLabel}</span>
+          </div>
+          <p class="text-xs text-dg-500 font-mono truncate mt-0.5">${tr.info_hash}</p>
+          <div class="mt-3">${progressBar(tr)}</div>
+          <div class="flex flex-wrap gap-x-5 gap-y-1 mt-3 text-xs text-dg-200">
+            <span>↓ <span class="text-sky-300 font-mono">${fmtSpeed(tr.download_speed)}</span></span>
+            <span>↑ <span class="text-pink-300 font-mono">${fmtSpeed(tr.upload_speed)}</span></span>
+            <span>${fmtBytes(tr.downloaded)} / ${fmtBytes(tr.size)}</span>
+            <span>↑ <span class="text-pink-300 font-mono">${fmtBytes(tr.uploaded)}</span></span>
+            <span>Peer: <span class="text-dg-100 font-mono">${tr.peers_connected}</span></span>
+            <span>Seed/Leech: <span class="text-dg-100 font-mono">${tr.seeders}/${tr.leechers}</span></span>
+            <span>Piece: <span class="text-dg-100 font-mono">${have}</span></span>
+          </div>
+          <div class="flex flex-wrap gap-2 mt-3 text-xs">
+            <span class="px-2 py-0.5 rounded-full bg-fuchsia-500/15 border border-fuchsia-400/30 text-fuchsia-200">${t('ratio')}: <b class="font-mono">${fmtRatio(tr.ratio)}</b></span>
+            <span class="px-2 py-0.5 rounded-full bg-pink-500/15 border border-pink-400/30 text-pink-200">${t('seededTo')}: <b class="font-mono">${tr.seeded_to}</b> ${t('peers')}</span>
+            <span class="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-emerald-200">${t('trackers')}: <b class="font-mono">${trs.filter(x=>x.working).length}</b> ${t('working')} / ${trs.filter(x=>!x.working).length} ${t('down')}</span>
+          </div>
+        </div>
+        <div class="flex gap-2 md:flex-col xl:flex-row md:items-end shrink-0">
+          ${tr.state === 'paused'
+            ? `<button onclick="act('${tr.id}','resume')" class="px-3 py-1.5 rounded-lg bg-emerald-500/30 border border-emerald-400/40 text-emerald-100 text-xs hover:bg-emerald-500/50 transition">${t('resuming')}</button>`
+            : `<button onclick="act('${tr.id}','pause')" class="px-3 py-1.5 rounded-lg dg-input text-dg-100 text-xs hover:border-dg-300 transition">${t('pausing')}</button>`}
+          <button onclick="act('${tr.id}','delete')" class="px-3 py-1.5 rounded-lg bg-rose-500/30 border border-rose-400/40 text-rose-100 text-xs hover:bg-rose-500/50 transition">${t('deleting')}</button>
+        </div>
+      </div>
+      ${open ? `<div class="acc-open mt-3 pt-3 border-t border-dg-700/50 space-y-3">
+        <div>
+          <div class="text-xs uppercase tracking-widest stat-label mb-2">${t('trackers')}</div>
+          ${trackerTable(trs)}
+        </div>
+        <div class="flex flex-wrap items-center gap-2 text-sm">
+          <span class="text-xs uppercase tracking-widest stat-label" id="mvlbl-${tr.id}">${t('move')}</span>
+          <select id="mv-${tr.id}" class="dg-input rounded-lg px-3 py-1.5 text-dg-100 text-xs focus:outline-none">
+            ${moveOptions(tr)}
+          </select>
+          <button onclick="moveTorrent('${tr.id}')" class="px-3 py-1.5 rounded-lg grad-btn text-white text-xs font-medium transition">${t('move')}</button>
+        </div>
+      </div>` : ''}
+    </div>
+  </div>`;
 }
 
 async function api(path, opts) {
@@ -372,6 +583,7 @@ async function api(path, opts) {
   return data;
 }
 
+// ---------- refresh ----------
 async function refresh() {
   try {
     const list = await api('/torrents');
@@ -379,37 +591,88 @@ async function refresh() {
     if (!list.length) {
       el.innerHTML = `<div class="card rounded-2xl p-8 text-center text-dg-400 text-sm">${esc(t('noTorrents'))}</div>`;
     } else {
-      el.innerHTML = list.map(renderTorrent).join('');
+      el.innerHTML = list.map(x => renderTorrent(x, !!openT[x.id])).join('');
     }
     document.getElementById('statTotal').textContent = list.length;
     document.getElementById('statSeeding').textContent = list.filter(x=>x.state==='seeding').length;
     document.getElementById('statDownloading').textContent = list.filter(x=>x.state==='downloading').length;
-    let up = 0;
-    list.forEach(x => { up += x.uploaded; });
+    let up = 0, served = 0;
+    list.forEach(x => { up += x.uploaded || 0; served += x.seeded_to || 0; });
     document.getElementById('statUploaded').textContent = fmtBytes(up);
+    document.getElementById('statServed').textContent = served;
   } catch (e) {
     document.getElementById('torrentList').innerHTML =
       `<div class="card rounded-2xl p-6 text-center text-rose-300 text-sm">${esc(t('connError'))} ${esc(e.message)}</div>`;
   }
 }
 
+async function refreshCats() {
+  try {
+    cats = await api('/categories');
+  } catch (e) { cats = []; }
+  const box = document.getElementById('catListBox');
+  const dl = document.getElementById('catList');
+  dl.innerHTML = cats.map(c => `<option value="${esc(c.path)}">`).join('');
+  if (!cats.length) {
+    box.innerHTML = `<div class="text-dg-500 text-xs">${esc(t('root'))} (${esc(t('empty'))})</div>`;
+    return;
+  }
+  box.innerHTML = cats.map(c => `
+    <div class="cat-row flex items-center gap-2 py-1.5 px-2 ${targetCat === c.path ? 'selected' : ''}" onclick="setTarget('${esc(c.path)}')">
+      <span class="text-dg-500 select-none">${'\u00A0'.repeat(c.depth*4)}${c.depth > 0 ? '└ ' : ''}📁</span>
+      <span class="text-dg-100 truncate">${esc(c.path)}</span>
+      <span class="text-xs px-2 py-0.5 rounded-full bg-dg-800/70 text-dg-300">${c.torrents}</span>
+      <span class="flex-1"></span>
+      <button onclick="event.stopPropagation();setTarget('${esc(c.path)}')" title="${esc(t('targetSet'))}" class="text-xs text-fuchsia-300 hover:text-fuchsia-200 px-1.5">◎</button>
+      <button onclick="event.stopPropagation();delCategory('${esc(c.path)}')" title="${esc(t('deleteFolder'))}" class="text-xs text-rose-300 hover:text-rose-200 px-1.5">✕</button>
+    </div>`).join('');
+}
+
+function setTarget(path) {
+  targetCat = path;
+  document.getElementById('dirInput').value = path;
+  refreshCats();
+  const st = document.getElementById('addStatus');
+  st.innerHTML = `<span class="text-fuchsia-300">${esc(t('targetSet'))}: 📁 ${esc(path || t('root'))}</span>`;
+}
+
+async function newCategory() {
+  const p = prompt(t('newFolder') + ' — unix/linux/debian');
+  if (!p) return;
+  try {
+    await api('/categories', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({path: p}) });
+    await refreshCats();
+    const st = document.getElementById('addStatus');
+    st.innerHTML = `<span class="text-emerald-300">${esc(t('catCreated'))}: ${esc(p)}</span>`;
+  } catch (e) { alert(e.message); }
+}
+
+async function delCategory(path) {
+  if (!confirm(`${t('deleteFolder')}: ${path}?`)) return;
+  try {
+    await api('/categories', { method:'DELETE', headers:{'Content-Type':'application/json'}, body: JSON.stringify({path}) });
+    if (targetCat === path) { targetCat = ''; document.getElementById('dirInput').value = ''; }
+    await refreshCats();
+  } catch (e) { alert(e.message || t('catEmpty')); }
+}
+
+// ---------- add ----------
 async function addFromInput() {
   const ta = document.getElementById('sourceInput');
   const lines = ta.value.split('\n').map(s=>s.trim()).filter(Boolean);
   if (!lines.length) return;
   const status = document.getElementById('addStatus');
+  const dir = document.getElementById('dirInput').value.trim();
   let ok = 0, fail = 0, lastFail = '';
   for (const line of lines) {
     try {
-      await api('/torrents', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({source: line}) });
+      await api('/torrents', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({source: line, dir}) });
       ok++;
-    } catch (e) {
-      fail++;
-      lastFail = `${esc(line.slice(0,60))}: ${esc(e.message)}`;
-    }
+    } catch (e) { fail++; lastFail = `${esc(line.slice(0,60))}: ${esc(e.message)}`; }
   }
   ta.value = '';
   status.innerHTML = `<span class="text-emerald-300">${ok} ${esc(t('adding'))}${fail ? `, ${fail} ${esc(t('errors'))} — ${lastFail}` : ''}</span>`;
+  await refreshCats();
   refresh();
 }
 
@@ -417,17 +680,36 @@ async function addFromFile(input) {
   const file = input.files[0];
   if (!file) return;
   const buf = new Uint8Array(await file.arrayBuffer());
-  const b64 = btoa(String.fromCharCode(...buf));
+  let bin = '';
+  buf.forEach(b => bin += String.fromCharCode(b));
+  const b64 = btoa(bin);
   const status = document.getElementById('addStatus');
+  const dir = document.getElementById('dirInput').value.trim();
   try {
-    await api('/torrents', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({source: b64}) });
+    await api('/torrents', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({source: b64, dir}) });
     status.innerHTML = `<span class="text-emerald-300">${esc(t('added'))}</span>`;
   } catch (e) {
     status.innerHTML = `<span class="text-rose-300">${esc(t('connError'))} ${esc(e.message)}</span>`;
   }
   input.value = '';
+  await refreshCats();
   refresh();
 }
+
+async function moveTorrent(id) {
+  const sel = document.getElementById('mv-' + id);
+  if (!sel) return;
+  const dir = sel.value;
+  try {
+    await api(`/torrents/${id}/move`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({category: dir}) });
+    const st = document.getElementById('addStatus');
+    st.innerHTML = `<span class="text-emerald-300">${esc(t('moved'))}: 📁 ${esc(dir || t('root'))}</span>`;
+    await refreshCats();
+    refresh();
+  } catch (e) { alert(e.message); }
+}
+
+function toggleDet(id) { openT[id] = !openT[id]; refresh(); }
 
 async function act(id, action) {
   try {

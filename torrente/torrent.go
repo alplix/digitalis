@@ -5,6 +5,7 @@ package torrente
 import (
 	"fmt"
 	"net"
+	"os"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -37,6 +38,7 @@ type Torrent struct {
 
 	State  State
 	SaveDir string
+	Category string // relative category folder under the base save dir ("" = root)
 	AddedAt time.Time
 
 	Downloaded int64
@@ -55,9 +57,28 @@ type Torrent struct {
 	PiecesHave  int
 	PiecesTotal int
 
+	// Advanced statistics
+	SeededTo     int       `json:"seeded_to"`     // number of distinct peers we have uploaded to
+	SeededFirst  time.Time `json:"seeded_first"`  // when we first uploaded any data
+	LastSeen     time.Time `json:"last_seen"`     // last time we uploaded or downloaded activity
+	FailedTrackers int     `json:"failed_trackers"` // trackers currently in a failing state
+	WorkingTrackers int   `json:"working_trackers"` // trackers currently working
+	Trackers     []*TrackerStat `json:"trackers"`   // per-tracker stats
+
 	storage *storage.Storage
 	engine  *Engine
 	picker  *picker
+}
+
+// Ratio returns upload/download ratio (1.0 = even, >1 = more uploaded than downloaded).
+func (t *Torrent) Ratio() float64 {
+	if t.Downloaded <= 0 {
+		if t.Uploaded > 0 {
+			return float64(t.Uploaded)
+		}
+		return 0
+	}
+	return float64(t.Uploaded) / float64(t.Downloaded)
 }
 
 // Progress returns the fraction [0,1] of the download that is complete.
@@ -220,6 +241,7 @@ func (e *Engine) AddTorrent(mi *metainfo.MetaInfo, saveDir string) (*Torrent, er
 		t.Name = t.InfoHash[:16]
 	}
 	t.ID = t.InfoHash[:16]
+	t.initTrackers()
 
 	e.mu.Lock()
 	if _, exists := e.torrents[t.ID]; exists {
@@ -322,23 +344,46 @@ func (e *Engine) Announce(t *Torrent, event string) error {
 		return fmt.Errorf("no trackers configured")
 	}
 
+	var lastErr error
+	t.mu.Lock()
+	trackers := make([]*TrackerStat, 0, len(urls))
 	for _, u := range urls {
+		ts := t.trackerByURL(u)
+		if ts == nil {
+			ts = &TrackerStat{URL: u}
+			t.Trackers = append(t.Trackers, ts)
+		}
+		trackers = append(trackers, ts)
+	}
+	t.mu.Unlock()
+
+	for i, u := range urls {
 		resp, err := tracker.Announce(u, t.InfoHash, e.PeerID(), e.port, uploaded, downloaded, left, event, 50)
-		if err != nil {
-			continue
-		}
-		if resp.Failure != "" {
-			e.Logf("tracker %s: %s", u, resp.Failure)
-			continue
-		}
 		t.mu.Lock()
-		t.Seeders = resp.Seeders
-		t.Leechers = resp.Leechers
-		t.PeersKnown += len(resp.Peers)
-		t.PeersConnected = e.sessionCount(t.ID)
+		ts := trackers[i]
+		if err != nil {
+			t.noteTrackerFailure(ts, err)
+			lastErr = err
+		} else if resp.Failure != "" {
+			t.noteTrackerFailure(ts, fmt.Errorf("%s", resp.Failure))
+			lastErr = fmt.Errorf("%s", resp.Failure)
+		} else {
+			t.noteTrackerSuccess(ts, resp.Seeders, resp.Leechers, len(resp.Peers))
+			t.Seeders = resp.Seeders
+			t.Leechers = resp.Leechers
+			t.PeersKnown += len(resp.Peers)
+			t.PeersConnected = e.sessionCount(t.ID)
+			t.countTrackersActive()
+			t.mu.Unlock()
+			e.connectPeers(t, resp.Peers)
+			t.mu.Lock()
+		}
+		t.countTrackersActive()
+		t.LastSeen = time.Now()
 		t.mu.Unlock()
-		e.connectPeers(t, resp.Peers)
-		return nil
+	}
+	if lastErr != nil {
+		return lastErr
 	}
 	return fmt.Errorf("no tracker responded")
 }
@@ -457,6 +502,32 @@ func (e *Engine) Resume(id string) error {
 	return nil
 }
 
+// MoveTorrent relocates a torrent's files to a new directory and updates its
+// category. The new directory must be on the same filesystem.
+func (e *Engine) MoveTorrent(id, newSaveDir, category string) error {
+	e.mu.Lock()
+	t, ok := e.torrents[id]
+	e.mu.Unlock()
+	if !ok {
+		return fmt.Errorf("torrent not found")
+	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.storage != nil {
+		if err := t.storage.Move(newSaveDir); err != nil {
+			return fmt.Errorf("move failed: %w", err)
+		}
+	} else if newSaveDir != "" {
+		if err := os.MkdirAll(newSaveDir, 0755); err != nil {
+			return err
+		}
+	}
+	t.SaveDir = newSaveDir
+	t.Category = category
+	e.Logf("moved torrent %s to %s", id, newSaveDir)
+	return nil
+}
+
 // RemoveTorrent stops and removes a torrent.
 func (e *Engine) RemoveTorrent(id string) error {
 	e.mu.Lock()
@@ -484,6 +555,13 @@ func (e *Engine) RemoveTorrent(id string) error {
 	t.mu.Unlock()
 	e.Logf("removed torrent %s", id)
 	return nil
+}
+
+// SetCategory updates the torrent's category label without moving files.
+func (t *Torrent) SetCategory(category string) {
+	t.mu.Lock()
+	t.Category = category
+	t.mu.Unlock()
 }
 
 // GetTorrent returns a torrent by id.

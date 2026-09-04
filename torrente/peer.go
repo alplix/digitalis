@@ -27,6 +27,7 @@ type peerSession struct {
 
 	bytesDown int64
 	bytesUp   int64
+	seededPeer bool // we have uploaded at least one block to this peer
 
 	stop chan struct{}
 }
@@ -415,5 +416,13 @@ func (s *peerSession) handleRequest(msg *peerwire.Message) {
 	atomic.AddInt64(&s.bytesUp, int64(len(data)))
 	s.t.mu.Lock()
 	s.t.Uploaded += int64(len(data))
+	if !s.seededPeer {
+		s.seededPeer = true
+		s.t.SeededTo++
+		if s.t.SeededFirst.IsZero() {
+			s.t.SeededFirst = time.Now()
+		}
+	}
+	s.t.LastSeen = time.Now()
 	s.t.mu.Unlock()
 }

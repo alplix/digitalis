@@ -304,6 +304,63 @@ func (s *Storage) writeAt(data []byte, offset int64) error {
 	return nil
 }
 
+// Move relocates all managed files to a new root directory.
+// The destination is expected to be on the same filesystem; open file
+// descriptors stay valid across renames on POSIX systems.
+func (s *Storage) Move(newDir string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if newDir == "" {
+		return fmt.Errorf("empty destination dir")
+	}
+	if filepath.Clean(newDir) == filepath.Clean(s.dir) {
+		s.rebuildPaths(newDir)
+		return nil
+	}
+	if s.meta.IsSingleFile() {
+		newPath := filepath.Join(newDir, s.meta.Info.Name)
+		if err := os.MkdirAll(newDir, 0755); err != nil {
+			return err
+		}
+		if _, err := os.Stat(filepath.Join(s.dir, s.meta.Info.Name)); err == nil {
+			if err := os.Rename(filepath.Join(s.dir, s.meta.Info.Name), newPath); err != nil {
+				return err
+			}
+		}
+	} else {
+		oldRoot := filepath.Join(s.dir, s.meta.Info.Name)
+		newRoot := filepath.Join(newDir, s.meta.Info.Name)
+		if err := os.MkdirAll(filepath.Dir(newRoot), 0755); err != nil {
+			return err
+		}
+		if _, err := os.Stat(oldRoot); err == nil {
+			if err := os.Rename(oldRoot, newRoot); err != nil {
+				return err
+			}
+		}
+	}
+	s.dir = newDir
+	s.rebuildPaths(newDir)
+	return nil
+}
+
+// rebuildPaths recomputes the on-disk path for every open file handle.
+func (s *Storage) rebuildPaths(newDir string) {
+	if s.meta.IsSingleFile() {
+		p := filepath.Join(newDir, s.meta.Info.Name)
+		if len(s.files) == 1 {
+			s.files[0].path = p
+		}
+		return
+	}
+	root := filepath.Join(newDir, s.meta.Info.Name)
+	for i, f := range s.meta.Info.Files {
+		if i < len(s.files) {
+			s.files[i].path = filepath.Join(root, filepath.Join(f.Path...))
+		}
+	}
+}
+
 // Close closes all file handles.
 func (s *Storage) Close() error {
 	for _, fh := range s.files {

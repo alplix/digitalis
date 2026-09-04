@@ -36,7 +36,8 @@ does it all with a flower on its lapel. 🌺
 |---|---------|---------|
 | 🔄 | **Native protocol** | Tracker announce (HTTP & UDP), peer-wire protocol, bitfield — all hand-written |
 | 🎯 | **Rare-first picking** | Smart piece selection for faster, fairer downloads |
-| 🌐 | **Multilingual UI** | **11 languages** with a live switcher: EN, TR, DE, FR, ES, IT, RU, JA, ZH, AR, HI |
+| 🌐 | **Multilingual UI** | **12 languages** with a live switcher: EN, TR, DE, FR, ES, IT, PT, RU, JA, ZH, AR, HI |
+| 🗂️ | **Categories** | Nested folders (`unix/linux/debian`), created on the fly, save dir per torrent, drag-free moving |
 | 🔌 | **Flexible input** | Raw `.torrent`, magnet URI, or file upload — paste in bulk |
 | 📁 | **Watch folder** | Drop `.torrent` files in a directory — auto-added & seeded |
 | 🚀 | **Speed control** | Global download & upload rate limits |
@@ -79,15 +80,15 @@ go build -o digitalis ./cmd/digitalis
 
 ```bash
 ./digitalis \
-  --web :8080 \                    # web UI address
+  --web :1919 \                    # web UI address
   --peer-port 51413 \              # incoming peer port
-  --dir /mnt/torrents/downloads \  # save directory
+  --dir /mnt/torrents/downloads \  # base save directory (categories = folders under it)
   --watch /mnt/torrents/watch \    # auto-add folder (optional)
   --download-limit 0 \             # bytes/sec, 0 = unlimited
   --upload-limit 0                 # bytes/sec, 0 = unlimited
 ```
 
-Then open the dashboard: **`http://YOUR-SERVER:8080/`** 🎉
+Then open the dashboard: **`http://YOUR-SERVER:1919/`** 🎉
 
 > 🔓 Open port `51413` on your router for inbound peer connections (better seeding).
 
@@ -105,7 +106,7 @@ After=network-online.target
 Type=simple
 User=alp
 WorkingDirectory=/home/alp/digitalis
-ExecStart=/home/alp/digitalis/digitalis --web :8080 --peer-port 51413 \
+ExecStart=/home/alp/digitalis/digitalis --web :1919 --peer-port 51413 \
           --dir /mnt/torrents/downloads --watch /mnt/torrents/watch
 Restart=on-failure
 RestartSec=3
@@ -127,15 +128,19 @@ sudo systemctl enable --now digitalis
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET`   | `/api/torrents` | List all torrents + live status |
-| `POST`  | `/api/torrents` | Add: `{"source": "magnet:/http:/base64(.torrent)"}` |
+| `POST`  | `/api/torrents` | Add: `{"source": "magnet:/http:/base64(.torrent)", "dir": "unix/linux"}` |
 | `POST`  | `/api/torrents/{id}/pause` | Pause a torrent |
 | `POST`  | `/api/torrents/{id}/resume` | Resume a torrent |
 | `POST`  | `/api/torrents/{id}/delete` | Remove a torrent |
+| `POST`  | `/api/torrents/{id}/move` | Move to a category: `{"category": "unix/linux/debian"}` |
+| `GET`   | `/api/categories` | List category folders + torrent counts |
+| `POST`  | `/api/categories` | Create nested folders: `{"path": "unix/linux/debian"}` |
+| `DELETE`| `/api/categories` | Delete an empty category: `{"path": "unix"}` |
 
 ```bash
-curl -X POST localhost:8080/api/torrents \
+curl -X POST localhost:1919/api/torrents \
   -H 'Content-Type: application/json' \
-  -d '{"source": "magnet:?xt=urn:btih:08ada5a..."}'
+  -d '{"source": "magnet:?xt=urn:btih:08ada5a...", "dir": "linux/debian"}'
 ```
 
 ---
@@ -151,7 +156,7 @@ digitalis/
 ├── storage/    → file layout + per-piece SHA-1 verification
 ├── torrente/   → core engine: piece picker, sessions, rate limits
 ├── web/        → embedded HTTP server (embed.FS) + multilingual UI
-│   └── templates/index.html   → Tailwind dashboard (11 languages)
+│   └── templates/index.html   → Tailwind dashboard (12 languages)
 └── cmd/digitalis/main.go      → entrypoint, flags, watch folder
 ```
 
@@ -172,18 +177,18 @@ digitalis/
 
 ## 🌍 Localization
 
-The web UI ships with **11 languages** out of the box. A single dropdown switches
+The web UI ships with **12 languages** out of the box. A single dropdown switches
 the whole interface instantly (RTL support included for Arabic). The choice is
 remembered in `localStorage`.
 
 | Language | Code | | Language | Code |
 |:--------:|:----:|---|:--------:|:----:|
-| English  | `en` | | Русский | `ru` |
-| Türkçe   | `tr` | | 日本語   | `ja` |
-| Deutsch  | `de` | | 中文     | `zh` |
-| Français | `fr` | | العربية  | `ar` |
-| Español  | `es` | | हिन्दी   | `hi` |
-| Italiano | `it` | |         |     |
+| English  | `en` | | Português | `pt` |
+| Türkçe   | `tr` | | Русский  | `ru` |
+| Deutsch  | `de` | | 日本語    | `ja` |
+| Français | `fr` | | 中文      | `zh` |
+| Español  | `es` | | العربية   | `ar` |
+| Italiano | `it` | | हिन्दी    | `hi` |
 
 ---
 
@@ -193,6 +198,21 @@ remembered in `localStorage`.
 - **Zero bloat** — no Docker, no database, no framework of the week.
 - **One binary** — static, embedded UI, ready for a Raspberry Pi or a rack server.
 - **Pretty as well as functional** — software should look like the flower it's named after. 🌸
+
+---
+
+## 🗂️ Categories & folders
+
+Every category **is a folder** under the base save directory. Create nested paths
+like `unix/linux/debian` and torrents added to that category land in exactly that
+folder — the directory tree mirrors your taxonomy, and files are re-arranged
+automatically when you move a torrent between categories.
+
+```bash
+curl -X POST localhost:1919/api/categories \
+  -H 'Content-Type: application/json' \
+  -d '{"path": "unix/linux/debian"}'
+```
 
 ---
 
@@ -215,7 +235,5 @@ SHA-1 verification, and seeding confirmed with live peers.
 <div align="center">
 
 *Made with ❤️ and a whole lot of foxglove.*
-
-**www.flower-of-light.org**
 
 </div>

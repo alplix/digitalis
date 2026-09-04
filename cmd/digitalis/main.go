@@ -19,7 +19,7 @@ import (
 
 func main() {
 	var (
-		webAddr   = flag.String("web", ":8080", "web UI listen address")
+		webAddr   = flag.String("web", ":1919", "web UI listen address")
 		peerPort  = flag.Int("peer-port", 51413, "BitTorrent peer listen port")
 		dir       = flag.String("dir", "", "torrent save directory (default: /mnt/torrents/downloads)")
 		upLimit   = flag.Int64("upload-limit", 0, "global upload limit in bytes/sec (0=unlimited)")
