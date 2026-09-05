@@ -137,6 +137,13 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /api/categories", s.createCategory)
 	mux.HandleFunc("DELETE /api/categories", s.deleteCategory)
 
+	mux.HandleFunc("GET /api/stats", s.getStats)
+	mux.HandleFunc("GET /api/settings", s.getSettings)
+	mux.HandleFunc("POST /api/settings", s.postSettings)
+	mux.HandleFunc("GET /api/trackers", s.listGlobalTrackers)
+	mux.HandleFunc("POST /api/torrents/{id}/trackers", s.addTorrentTracker)
+	mux.HandleFunc("DELETE /api/torrents/{id}/trackers", s.removeTorrentTracker)
+
 	return s.withLogging(mux)
 }
 
@@ -156,6 +163,158 @@ func (s *Server) index(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Write(html)
+}
+
+func (s *Server) getStats(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, s.engine.StatsSnapshot())
+}
+
+// settingsView is the settings JSON used by the UI.
+type settingsView struct {
+	BaseDir          string `json:"base_dir"`
+	UploadLimit      int64  `json:"upload_limit"`
+	DownloadLimit    int64  `json:"download_limit"`
+	DailyUploadLimit int64  `json:"daily_upload_limit"`
+	PeerPort         int    `json:"peer_port"`
+	Version          string `json:"version"`
+}
+
+func (s *Server) settingsView() settingsView {
+	v := s.engine.View()
+	return settingsView{
+		BaseDir:          v.BaseDir,
+		UploadLimit:      v.UploadLimit,
+		DownloadLimit:    v.DownloadLimit,
+		DailyUploadLimit: v.DailyUploadLimit,
+		PeerPort:         s.engine.Port(),
+		Version:          "digitalis 0.7",
+	}
+}
+
+func (s *Server) getSettings(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, s.settingsView())
+}
+
+func (s *Server) postSettings(w http.ResponseWriter, r *http.Request) {
+	var patch torrente.Settings
+	if err := json.NewDecoder(r.Body).Decode(&patch); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
+		return
+	}
+	cur, err := s.engine.UpdateSettings(patch)
+	if err != nil {
+		writeJSON(w, http.StatusConflict, map[string]string{"error": err.Error()})
+		return
+	}
+	if cur.BaseDir != "" && filepath.Clean(cur.BaseDir) != filepath.Clean(s.saveDir) {
+		if err := os.MkdirAll(cur.BaseDir, 0755); err == nil {
+			s.saveDir = cur.BaseDir
+		}
+	}
+	writeJSON(w, http.StatusOK, s.settingsView())
+}
+
+// globalTrackerView aggregates a tracker URL across all torrents.
+type globalTrackerView struct {
+	URL          string    `json:"url"`
+	Working      bool      `json:"working"`
+	Torrents     int       `json:"torrents"`
+	Announces    int     `json:"announces"`
+	Successes    int     `json:"successes"`
+	Failures     int     `json:"failures"`
+	LastSuccess  time.Time `json:"last_success"`
+	LastFailure  time.Time `json:"last_failure"`
+	LastSeeders  int       `json:"last_seeders"`
+	LastLeechers int       `json:"last_leechers"`
+}
+
+func (s *Server) listGlobalTrackers(w http.ResponseWriter, r *http.Request) {
+	m := make(map[string]*globalTrackerView)
+	order := make([]string, 0)
+	for _, t := range s.engine.Torrents() {
+		for _, ts := range t.Trackers {
+			g := m[ts.URL]
+			if g == nil {
+				g = &globalTrackerView{URL: ts.URL}
+				m[ts.URL] = g
+				order = append(order, ts.URL)
+			}
+			g.Torrents++
+			g.Announces += ts.Announces
+			g.Successes += ts.Successes
+			g.Failures += ts.Failures
+			if ts.Working {
+				g.Working = true
+			}
+			if ts.LastSuccess.After(g.LastSuccess) {
+				g.LastSuccess = ts.LastSuccess
+			}
+			if ts.LastFailure.After(g.LastFailure) {
+				g.LastFailure = ts.LastFailure
+			}
+			if ts.LastSeeders > g.LastSeeders {
+				g.LastSeeders = ts.LastSeeders
+			}
+			if ts.LastLeechers > g.LastLeechers {
+				g.LastLeechers = ts.LastLeechers
+			}
+		}
+	}
+	sort.Slice(order, func(i, j int) bool {
+		a, b := m[order[i]], m[order[j]]
+		if a.Announces != b.Announces {
+			return a.Announces > b.Announces
+		}
+		return order[i] < order[j]
+	})
+	out := make([]globalTrackerView, 0, len(order))
+	for _, u := range order {
+		out = append(out, *m[u])
+	}
+	writeJSON(w, http.StatusOK, out)
+}
+
+// trackerReq carries a tracker URL for torrent add/remove.
+type trackerReq struct {
+	URL string `json:"url"`
+}
+
+func (s *Server) addTorrentTracker(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	var req trackerReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
+		return
+	}
+	u := strings.TrimSpace(req.URL)
+	if u == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "empty tracker url"})
+		return
+	}
+	if err := s.engine.AddTracker(id, u); err != nil {
+		writeJSON(w, http.StatusConflict, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"ok": "added"})
+}
+
+func (s *Server) removeTorrentTracker(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	var req trackerReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
+		return
+	}
+	u := strings.TrimSpace(req.URL)
+	if u == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "empty tracker url"})
+		return
+	}
+	if err := s.engine.RemoveTracker(id, u); err != nil {
+		writeJSON(w, http.StatusConflict, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"ok": "removed"})
 }
 
 func writeJSON(w http.ResponseWriter, status int, v interface{}) {

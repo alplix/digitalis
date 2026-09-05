@@ -165,6 +165,8 @@ func (e *Engine) registerSession(s *peerSession) {
 	e.mu.Unlock()
 	s.t.picker.addPeer(s)
 
+	e.recordConn(s.addr)
+
 	s.t.mu.Lock()
 	s.t.PeersConnected = e.sessionCount(s.t.ID)
 	s.t.mu.Unlock()
@@ -194,6 +196,12 @@ func (s *peerSession) run() {
 		e.unregisterSession(s)
 		s.conn.Close()
 	}()
+
+	// Magnets without fetched metadata have no storage; there is nothing to
+	// download or seed yet, so hold the connection without a message loop.
+	if s.t.storage == nil {
+		return
+	}
 
 	s.peerBitfield = newBitfield(s.t.storage.PieceCount())
 
@@ -334,6 +342,8 @@ func (s *peerSession) handlePiece(msg *peerwire.Message) {
 	s.pendingBlocks--
 
 	atomic.AddInt64(&s.bytesDown, int64(len(msg.Payload)))
+	e := s.e
+	e.recordDown(int64(len(msg.Payload)))
 	s.t.mu.Lock()
 	s.t.Downloaded += int64(len(msg.Payload))
 	if s.t.Downloaded > s.t.TotalWanted {
@@ -392,6 +402,10 @@ func (s *peerSession) abortPiece() {
 
 // handleRequest serves a block request (we are seeding or sharing).
 func (s *peerSession) handleRequest(msg *peerwire.Message) {
+	// daily upload limit reached: refuse new uploads until the day resets.
+	if s.e.UploadBlocked() {
+		return
+	}
 	idx := int(msg.Index)
 	begin := int(msg.Begin)
 	length := int(msg.Length)
@@ -414,6 +428,7 @@ func (s *peerSession) handleRequest(msg *peerwire.Message) {
 		return
 	}
 	atomic.AddInt64(&s.bytesUp, int64(len(data)))
+	s.e.recordUp(int64(len(data)))
 	s.t.mu.Lock()
 	s.t.Uploaded += int64(len(data))
 	if !s.seededPeer {

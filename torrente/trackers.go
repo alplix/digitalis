@@ -1,6 +1,7 @@
 package torrente
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -33,23 +34,34 @@ func (t *Torrent) trackerURLs() []string {
 	if t.Magnet != nil {
 		urls = append(urls, t.Magnet.Trackers...)
 	}
+	urls = append(urls, t.CustomTrackers...)
 	return urls
 }
 
-// initTrackers seeds the tracker stats list from the metainfo.
+// initTrackers seeds the tracker stats list from the metainfo and custom list.
+// Existing per-tracker state (working, successes, ...) is preserved by URL.
 func (t *Torrent) initTrackers() {
 	urls := t.trackerURLs()
 	if len(urls) == 0 {
+		t.Trackers = nil
 		return
 	}
-	seen := make(map[string]bool)
+	seen := make(map[string]*TrackerStat)
+	for _, ts := range t.Trackers {
+		seen[ts.URL] = ts
+	}
+	var rebuilt []*TrackerStat
 	for _, u := range urls {
-		if seen[u] {
+		if t.RemovedTrackers[u] {
 			continue
 		}
-		seen[u] = true
-		t.Trackers = append(t.Trackers, &TrackerStat{URL: u})
+		if ts := seen[u]; ts != nil {
+			rebuilt = append(rebuilt, ts)
+			continue
+		}
+		rebuilt = append(rebuilt, &TrackerStat{URL: u})
 	}
+	t.Trackers = rebuilt
 }
 
 // trackerByURL finds a tracker stat by URL.
@@ -72,6 +84,9 @@ func (t *Torrent) noteTrackerSuccess(ts *TrackerStat, seeders, leechers, peers i
 	ts.LastLeechers = leechers
 	ts.LastPeers = peers
 	ts.LastError = ""
+	if t.AnnounceCount != nil {
+		t.AnnounceCount[ts.URL]++
+	}
 }
 
 // noteTrackerFailure records a failed announce.
@@ -99,4 +114,77 @@ func (t *Torrent) countTrackersActive() {
 	}
 	t.WorkingTrackers = w
 	t.FailedTrackers = f
+}
+
+func goodTrackerScheme(u string) bool {
+	if len(u) < 7 {
+		return false
+	}
+	switch u[:6] {
+	case "http:/", "udp://", "wss://", "ws://":
+		return true
+	}
+	if len(u) >= 7 && u[:7] == "https:/" {
+		return true
+	}
+	return false
+}
+
+// AddTracker adds a private announce URL to a torrent and re-announces.
+func (e *Engine) AddTracker(id, url string) error {
+	t, ok := e.GetTorrent(id)
+	if !ok {
+		return fmt.Errorf("torrent not found")
+	}
+	if !goodTrackerScheme(url) {
+		return fmt.Errorf("unsupported tracker scheme: %s", url)
+	}
+	t.mu.Lock()
+	if t.RemovedTrackers == nil {
+		t.RemovedTrackers = make(map[string]bool)
+	}
+	if t.AnnounceCount == nil {
+		t.AnnounceCount = make(map[string]int64)
+	}
+	for _, u := range t.CustomTrackers {
+		if u == url {
+			t.mu.Unlock()
+			return fmt.Errorf("tracker already added")
+		}
+	}
+	t.CustomTrackers = append(t.CustomTrackers, url)
+	delete(t.RemovedTrackers, url)
+	t.initTrackers()
+	t.countTrackersActive()
+	t.mu.Unlock()
+	go e.Announce(t, "started")
+	return nil
+}
+
+// RemoveTracker disables an announce URL for a torrent and re-announces.
+func (e *Engine) RemoveTracker(id, url string) error {
+	t, ok := e.GetTorrent(id)
+	if !ok {
+		return fmt.Errorf("torrent not found")
+	}
+	t.mu.Lock()
+	if t.RemovedTrackers == nil {
+		t.RemovedTrackers = make(map[string]bool)
+	}
+	custom := false
+	for i, u := range t.CustomTrackers {
+		if u == url {
+			t.CustomTrackers = append(t.CustomTrackers[:i], t.CustomTrackers[i+1:]...)
+			custom = true
+			break
+		}
+	}
+	if !custom {
+		t.RemovedTrackers[url] = true
+	}
+	t.initTrackers()
+	t.countTrackersActive()
+	t.mu.Unlock()
+	go e.Announce(t, "started")
+	return nil
 }

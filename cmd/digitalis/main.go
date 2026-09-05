@@ -37,8 +37,29 @@ func main() {
 	}
 
 	engine := torrente.NewEngine(*peerPort)
-	engine.SetUploadLimit(*upLimit)
-	engine.SetDownloadLimit(*downLimit)
+
+	// Persistent settings + stats live under a config dir; BaseDir from
+	// settings overrides the --dir default.
+	cfgDir, err := os.UserConfigDir()
+	if err != nil || cfgDir == "" {
+		cfgDir = "/home/alp/.config"
+	}
+	cfgDir = filepath.Join(cfgDir, "digitalis")
+	os.MkdirAll(cfgDir, 0o755)
+	settings := engine.InitStats(cfgDir, *dir)
+	if settings.BaseDir != "" && filepath.Clean(settings.BaseDir) != filepath.Clean(*dir) {
+		*dir = settings.BaseDir
+	}
+	os.MkdirAll(*dir, 0o755)
+
+	engine.SetUploadLimit(settings.UploadLimit)
+	engine.SetDownloadLimit(settings.DownloadLimit)
+	if *upLimit != 0 {
+		engine.SetUploadLimit(*upLimit)
+	}
+	if *downLimit != 0 {
+		engine.SetDownloadLimit(*downLimit)
+	}
 
 	if _, err := engine.Listen(); err != nil {
 		fmt.Fprintf(os.Stderr, "peer listen failed: %v\n", err)

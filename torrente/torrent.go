@@ -65,6 +65,12 @@ type Torrent struct {
 	WorkingTrackers int   `json:"working_trackers"` // trackers currently working
 	Trackers     []*TrackerStat `json:"trackers"`   // per-tracker stats
 
+	// CustomTrackers are user-added announce URLs; RemovedTrackers are
+	// announce URLs (own or custom) the user has disabled for this torrent.
+	CustomTrackers  []string          `json:"custom_trackers"`
+	RemovedTrackers map[string]bool   `json:"removed_trackers"`
+	AnnounceCount   map[string]int64   `json:"announce_count"`
+
 	storage *storage.Storage
 	engine  *Engine
 	picker  *picker
@@ -160,8 +166,20 @@ type Engine struct {
 	uploadLimiter   *rateLimiter
 	downloadLimiter *rateLimiter
 
-	statsMu  sync.Mutex
-	lastStats time.Time
+	// global activity (dashboard stats), guarded by statsMu
+	statsMu       sync.Mutex
+	stats         stats
+	statsFile     string
+	lastStats     time.Time
+
+	// settings persistence
+	settingsFile string
+	settings     Settings
+	uploadPaused bool
+
+	// absolute byte counters for this process
+	byteUpRun   int64
+	byteDownRun int64
 
 	Logf func(format string, a ...interface{})
 }
@@ -235,6 +253,8 @@ func (e *Engine) AddTorrent(mi *metainfo.MetaInfo, saveDir string) (*Torrent, er
 		AddedAt:     time.Now(),
 		TotalWanted: mi.TotalLength(),
 		Size:        mi.TotalLength(),
+		RemovedTrackers: make(map[string]bool),
+		AnnounceCount: make(map[string]int64),
 		engine:      e,
 	}
 	if t.Name == "" {
@@ -292,6 +312,8 @@ func (e *Engine) AddMagnet(m *metainfo.Magnet, saveDir string) (*Torrent, error)
 		SaveDir:    saveDir,
 		AddedAt:    time.Now(),
 		TotalWanted: m.ExactLength,
+		RemovedTrackers: make(map[string]bool),
+		AnnounceCount: make(map[string]int64),
 		engine:     e,
 	}
 	if t.Name == "" {
@@ -299,6 +321,7 @@ func (e *Engine) AddMagnet(m *metainfo.Magnet, saveDir string) (*Torrent, error)
 	}
 	t.Size = t.TotalWanted
 	t.ID = ihHex[:16]
+	t.initTrackers()
 
 	e.mu.Lock()
 	if _, exists := e.torrents[t.ID]; exists {
@@ -340,6 +363,15 @@ func (e *Engine) Announce(t *Torrent, event string) error {
 	if t.Magnet != nil {
 		urls = append(urls, t.Magnet.Trackers...)
 	}
+	urls = append(urls, t.CustomTrackers...)
+	active := urls[:0]
+	for _, u := range urls {
+		if t.RemovedTrackers[u] {
+			continue
+		}
+		active = append(active, u)
+	}
+	urls = active
 	if len(urls) == 0 {
 		return fmt.Errorf("no trackers configured")
 	}
