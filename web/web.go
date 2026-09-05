@@ -24,11 +24,14 @@ var templatesFS embed.FS
 type Server struct {
 	engine  *torrente.Engine
 	saveDir string
+	hub     *wsHub
 }
 
 // NewServer creates a web server around an engine.
 func NewServer(engine *torrente.Engine, saveDir string) *Server {
-	return &Server{engine: engine, saveDir: saveDir}
+	s := &Server{engine: engine, saveDir: saveDir, hub: newWSHub()}
+	go s.broadcastLoop()
+	return s
 }
 
 // torrentView is the JSON representation of a torrent.
@@ -58,6 +61,8 @@ type torrentView struct {
 	Category       string        `json:"category"`
 	SaveDir        string        `json:"save_dir"`
 	AddedAt        time.Time     `json:"added_at"`
+	Comment        string        `json:"comment,omitempty"`
+	CreatedBy      string        `json:"created_by,omitempty"`
 }
 
 type trackerView struct {
@@ -115,8 +120,19 @@ func (s *Server) snapshot(t *torrente.Torrent) torrentView {
 		Category:       t.Category,
 		SaveDir:        t.SaveDir,
 		AddedAt:        t.AddedAt,
+		Comment:        t.MetaInfoComment(),
+		CreatedBy:      t.MetaInfoCreatedBy(),
 	}
 	return v
+}
+
+func (s *Server) getTorrentDetail(w http.ResponseWriter, r *http.Request) {
+	d, err := s.engine.Detail(r.PathValue("id"))
+	if err != nil {
+		writeError(w, http.StatusNotFound, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, d)
 }
 
 // Handler returns the http.Handler for the server.
@@ -127,11 +143,14 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /", s.index)
 
 	mux.HandleFunc("GET /api/torrents", s.listTorrents)
+	mux.HandleFunc("GET /api/torrents/{id}", s.getTorrentDetail)
 	mux.HandleFunc("POST /api/torrents", s.addTorrent)
 	mux.HandleFunc("POST /api/torrents/{id}/pause", s.pause)
 	mux.HandleFunc("POST /api/torrents/{id}/resume", s.resume)
 	mux.HandleFunc("POST /api/torrents/{id}/delete", s.delete)
 	mux.HandleFunc("POST /api/torrents/{id}/move", s.moveTorrent)
+
+	mux.HandleFunc("GET /ws", s.wsHandler)
 
 	mux.HandleFunc("GET /api/categories", s.listCategories)
 	mux.HandleFunc("POST /api/categories", s.createCategory)
@@ -321,6 +340,12 @@ func writeJSON(w http.ResponseWriter, status int, v interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(v)
+}
+
+func writeError(w http.ResponseWriter, status int, msg string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(map[string]string{"error": msg})
 }
 
 func (s *Server) listTorrents(w http.ResponseWriter, r *http.Request) {

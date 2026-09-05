@@ -371,5 +371,74 @@ func (s *Storage) Close() error {
 	return nil
 }
 
+// PieceSnap is a frozen copy of a piece's state for a detail view.
+type PieceSnap struct {
+	Present   bool
+	Verifying bool
+	InFlight  int
+}
+
+// PiecesSnapshot returns a snapshot of all piece states.
+func (s *Storage) PiecesSnapshot() []PieceSnap {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	out := make([]PieceSnap, len(s.pieces))
+	for i, p := range s.pieces {
+		out[i] = PieceSnap{Present: p.Present, Verifying: p.Verifying, InFlight: p.InFlight}
+	}
+	return out
+}
+
+// FileSnap describes a file and how many of its bytes are verified on disk.
+type FileSnap struct {
+	Path   string
+	Length int64
+	Done   int64
+}
+
+// FilesSnapshot reports each file with its verified bytes. Pieces overlap file
+// boundaries, so done bytes are computed piece-by-piece for accuracy.
+func (s *Storage) FilesSnapshot() []FileSnap {
+	s.mu.Lock()
+	states := make([]PieceSnap, len(s.pieces))
+	for i, p := range s.pieces {
+		states[i] = PieceSnap{Present: p.Present}
+	}
+	s.mu.Unlock()
+
+	pieceLen := s.meta.Info.PieceLength
+	total := s.meta.TotalLength()
+	var start int64
+	out := make([]FileSnap, 0, len(s.files))
+	for _, fh := range s.files {
+		end := start + fh.length
+		var done int64
+		for i := 0; i < len(states); i++ {
+			if !states[i].Present {
+				continue
+			}
+			ps := int64(i) * pieceLen
+			pe := ps + pieceLen
+			if pe > total {
+				pe = total
+			}
+			if ps >= end || pe <= start {
+				continue
+			}
+			a, b := ps, pe
+			if a < start {
+				a = start
+			}
+			if b > end {
+				b = end
+			}
+			done += b - a
+		}
+		out = append(out, FileSnap{Path: fh.path, Length: fh.length, Done: done})
+		start = end
+	}
+	return out
+}
+
 // TotalLength returns the total byte length.
 func (s *Storage) TotalLength() int64 { return s.meta.TotalLength() }

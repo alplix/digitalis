@@ -105,6 +105,22 @@ func (t *Torrent) Progress() float64 {
 // Percent is a convenience rounding helper.
 func (t *Torrent) Percent() float64 { return t.Progress() * 100 }
 
+// MetaInfoComment returns the metainfo comment, if any.
+func (t *Torrent) MetaInfoComment() string {
+	if t.MetaInfo != nil {
+		return t.MetaInfo.Comment
+	}
+	return ""
+}
+
+// MetaInfoCreatedBy returns the creator string from metainfo, if any.
+func (t *Torrent) MetaInfoCreatedBy() string {
+	if t.MetaInfo != nil {
+		return t.MetaInfo.CreatedBy
+	}
+	return ""
+}
+
 // PieceStats returns (present, total) piece counts.
 func (t *Torrent) PieceStats() (int, int) {
 	if t.storage == nil {
