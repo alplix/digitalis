@@ -204,10 +204,12 @@ func (e *Engine) statsTick() {
 	e.applySchedule(cur)
 }
 
-// applySchedule applies night-mode rate caps and per-torrent ratio targets.
-// It runs from the stats loop so timing changes happen without user action.
+// applySchedule applies night-mode rate caps / full pauses and per-torrent
+// ratio targets. It runs from the stats loop so timing changes happen without
+// user action.
 func (e *Engine) applySchedule(cur Settings) {
 	inNight := cur.NightMode && nightIsActive(cur.NightStart, cur.NightEnd, time.Now())
+	wantPause := inNight && cur.NightPause
 
 	e.mu.Lock()
 	applied := e.nightApplied
@@ -231,6 +233,29 @@ func (e *Engine) applySchedule(cur Settings) {
 		e.nightApplied = false
 		e.mu.Unlock()
 		e.Logf("night mode ended, restored limits")
+	}
+
+	// Full pause during the night window. Upload is re-asserted every tick
+	// because the daily-limit check may clear uploadPaused; on wake upload is
+	// left to that same check so a daily cap is not bypassed.
+	e.mu.Lock()
+	paused := e.nightPaused
+	e.mu.Unlock()
+	if wantPause {
+		e.setUploadPaused(true)
+		if !paused {
+			e.setDownloadPaused(true)
+			e.mu.Lock()
+			e.nightPaused = true
+			e.mu.Unlock()
+			e.Logf("night full pause engaged")
+		}
+	} else if paused {
+		e.setDownloadPaused(false)
+		e.mu.Lock()
+		e.nightPaused = false
+		e.mu.Unlock()
+		e.Logf("night full pause released")
 	}
 
 	if cur.RatioTarget <= 0 {
@@ -330,6 +355,20 @@ func (e *Engine) UploadBlocked() bool {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	return e.uploadPaused
+}
+
+// setDownloadPaused holds or releases downloads (night full pause only).
+func (e *Engine) setDownloadPaused(p bool) {
+	e.mu.Lock()
+	e.downloadPaused = p
+	e.mu.Unlock()
+}
+
+// DownloadBlocked reports whether downloads are held (e.g. night pause).
+func (e *Engine) DownloadBlocked() bool {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	return e.downloadPaused
 }
 
 // recordUp/recordDown accumulate byte counters on the hot path.

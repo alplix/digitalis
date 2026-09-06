@@ -154,3 +154,59 @@ func TestRatioPerTorrentOverride(t *testing.T) {
 		t.Errorf("t2 state = %s, want paused", t2.State)
 	}
 }
+
+func TestNightFullPause(t *testing.T) {
+	e := newTestEngine()
+	// window covering "now" with full pause
+	night := Settings{NightMode: true, NightStart: "00:00", NightEnd: "23:59", NightPause: true}
+	e.mu.Lock()
+	e.settings = night
+	e.mu.Unlock()
+	e.applySchedule(e.settings)
+	if !e.UploadBlocked() {
+		t.Error("upload should be blocked during night full pause")
+	}
+	if !e.DownloadBlocked() {
+		t.Error("download should be blocked during night full pause")
+	}
+
+	// the daily-limit check may clear uploadPaused mid-night; applySchedule
+	// must re-assert it on the next tick
+	e.setUploadPaused(false)
+	e.applySchedule(e.settings)
+	if !e.UploadBlocked() {
+		t.Error("upload pause must be re-asserted after daily check clears it")
+	}
+
+	// disable pause while still in the window
+	nightNoPause := night
+	nightNoPause.NightPause = false
+	e.mu.Lock()
+	e.settings = nightNoPause
+	e.mu.Unlock()
+	e.applySchedule(e.settings)
+	if e.DownloadBlocked() {
+		t.Error("download should be released when night pause is off")
+	}
+}
+
+func TestNightCapsWithoutPause(t *testing.T) {
+	e := newTestEngine()
+	e.mu.Lock()
+	e.settings = Settings{NightMode: true, NightStart: "00:00", NightEnd: "23:59",
+		NightUpload: 2048, NightDownload: 4096}
+	e.mu.Unlock()
+	e.applySchedule(e.settings)
+	if e.UploadBlocked() {
+		t.Error("caps-only night mode must not block uploads")
+	}
+	if e.DownloadBlocked() {
+		t.Error("caps-only night mode must not block downloads")
+	}
+	if e.UploadRateLimit != 2048 {
+		t.Errorf("night upload cap = %d, want 2048", e.UploadRateLimit)
+	}
+	if e.DownloadRateLimit != 4096 {
+		t.Errorf("night download cap = %d, want 4096", e.DownloadRateLimit)
+	}
+}

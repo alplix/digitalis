@@ -209,7 +209,9 @@ type Engine struct {
 	settingsFile string
 	settings     Settings
 	uploadPaused bool
+	downloadPaused bool
 	nightApplied bool
+	nightPaused  bool
 
 	// absolute byte counters for this process
 	byteUpRun   int64

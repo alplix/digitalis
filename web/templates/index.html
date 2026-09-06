@@ -589,6 +589,10 @@
                     <input id="set-night-down" type="number" min="0" class="w-full rounded-xl px-2 py-2 inp text-sm focus:outline-none font-mono">
                   </div>
                 </div>
+                <label class="flex items-center justify-between gap-3 mt-2 text-xs cursor-pointer">
+                  <span class="tx2" data-i18n="nightPause">Fully pause transfers at night</span>
+                  <input id="set-night-pause" type="checkbox" class="selchk">
+                </label>
               </div>
             </div>
           </div>
@@ -691,7 +695,7 @@ const I18N = {
     directories: 'Directories', saveDir: 'Save directory', dirHint: 'New torrents save here. Existing torrents keep their current folder.',
     dashRateLimits: 'Rate limits', upLimit: 'Upload limit (bytes/s, 0=∞)', downLimit: 'Download limit (bytes/s, 0=∞)',
     dailyUpload: 'Daily upload limit (bytes, 0=off)', dailyHint: 'Uploads pause for the day when reached; resets at midnight.',
-    nightMode: 'Night mode (quiet hours)', nightStart: 'From', nightEnd: 'To (may pass midnight)', nightUp: 'Cap upload (B/s, 0=keep)', nightDown: 'Cap download (B/s, 0=keep)',
+    nightMode: 'Night mode (quiet hours)', nightStart: 'From', nightEnd: 'To (may pass midnight)', nightUp: 'Cap upload (B/s, 0=keep)', nightDown: 'Cap download (B/s, 0=keep)', nightPause: 'Fully pause transfers at night',
     ratioGoal: 'Ratio goal', ratioTarget: 'Seeding stops at ratio (0=off)', ratioStop: 'Pause seeding when reached', ratioRemove: 'Remove torrent when reached',
     peerInfo: 'Client', peerPort: 'Peer port', baseDirRoot: 'Base dir', version: 'Version', save: 'Save', saved: 'Settings saved',
     trackerAdded: 'tracker added', trackerRemoved: 'tracker removed', addTracker: 'Add tracker', remove: 'Remove',
@@ -1901,6 +1905,7 @@ async function loadSettings() {
     document.getElementById('set-night-end').value = s.night_end || '';
     document.getElementById('set-night-up').value = s.night_upload || 0;
     document.getElementById('set-night-down').value = s.night_download || 0;
+    document.getElementById('set-night-pause').checked = !!s.night_pause;
     document.getElementById('set-ratio').value = s.ratio_target || 0;
     document.getElementById('set-ratio-stop').checked = !!s.ratio_stop;
     document.getElementById('set-ratio-remove').checked = !!s.ratio_remove;
@@ -1926,6 +1931,7 @@ async function saveSettings() {
     night_end: document.getElementById('set-night-end').value || '',
     night_upload: parseInt(document.getElementById('set-night-up').value) || 0,
     night_download: parseInt(document.getElementById('set-night-down').value) || 0,
+    night_pause: document.getElementById('set-night-pause').checked,
     ratio_target: parseFloat(document.getElementById('set-ratio').value) || 0,
     ratio_stop: document.getElementById('set-ratio-stop').checked,
     ratio_remove: document.getElementById('set-ratio-remove').checked

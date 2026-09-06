@@ -297,6 +297,7 @@ type settingsView struct {
 	NightEnd         string  `json:"night_end"`
 	NightUpload      int64   `json:"night_upload"`
 	NightDownload    int64   `json:"night_download"`
+	NightPause       bool    `json:"night_pause"`
 	RatioTarget      float64 `json:"ratio_target"`
 	RatioStop        bool    `json:"ratio_stop"`
 	RatioRemove      bool    `json:"ratio_remove"`
@@ -316,6 +317,7 @@ func (s *Server) settingsView() settingsView {
 		NightEnd:         v.NightEnd,
 		NightUpload:      v.NightUpload,
 		NightDownload:    v.NightDownload,
+		NightPause:       v.NightPause,
 		RatioTarget:      v.RatioTarget,
 		RatioStop:        v.RatioStop,
 		RatioRemove:      v.RatioRemove,

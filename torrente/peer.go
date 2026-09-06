@@ -342,6 +342,10 @@ func (s *peerSession) pumpRequests() {
 	if s.amChoked || s.t.storage == nil || s.peerBitfield == nil {
 		return
 	}
+	// night full pause: stop asking for blocks
+	if s.e.DownloadBlocked() {
+		return
+	}
 	for s.pendingBlocks < requestWindow {
 		if s.currentPiece == -1 {
 			idx := s.t.picker.acquire(s)

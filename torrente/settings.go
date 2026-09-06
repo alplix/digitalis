@@ -15,12 +15,14 @@ type Settings struct {
 	DailyUploadLimit int64  `json:"daily_upload_limit"`
 
 	// Night mode: during [NightStart,NightEnd) the transfer rate is capped at
-	// NightUpload/NightDownload (0 = keep the daytime limit unchanged).
+	// NightUpload/NightDownload (0 = keep the daytime limit unchanged). When
+	// NightPause is set, transfers stop completely during the window.
 	NightMode     bool   `json:"night_mode"`
 	NightStart    string `json:"night_start"`   // "HH:MM"
 	NightEnd      string `json:"night_end"`     // "HH:MM", may wrap midnight
 	NightUpload   int64  `json:"night_upload"`  // bytes/sec during night
 	NightDownload int64  `json:"night_download"`
+	NightPause    bool   `json:"night_pause"`
 
 	// Ratio target: once a fully-downloaded torrent's ratio reaches the target
 	// it is stopped or removed. 0 disables. Per-torrent overrides win.
@@ -102,6 +104,7 @@ func (e *Engine) UpdateSettings(patch Settings) (Settings, error) {
 	cur.NightEnd = patch.NightEnd
 	cur.NightUpload = patch.NightUpload
 	cur.NightDownload = patch.NightDownload
+	cur.NightPause = patch.NightPause
 	cur.RatioTarget = patch.RatioTarget
 	cur.RatioStop = patch.RatioStop
 	cur.RatioRemove = patch.RatioRemove
