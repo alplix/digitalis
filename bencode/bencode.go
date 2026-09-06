@@ -39,6 +39,17 @@ func Decode(data []byte) (Value, error) {
 	return v, nil
 }
 
+// DecodePrefix parses one leading bencode value from data and reports how many
+// bytes it consumed. The remainder may hold trailing (binary) content.
+func DecodePrefix(data []byte) (Value, int, error) {
+	d := &decoder{buf: data}
+	v, err := d.parseValue()
+	if err != nil {
+		return nil, 0, err
+	}
+	return v, d.pos, nil
+}
+
 type decoder struct {
 	buf []byte
 	pos int

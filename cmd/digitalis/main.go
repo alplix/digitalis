@@ -71,7 +71,7 @@ func main() {
 		go watchForTorrents(engine, *watchDir, *dir)
 	}
 
-	srv := web.NewServer(engine, *dir)
+	srv := web.NewServer(engine, *dir, cfgDir)
 	httpSrv := &http.Server{Addr: *webAddr, Handler: srv.Handler()}
 
 	go func() {

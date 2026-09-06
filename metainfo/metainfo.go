@@ -159,17 +159,46 @@ func Parse(data []byte) (*MetaInfo, error) {
 	}
 	m.Info.Raw = infoBencoded
 
+	if err := populateInfo(&m.Info, infoDict); err != nil {
+		return nil, err
+	}
+
+	return m, nil
+}
+
+// ParseInfo builds a MetaInfo from the raw bencoded info dictionary bytes, as
+// received over the wire via BEP-9 ut_metadata. The raw bytes are kept verbatim
+// so the info hash always matches.
+func ParseInfo(data []byte) (*MetaInfo, error) {
+	raw, err := bencode.Decode(data)
+	if err != nil {
+		return nil, fmt.Errorf("parse info: %w", err)
+	}
+	infoDict, ok := raw.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("parse info: not a dictionary")
+	}
+	m := &MetaInfo{}
+	m.Info.Raw = append([]byte(nil), data...)
+	if err := populateInfo(&m.Info, infoDict); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+// populateInfo fills an InfoDict from a decoded bencode dictionary.
+func populateInfo(info *InfoDict, infoDict map[string]interface{}) error {
 	if v, ok := infoDict["name"]; ok {
-		m.Info.Name = decodeString(v.(string))
+		info.Name = decodeString(v.(string))
 	}
 	if v, ok := infoDict["piece length"]; ok {
-		m.Info.PieceLength = toInt64(v)
+		info.PieceLength = toInt64(v)
 	}
 	if v, ok := infoDict["pieces"]; ok {
-		m.Info.Pieces = v.(string)
+		info.Pieces = v.(string)
 	}
 	if v, ok := infoDict["length"]; ok {
-		m.Info.Length = toInt64(v)
+		info.Length = toInt64(v)
 	}
 	if v, ok := infoDict["files"]; ok {
 		if l, ok := v.([]interface{}); ok {
@@ -189,12 +218,11 @@ func Parse(data []byte) (*MetaInfo, error) {
 						}
 					}
 				}
-				m.Info.Files = append(m.Info.Files, f)
+				info.Files = append(info.Files, f)
 			}
 		}
 	}
-
-	return m, nil
+	return nil
 }
 
 func toInt64(v interface{}) int64 {

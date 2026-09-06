@@ -47,11 +47,12 @@ func (h *wsHub) unregister(c *wsClient) {
 }
 
 func (h *wsHub) broadcast(payload []byte) {
+	frame := frameText(payload)
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	for c := range h.clients {
 		select {
-		case c.send <- payload:
+		case c.send <- frame:
 		default: // slow client, drop tick
 		}
 	}
@@ -136,6 +137,23 @@ func (s *Server) broadcastLoop() {
 		}
 		s.hub.broadcast(payload)
 	}
+}
+
+// noticeMsg is a one-off WebSocket notification (completion, metadata fetched).
+type noticeMsg struct {
+	Type string `json:"type"`
+	Kind string `json:"kind"`
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+// broadcastNotice pushes a notification to all connected clients.
+func (s *Server) broadcastNotice(kind, id, name string) {
+	b, err := json.Marshal(noticeMsg{Type: "notice", Kind: kind, ID: id, Name: name})
+	if err != nil {
+		return
+	}
+	s.hub.broadcast(b)
 }
 
 // frameText wraps a payload in a single FIN text frame (RFC 6455).

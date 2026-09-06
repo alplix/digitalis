@@ -10,6 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/alplix/digitalis/dht"
 	"github.com/alplix/digitalis/metainfo"
 	"github.com/alplix/digitalis/storage"
 	"github.com/alplix/digitalis/tracker"
@@ -35,6 +36,11 @@ type Torrent struct {
 	InfoHash, Name string
 	MetaInfo *metainfo.MetaInfo
 	Magnet   *metainfo.Magnet
+
+	// BEP-9 metadata exchange state (magnets). MetaChunks holds partial
+	// metadata pieces gathered from peers; MetaSize is the advertised size.
+	MetaSize   int64
+	MetaChunks map[int][]byte
 
 	State  State
 	SaveDir string
@@ -70,10 +76,12 @@ type Torrent struct {
 	CustomTrackers  []string          `json:"custom_trackers"`
 	RemovedTrackers map[string]bool   `json:"removed_trackers"`
 	AnnounceCount   map[string]int64   `json:"announce_count"`
+	DownloadLimit   int64             `json:"download_limit"`
 
 	storage *storage.Storage
 	engine  *Engine
 	picker  *picker
+	dlRate  *rateLimiter
 }
 
 // Ratio returns upload/download ratio (1.0 = even, >1 = more uploaded than downloaded).
@@ -159,6 +167,12 @@ func (t *Torrent) setState(s State) {
 	t.mu.Unlock()
 }
 
+// Notice kinds delivered through Engine.OnNotice.
+const (
+	NoticeComplete string = "complete" // torrent finished downloading
+	NoticeMetadata string = "metadata" // magnet resolved its metadata
+)
+
 // Engine manages all torrents and peer connections.
 type Engine struct {
 	mu       sync.Mutex
@@ -173,6 +187,7 @@ type Engine struct {
 	listener      net.Listener
 
 	connecting map[string]bool
+	selfAddrs  map[string]bool
 
 	// settings
 	UploadRateLimit   int64
@@ -197,7 +212,13 @@ type Engine struct {
 	byteUpRun   int64
 	byteDownRun int64
 
+	// OnNotice is invoked for user-facing events (download completion, magnet
+	// metadata resolution). It must not block the caller for long.
+	OnNotice func(kind, id, name string)
+
 	Logf func(format string, a ...interface{})
+
+	dhtClient *dht.Client
 }
 
 // NewEngine creates a torrent engine with a random peer id.
@@ -216,6 +237,7 @@ func NewEngine(port int) *Engine {
 		prevDown:        make(map[string]int64),
 		prevUp:          make(map[string]int64),
 		connecting:      make(map[string]bool),
+		selfAddrs:       make(map[string]bool),
 		port:            port,
 		MaxConnections:  200,
 		clientPeerID:    string(pid),
@@ -310,6 +332,7 @@ func (e *Engine) AddTorrent(mi *metainfo.MetaInfo, saveDir string) (*Torrent, er
 	e.startAnnounceLoop(t)
 	go e.Announce(t, "started")
 	e.startPeerLoop(t)
+	e.startDHTPeerLoop(t)
 	e.Logf("added torrent %q (%s)", t.Name, t.ID)
 	return t, nil
 }
@@ -352,6 +375,7 @@ func (e *Engine) AddMagnet(m *metainfo.Magnet, saveDir string) (*Torrent, error)
 	e.startAnnounceLoop(t)
 	go e.Announce(t, "started")
 	e.startPeerLoop(t)
+	e.startDHTPeerLoop(t)
 	e.Logf("added magnet %q (%s)", t.Name, t.ID)
 	return t, nil
 }

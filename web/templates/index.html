@@ -144,6 +144,16 @@
 
   .live-legend .dot-up { background: var(--accent2); }
   .live-legend .dot-dn { background: var(--down); }
+
+  .toast { animation: toastin .3s ease; cursor: pointer; }
+  .toast:hover { border-color: var(--border2); }
+  @keyframes toastin { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
+
+  .selchk { accent-color: #4ade80; width: 15px; height: 15px; cursor: pointer; }
+  html[data-theme="light"] .selchk { accent-color: #16a34a; }
+
+  .bulk-btn { padding: .3rem .7rem; border-radius: .5rem; font-size: .72rem; font-weight: 500; transition: filter .15s ease; }
+  .bulk-btn:hover { filter: brightness(1.1); }
 </style>
 </head>
 <body class="font-sans">
@@ -152,22 +162,30 @@
 
   <!-- Sidebar -->
   <aside class="w-16 md:w-60 shrink-0 border-r border-[var(--border)] flex flex-col p-3 gap-1 sticky top-0 h-screen">
-    <div class="flex items-center gap-2.5 px-1 md:px-2 mb-4 mt-1">
+    <div class="flex items-center gap-2.5 px-1 md:px-2 mb-4 mt-1" onclick="show('dashboard')" style="cursor:pointer">
       <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#14532d] to-[#052e16] flex items-center justify-center shadow-lg shadow-black/30 shrink-0">
         <svg class="logo-bloom w-6 h-6" viewBox="0 0 24 24" fill="none">
-          <path d="M12 21v-6" stroke="#a3e635" stroke-width="1.4" stroke-linecap="round"/>
-          <path d="M12 15c-2.1-1-3.4-2.6-3.4-4.4a3.4 3.4 0 0 1 6.8 0c0 1.8-1.3 3.4-3.4 4.4z" fill="url(#fPet)" opacity="0.95"/>
-          <path d="M12 14c-2.6-1-4.1-2.9-4.1-5a4.1 4.1 0 0 1 8.2 0c0 2.1-1.5 4-4.1 5z" fill="url(#fBell)" opacity="0.55"/>
-          <path d="M12 14c-.2-1.5.3-2.7.7-2.7M12 14c.2-1.5-.3-2.7-.7-2.7" stroke="#4ade80" stroke-width="1.1" stroke-linecap="round"/>
+          <path d="M12 21v-8" stroke="#34d399" stroke-width="1.3" stroke-linecap="round" opacity="0.9"/>
+          <path d="M12 3.6 C10.3 4.0 9.6 5.0 9.6 6.5 C9.6 7.8 10.6 9.0 11.9 9.6 C13.4 9.0 14.4 7.8 14.4 6.5 C14.4 5.0 13.7 4.0 12 3.6 Z" fill="url(#dvB1)"/>
+          <path d="M12 8.2 C10.6 8.5 10.1 9.4 10.1 10.7 C10.1 11.9 10.9 12.9 12 13.4 C13.1 12.9 13.9 11.9 13.9 10.7 C13.9 9.4 13.4 8.5 12 8.2 Z" fill="url(#dvB2)"/>
+          <path d="M12 12.6 C10.8 12.9 10.4 13.6 10.4 14.8 C10.4 15.9 11.1 16.8 12 17.2 C12.9 16.8 13.6 15.9 13.6 14.8 C13.6 13.6 13.2 12.9 12 12.6 Z" fill="url(#dvB3)"/>
+          <circle cx="11" cy="5.6" r="0.6" fill="#052e16" opacity="0.5"/>
+          <circle cx="12.4" cy="5.3" r="0.6" fill="#052e16" opacity="0.5"/>
+          <circle cx="11.2" cy="10" r="0.6" fill="#052e16" opacity="0.5"/>
+          <circle cx="12.6" cy="9.7" r="0.6" fill="#052e16" opacity="0.5"/>
+          <circle cx="11.2" cy="14.2" r="0.6" fill="#052e16" opacity="0.5"/>
+          <circle cx="12.6" cy="13.9" r="0.6" fill="#052e16" opacity="0.5"/>
+          <path d="M12 21c-1.2-2.6-.5-4.3.8-4.9.3 1.5.1 3.2-.4 4.9z" fill="#15803d" opacity="0.9"/>
           <defs>
-            <linearGradient id="fPet" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9f99d"/><stop offset="1" stop-color="#a3e635"/></linearGradient>
-            <linearGradient id="fBell" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bef264"/><stop offset="1" stop-color="#4ade80"/></linearGradient>
+            <linearGradient id="dvB1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9f99d"/><stop offset="1" stop-color="#a3e635"/></linearGradient>
+            <linearGradient id="dvB2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a3e635"/><stop offset="1" stop-color="#4ade80"/></linearGradient>
+            <linearGradient id="dvB3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4ade80"/><stop offset="1" stop-color="#2dd4bf"/></linearGradient>
           </defs>
         </svg>
       </div>
       <div class="hidden md:block">
         <div class="font-bold text-[color:var(--txt)] leading-none">Digitalis</div>
-        <div class="text-[10px] tx2 mt-0.5">By Alp · v0.8</div>
+        <div class="text-[10px] tx2 mt-0.5">coded by <b>Alperen Yavuz</b></div>
       </div>
     </div>
 
@@ -179,6 +197,10 @@
       <div class="nav-item rounded-lg px-2 md:px-3 py-2 flex items-center gap-2.5" data-view="torrents" onclick="show('torrents')">
         <svg class="nav-ico w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
         <span class="hidden md:inline" data-i18n="torrents">Torrents</span>
+      </div>
+      <div class="nav-item rounded-lg px-2 md:px-3 py-2 flex items-center gap-2.5" data-view="guide" onclick="show('guide')">
+        <svg class="nav-ico w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 19.5V5.5a2 2 0 012-2h4.7a2 2 0 011.8 1.1L13.7 6H20a1 1 0 011 1v10.2a1 1 0 01-1 1h-6.4a2 2 0 00-1.7.9l-1.2 1.9a1 1 0 01-1.7 0l-1.2-1.9a2 2 0 00-1.7-.9H5a1 1 0 01-1-1z"/></svg>
+        <span class="hidden md:inline" data-i18n="guide">Guide</span>
       </div>
       <div class="nav-item rounded-lg px-2 md:px-3 py-2 flex items-center gap-2.5" data-view="trackers" onclick="show('trackers')">
         <svg class="nav-ico w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M13 5l7 7-7 7-7-7 7-7z"/></svg>
@@ -213,6 +235,11 @@
         <option value="ar">العربية</option>
         <option value="hi">हिन्दी</option>
       </select>
+    </div>
+
+    <div class="px-1 md:px-2 pt-2 mt-1 border-t border-[var(--border)] flex items-center justify-center md:justify-start gap-1.5 text-[10px] tx3 select-none">
+      <span class="md:hidden font-mono text-[9px]">AY</span>
+      <span class="hidden md:inline">coded by <b style="color:var(--txt2)">Alperen Yavuz</b> · © 2026</span>
     </div>
   </aside>
 
@@ -344,7 +371,11 @@
           </div>
         </div>
 
-        <div class="card rounded-2xl p-3 mb-4 grid grid-cols-1 md:grid-cols-4 gap-2">
+        <div class="card rounded-2xl p-3 mb-4 grid grid-cols-1 md:grid-cols-5 gap-2">
+          <label class="flex items-center justify-center gap-2 text-xs tx2 select-none cursor-pointer">
+            <input type="checkbox" id="selAll" class="selchk" onchange="toggleSelAll(this.checked)">
+            <span data-i18n="selectAll">Select all</span>
+          </label>
           <input id="fSearch" data-i18n-placeholder="vSearch" oninput="renderList()" class="inp rounded-lg px-3 py-2 text-sm focus:outline-none" spellcheck="false">
           <select id="fState" onchange="renderList()" class="inp rounded-lg px-3 py-2 text-sm focus:outline-none">
             <option value="">All states</option>
@@ -365,9 +396,26 @@
           </select>
         </div>
 
+        <div id="bulkBar" class="hidden sticky bottom-3 z-30 card rounded-2xl px-4 py-2.5 mb-3 flex items-center gap-2 flex-wrap">
+          <span class="text-xs tx2 whitespace-nowrap" id="bulkCount"></span>
+          <button onclick="bulk('pause')" class="bulk-btn inp" style="color:var(--txt)">⏸ <span data-i18n="pausing">Pause</span></button>
+          <button onclick="bulk('resume')" class="bulk-btn" style="background:rgba(52,211,153,.18);border:1px solid rgba(52,211,153,.4)">▶ <span data-i18n="resuming">Resume</span></button>
+          <button onclick="bulk('delete')" class="bulk-btn" style="background:rgba(251,113,133,.15);border:1px solid rgba(251,113,133,.35);color:#fda4af">🗑 <span data-i18n="deleting">Delete</span></button>
+          <button onclick="sel.clear();updateBulkBar();renderList()" class="bulk-btn inp tx3" title="✕">✕</button>
+        </div>
+
         <div id="torrentList" class="space-y-3">
           <div class="card rounded-2xl p-6 text-center tx2 text-sm" data-i18n="loading">Loading...</div>
         </div>
+      </section>
+
+      <!-- ============ GUIDE ============ -->
+      <section id="view-guide" class="view">
+        <div class="flex items-center justify-between gap-3 mb-4">
+          <h1 class="text-xl md:text-2xl font-bold" data-i18n="guide">Guide</h1>
+        </div>
+        <div class="card rounded-2xl p-4 mb-4 text-sm" style="color:var(--txt2)"><div data-i18n="guideIntro">Everything you need to know about Digitalis, from-scratch BitTorrent client.</div></div>
+        <div id="guideBody" class="space-y-3"></div>
       </section>
 
       <!-- ============ TRACKERS ============ -->
@@ -450,6 +498,10 @@
 
     </div>
   </main>
+
+  <div class="max-w-5xl mx-auto px-4 md:px-6 pb-8 -mt-4 text-center text-[11px] tx3 select-none">
+    Digitalis · coded by <b style="color:var(--txt2)">Alperen Yavuz</b> · © 2026
+  </div>
 </div>
 
 <!-- ============ DETAIL DRAWER ============ -->
@@ -458,13 +510,16 @@
   <div id="drawerBody" class="h-full drawer-body overflow-y-auto p-5"></div>
 </aside>
 
+<div id="toasts" class="fixed bottom-4 right-4 z-[60] space-y-2 w-80 max-w-[92vw]"></div>
+
 <script>
 const API = '/api';
 
 const I18N = {
   en: {
     tagline: 'A from-scratch BitTorrent client', noDocker: 'No Docker',
-    dashboard: 'Dashboard', torrents: 'Torrents', trackers: 'Trackers', categories: 'Categories', settings: 'Settings',
+    dashboard: 'Dashboard', torrents: 'Torrents', trackers: 'Trackers', categories: 'Categories', settings: 'Settings', guide: 'Guide',
+    guideIntro: 'Everything you need to know about Digitalis, a from-scratch BitTorrent client.',
     since: 'collecting since', upTotal: 'Upload total', downTotal: 'Download total', connsTotal: 'Conns total', connActive: 'Active conns',
     upToday: 'Upload today', downToday: 'Download today', dailyLimit: 'Daily upload limit', uploadPaused: 'Upload paused — daily limit reached',
     chartActivity: 'Activity', day: 'Day', month: 'Month', years: 'Years', all: 'All', up: 'Up', down: 'Down', countries: 'Peer countries',
@@ -492,11 +547,14 @@ const I18N = {
     noMatch: 'No torrents match the current search/filter.',
     themeDark: 'Dark theme', themeLight: 'Light theme', bytesDone: 'done',
     downloading: 'Downloading', seeding: 'Seeding',
-    activePeers: 'Active peers', knownPeers: 'Known peers', trackersOf: 'Trackers', upload: 'Upload', download: 'Download'
+    activePeers: 'Active peers', knownPeers: 'Known peers', trackersOf: 'Trackers', upload: 'Upload', download: 'Download',
+    noticeComplete: 'Download complete', noticeMetadata: 'Metadata fetched',
+    selectAll: 'Select all', selected: 'selected', noLimit: 'no limit'
   },
   tr: {
     tagline: 'Yüksük Otu — sıfırdan yazılmış BitTorrent istemcisi', noDocker: 'Docker yok',
-    dashboard: 'Panel', torrents: 'Torrentler', trackers: 'Trackerlar', categories: 'Kategoriler', settings: 'Ayarlar',
+    dashboard: 'Panel', torrents: 'Torrentler', trackers: 'Trackerlar', categories: 'Kategoriler', settings: 'Ayarlar', guide: 'Rehber',
+    guideIntro: 'Digitalis hakkında bilmen gereken her şey — sıfırdan yazılmış BitTorrent istemcisi.',
     since: 'toplanma başlangıcı', upTotal: 'Toplam Yükleme', downTotal: 'Toplam İndirme', connsTotal: 'Toplam Bağlantı', connActive: 'Aktif Bağlantı',
     upToday: 'Bugün Yükleme', downToday: 'Bugün İndirme', dailyLimit: 'Günlük Yükleme Limiti', uploadPaused: 'Yükleme duraklatıldı — günlük limit doldu',
     chartActivity: 'Aktivite', day: 'Gün', month: 'Ay', years: 'Yıllar', all: 'Tümü', up: 'Yüklenen', down: 'İndirilen', countries: 'Peer Ülkeleri',
@@ -524,7 +582,9 @@ const I18N = {
     noMatch: 'Arama/filtre ile eşleşen torrent yok.',
     themeDark: 'Koyu tema', themeLight: 'Açık tema', bytesDone: 'tamam',
     downloading: 'İndiriliyor', seeding: 'Paylaşılıyor',
-    activePeers: 'Aktif peer', knownPeers: 'Bilinen peer', trackersOf: 'Trackerlar', upload: 'Yükleme', download: 'İndirme'
+    activePeers: 'Aktif peer', knownPeers: 'Bilinen peer', trackersOf: 'Trackerlar', upload: 'Yükleme', download: 'İndirme',
+    noticeComplete: 'İndirme tamamlandı', noticeMetadata: 'Meta veri alındı',
+    selectAll: 'Tümünü seç', selected: 'seçili', noLimit: 'limit yok'
   },
   de: {
     tagline: 'Ein von Grund auf geschriebener BitTorrent-Client', noDocker: 'Kein Docker',
@@ -780,6 +840,8 @@ let chartData = null;
 let torrentsData = [];
 let detailId = null;
 let liveUp = [], liveDn = [];
+let sel = new Set();
+let guideLang = null;
 
 function t(key) { return translations[key] !== undefined ? translations[key] : (I18N.en[key] !== undefined ? I18N.en[key] : key); }
 function applyLang() {
@@ -792,6 +854,7 @@ function applyLang() {
   if (sel && sel.value !== lang) sel.value = lang;
   refreshCats();
   renderChart();
+  renderGuide();
 }
 
 function setLang(l) { lang = l; localStorage.setItem('dg-lang', l); applyLang(); }
@@ -816,6 +879,7 @@ function show(name) {
   if (name === 'dashboard') refreshStats();
   if (name === 'trackers') refreshTrackers();
   if (name === 'settings') loadSettings();
+  if (name === 'guide') renderGuide();
 }
 
 // ---------- formatting ----------
@@ -875,7 +939,11 @@ function renderTorrent(tr) {
   <div class="card rounded-2xl overflow-hidden">
     <div class="p-4 md:p-5 flex flex-col gap-3">
       <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
-        <div class="min-w-0 flex-1 cursor-pointer" onclick="openDetail('${tr.id}')">
+        <div class="flex items-start gap-3 min-w-0">
+          <label class="pt-1 shrink-0" onclick="event.stopPropagation()" title="${esc(t('selectAll'))}">
+            <input type="checkbox" class="selchk" data-id="${esc(tr.id)}" ${sel.has(tr.id) ? 'checked' : ''} onchange="toggleSel('${esc(tr.id)}',this.checked)">
+          </label>
+          <div class="min-w-0 flex-1 cursor-pointer" onclick="openDetail('${esc(tr.id)}')">
           <div class="flex items-start gap-2 flex-wrap">
             <h3 class="font-semibold truncate" style="color:var(--txt)">${esc(tr.name)}</h3>
             ${stateBadge(tr.state)}
@@ -896,7 +964,9 @@ function renderTorrent(tr) {
             <span class="px-2 py-0.5 rounded-full chip">${t('ratio')}: <b class="font-mono">${fmtRatio(tr.ratio)}</b></span>
             <span class="px-2 py-0.5 rounded-full chip">${t('seededTo')}: <b class="font-mono">${tr.seeded_to}</b> ${t('peers')}</span>
             <span class="px-2 py-0.5 rounded-full chip">${t('trackers')}: <b class="font-mono">${trs.filter(x=>x.working).length}</b> ${t('working')} / ${trs.filter(x=>!x.working).length} ${t('down')}</span>
+            ${tr.download_limit > 0 ? `<span class="px-2 py-0.5 rounded-full chip" title="${esc(t('downLimit'))}">↓ ≤ <b class="font-mono">${fmtBytes(tr.download_limit)}/s</b></span>` : ''}
           </div>
+        </div>
         </div>
         <div class="flex gap-2 md:flex-col xl:flex-row md:items-end shrink-0">
           ${tr.state === 'paused'
@@ -983,6 +1053,14 @@ function renderList() {
   if (document.getElementById('statTotal')) document.getElementById('statTotal').textContent = torrentsData.length;
   if (document.getElementById('statSeeding')) document.getElementById('statSeeding').textContent = torrentsData.filter(x=>x.state==='seeding').length;
   if (document.getElementById('statDownloading')) document.getElementById('statDownloading').textContent = torrentsData.filter(x=>x.state==='downloading').length;
+  updateBulkBar();
+  const sa = document.getElementById('selAll');
+  if (sa) {
+    const ids = list.map(x => x.id);
+    const onSel = ids.filter(id => sel.has(id)).length;
+    sa.checked = ids.length > 0 && onSel === ids.length;
+    sa.indeterminate = onSel > 0 && onSel < ids.length;
+  }
 }
 
 function refreshCatFilter() {
@@ -1101,6 +1179,100 @@ async function act(id, action) {
   catch (e) { alert(e.message); }
 }
 
+// ---------- bulk selection ----------
+function updateBulkBar() {
+  const bar = document.getElementById('bulkBar');
+  if (!bar) return;
+  const n = sel.size;
+  bar.classList.toggle('hidden', n === 0);
+  const cnt = document.getElementById('bulkCount');
+  if (cnt) cnt.textContent = `${n} ${t('selected')}`;
+}
+
+function toggleSel(id, checked) {
+  if (checked) sel.add(id); else sel.delete(id);
+  updateBulkBar();
+}
+
+function toggleSelAll(checked) {
+  applyFilters().forEach(x => { if (checked) sel.add(x.id); else sel.delete(x.id); });
+  updateBulkBar();
+  renderList();
+}
+
+async function bulk(action) {
+  const ids = [...sel];
+  if (!ids.length) return;
+  if (action === 'delete' && !confirm(`${t('deleting')} ${ids.length} ${t('selected')}?`)) return;
+  try {
+    const r = await api('/bulk', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action, ids}) });
+    const fail = (r.failed || []).length;
+    sel.clear();
+    updateBulkBar();
+    refreshTorrentsFromAPI();
+    if (fail) alert(`${ids.length - fail} ${t('adding')}, ${fail} ${t('errors')}`);
+  } catch (e) { alert(e.message); }
+}
+
+// ---------- rate limit (detail) ----------
+async function setTorrentLimit(id) {
+  const inp = document.getElementById('dllimit-' + id);
+  if (!inp) return;
+  const v = parseInt(inp.value) || 0;
+  try {
+    await api(`/torrents/${id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({download_limit: v}) });
+    if (detailId === id) refreshDetail(id); else refreshTorrentsFromAPI();
+  } catch (e) { alert(e.message); }
+}
+
+// ---------- notifications ----------
+function toast(kind, id, name) {
+  const box = document.getElementById('toasts');
+  if (!box) return;
+  const label = kind === 'complete' ? t('noticeComplete') : (kind === 'metadata' ? t('noticeMetadata') : (kind.charAt(0).toUpperCase() + kind.slice(1)));
+  const ico = kind === 'complete' ? '✅' : '🧲';
+  const el = document.createElement('div');
+  el.className = 'toast card rounded-xl p-3 flex items-start gap-3';
+  el.setAttribute('role', 'status');
+  el.onclick = () => { el.remove(); if (id) openDetail(id); };
+  el.innerHTML = `
+    <span class="text-base leading-none mt-0.5 shrink-0">${ico}</span>
+    <span class="min-w-0 flex-1">
+      <span class="block text-sm font-semibold truncate" style="color:var(--txt)">${esc(label)}</span>
+      <span class="block text-xs tx2 truncate mt-0.5">${esc(name || id || '')}</span>
+    </span>
+    <button class="tx3 shrink-0" onclick="event.stopPropagation();this.closest('.toast').remove()">✕</button>`;
+  box.appendChild(el);
+  setTimeout(() => { if (el.parentNode) el.remove(); }, 9000);
+}
+
+// ---------- guide ----------
+function guideContent(l) {
+  const tr = l === 'tr';
+  const H = (t0, b) => `<div class="card rounded-2xl p-4"><div class="flex items-center gap-2 mb-1.5"><span class="text-base">${t0[0]}</span><h3 class="font-semibold text-sm" style="color:var(--txt)">${t0[1]}</h3></div><div class="text-[13px] leading-relaxed" style="color:var(--txt2)">${b}</div></div>`;
+  if (tr) return [
+    H(['📥','Torrent Ekleme'], `Magnet linki(lerini) <b>satır satır</b> yapıştırın, bir <b>.torrent URL</b> si verin ya da <b>.torrent dosyası</b> yükleyin. İsteğe bağlı hedef klasör girin — Kategoriler sayfasından iç içe klasörler açılır (ör. <code class="font-mono">unix/linux/debian</code>).`),
+    H(['🧲', "Magnet'ler nasıl çalışır? (BEP 9 + BEP 10)"], `Bir magnet yalnızca SHA-1 info hash'ini taşır. Digitalis DHT ve tracker'lardan peer bulur, sonra peer'larla <b>ut_metadata</b> paketini takas ederek meta veriyi indirir. Peer'lar bulunana kadar parçalar <b>0/0</b> görünür — bu normaldir, genelde saniyeler sürer.`),
+    H(['⚙️','Ayarlar'], `Kayıt dizini; küresel yükleme/indirme limitleri; günlük yükleme üst sınırı (dolunca gün sonuna kadar duraklar, gece yarısı sıfırlanır). <b>Torrent başına indirme limiti</b> detay panelinden ayarlanır.`),
+    H(['🔁','Kalıcılık'], `Torrentler kayıt altına alınır ve <b>restart sonrası otomatik geri yüklenir</b> (config dizininde torrents.json).`),
+    H(['📡','Keşif: DHT + PEX + tracker'], `DHT (dağıtık hash tablosu) düğümü, bağlı peer'lar arası <b>PEX</b> (peer değişimi) ve tracker anounce'ları — hepsi varsayılan olarak açık.`),
+    H(['🧩','İstemci hakkında'], `Tek <b>Go</b> ikilisi — Docker yok, konteyner yok. Web arayüzü :1919, peer portu :51413. Parça haritası, dosya listesi, canlı WebSocket grafiği ve çok dilli arayüz dahil.`)
+  ].join('');
+  return [
+    H(['📥','Adding torrents'], `Paste <b>magnet link(s)</b> line by line, a <b>.torrent URL</b>, or upload a <b>.torrent file</b>. Optionally pick a target folder — create nested folders from the Categories page (e.g. <code class="font-mono">unix/linux/debian</code>).`),
+    H(['🧲','How magnets work (BEP 9 + BEP 10)'], `A magnet carries only the SHA-1 info hash. Digitalis finds peers via <b>DHT</b> and trackers, then <b>ut_metadata</b> with connected peers downloads the actual metadata. Until peers arrive, pieces show <b>0/0</b> — that's normal and usually lasts seconds.`),
+    H(['⚙️','Settings'], `Save directory; global upload/download limits; daily upload cap (pauses until midnight when reached, then resets). <b>Per-torrent download limit</b> can be set from the detail panel.`),
+    H(['🔁','Persistence'], `Torrents are recorded and <b>restored automatically after a restart</b> (torrents.json in the config dir).`),
+    H(['📡','Discovery: DHT + PEX + trackers'], `A DHT (distributed hash table) node, <b>PEX</b> (peer exchange) between connected peers, and tracker announces — all enabled by default.`),
+    H(['🧩','About the client'], `A single <b>Go</b> binary — no Docker, no containers. Web UI on :1919, peer port on :51413. Includes piece map, file list, live WebSocket chart, and a multi-language UI.`)
+  ].join('');
+}
+
+function renderGuide() {
+  const body = document.getElementById('guideBody');
+  if (body && (guideLang !== lang || !body.innerHTML.trim())) { body.innerHTML = guideContent(lang); guideLang = lang; }
+}
+
 // ---------- detail drawer ----------
 async function openDetail(id) {
   detailId = id;
@@ -1194,6 +1366,12 @@ function renderDetail(d) {
       <span class="text-xs uppercase tracking-widest tx2">${t('move')}</span>
       <select id="mv-${d.id}" class="inp rounded-lg px-3 py-1.5 text-xs focus:outline-none">${moveOptions(d)}</select>
       <button onclick="moveTorrent('${d.id}')" class="px-3 py-1.5 rounded-lg btn-primary text-xs font-medium transition">${t('move')}</button>
+    </div>
+
+    <div class="flex items-center gap-2 mb-4">
+      <span class="text-xs uppercase tracking-widest tx2 shrink-0">${t('downLimit')}</span>
+      <input id="dllimit-${d.id}" type="number" min="0" step="1" value="${d.download_limit || 0}" class="inp rounded-lg px-3 py-1.5 text-xs font-mono focus:outline-none flex-1" style="color:var(--txt)">
+      <button onclick="setTorrentLimit('${d.id}')" class="px-3 py-1.5 rounded-lg btn-primary text-xs font-medium transition" style="color:var(--btn-txt)">${t('save')}</button>
     </div>
 
     <div class="flex gap-2">
@@ -1351,6 +1529,11 @@ function connectWS() {
   ws.onmessage = (ev) => {
     try {
       const m = JSON.parse(ev.data);
+      if (m.type === 'notice') {
+        toast(m.kind || 'info', m.id, m.name);
+        if (m.kind === 'complete' || m.kind === 'metadata') refreshTorrentsFromAPI();
+        return;
+      }
       if (m.type !== 'tick') return;
       livePush(m.up || 0, m.down || 0);
       if (m.torrents && m.torrents.length !== undefined) {

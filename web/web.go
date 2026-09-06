@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/alplix/digitalis/metainfo"
@@ -25,12 +26,33 @@ type Server struct {
 	engine  *torrente.Engine
 	saveDir string
 	hub     *wsHub
+
+	cfgDir    string
+	recordsMu sync.Mutex
+	records   []torrentRecord
 }
 
-// NewServer creates a web server around an engine.
-func NewServer(engine *torrente.Engine, saveDir string) *Server {
-	s := &Server{engine: engine, saveDir: saveDir, hub: newWSHub()}
+// NewServer creates a web server around an engine. cfgDir is the persistent
+// config directory used to restore torrents across restarts ("" disables).
+func NewServer(engine *torrente.Engine, saveDir, cfgDir string) *Server {
+	s := &Server{
+		engine:  engine,
+		saveDir: saveDir,
+		hub:     newWSHub(),
+		cfgDir:  cfgDir,
+	}
 	go s.broadcastLoop()
+
+	// Streaming notifications (download complete, magnet metadata resolved).
+	engine.OnNotice = func(kind, id, name string) {
+		s.broadcastNotice(kind, id, name)
+	}
+
+	// Restore persisted torrents.
+	if cfgDir != "" {
+		s.records = loadRecords(cfgDir)
+		s.restoreRecords(s.records)
+	}
 	return s
 }
 
@@ -63,6 +85,7 @@ type torrentView struct {
 	AddedAt        time.Time     `json:"added_at"`
 	Comment        string        `json:"comment,omitempty"`
 	CreatedBy      string        `json:"created_by,omitempty"`
+	DownloadLimit  int64         `json:"download_limit"`
 }
 
 type trackerView struct {
@@ -122,6 +145,7 @@ func (s *Server) snapshot(t *torrente.Torrent) torrentView {
 		AddedAt:        t.AddedAt,
 		Comment:        t.MetaInfoComment(),
 		CreatedBy:      t.MetaInfoCreatedBy(),
+		DownloadLimit:  s.engine.TorrentDownloadLimit(t.ID),
 	}
 	return v
 }
@@ -145,10 +169,13 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /api/torrents", s.listTorrents)
 	mux.HandleFunc("GET /api/torrents/{id}", s.getTorrentDetail)
 	mux.HandleFunc("POST /api/torrents", s.addTorrent)
+	mux.HandleFunc("PATCH /api/torrents/{id}", s.patchTorrent)
 	mux.HandleFunc("POST /api/torrents/{id}/pause", s.pause)
 	mux.HandleFunc("POST /api/torrents/{id}/resume", s.resume)
 	mux.HandleFunc("POST /api/torrents/{id}/delete", s.delete)
 	mux.HandleFunc("POST /api/torrents/{id}/move", s.moveTorrent)
+	mux.HandleFunc("POST /api/bulk", s.bulkOp)
+	mux.HandleFunc("GET /api/files", s.listFiles)
 
 	mux.HandleFunc("GET /ws", s.wsHandler)
 
@@ -206,7 +233,7 @@ func (s *Server) settingsView() settingsView {
 		DownloadLimit:    v.DownloadLimit,
 		DailyUploadLimit: v.DailyUploadLimit,
 		PeerPort:         s.engine.Port(),
-		Version:          "digitalis 0.7",
+		Version:          "digitalis 0.9",
 	}
 }
 
@@ -408,6 +435,14 @@ func (s *Server) addTorrent(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, s.snapshot(t))
 	}
 
+	kind := "url"
+	if strings.HasPrefix(src, "magnet:") {
+		kind = "magnet"
+	}
+	persist := func(t *torrente.Torrent) {
+		s.persistRecord(torrentRecord{Kind: kind, ID: t.ID, Source: src, Category: category})
+	}
+
 	if strings.HasPrefix(src, "magnet:") {
 		m, err := metainfo.ParseMagnet(src)
 		if err != nil {
@@ -424,6 +459,7 @@ func (s *Server) addTorrent(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		t.SetCategory(category)
+		persist(t)
 		addResp(t)
 		return
 	}
@@ -457,6 +493,7 @@ func (s *Server) addTorrent(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		t.SetCategory(category)
+		persist(t)
 		addResp(t)
 		return
 	}
@@ -469,6 +506,7 @@ func (s *Server) addTorrent(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		t.SetCategory(category)
+		persist(t)
 		addResp(t)
 		return
 	}
@@ -500,6 +538,7 @@ func (s *Server) delete(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusNotFound, map[string]string{"error": err.Error()})
 		return
 	}
+	s.dropRecord(id)
 	writeJSON(w, http.StatusOK, map[string]string{"ok": "deleted"})
 }
 
@@ -529,6 +568,20 @@ func (s *Server) moveTorrent(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusNotFound, map[string]string{"error": "torrent not found"})
 		return
 	}
+	s.recordsMu.Lock()
+	for i := range s.records {
+		if s.records[i].ID == id {
+			s.records[i].Category = category
+			recs := append([]torrentRecord(nil), s.records...)
+			s.recordsMu.Unlock()
+			if s.cfgDir != "" {
+				_ = saveRecords(s.cfgDir, recs)
+			}
+			writeJSON(w, http.StatusOK, s.snapshot(t))
+			return
+		}
+	}
+	s.recordsMu.Unlock()
 	writeJSON(w, http.StatusOK, s.snapshot(t))
 }
 
@@ -648,4 +701,130 @@ func (s *Server) deleteCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, s.categoryTree())
+}
+
+// patchRequest carries the per-torrent settings accepted by PATCH.
+type patchRequest struct {
+	DownloadLimit *int64 `json:"download_limit"`
+}
+
+func (s *Server) patchTorrent(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	var req patchRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
+		return
+	}
+	if _, ok := s.engine.GetTorrent(id); !ok {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "torrent not found"})
+		return
+	}
+	if req.DownloadLimit != nil {
+		if err := s.engine.SetTorrentDownloadLimit(id, *req.DownloadLimit); err != nil {
+			writeJSON(w, http.StatusConflict, map[string]string{"error": err.Error()})
+			return
+		}
+	}
+	t, _ := s.engine.GetTorrent(id)
+	writeJSON(w, http.StatusOK, s.snapshot(t))
+}
+
+// bulkRequest runs an operation across many torrents at once.
+type bulkRequest struct {
+	Action string   `json:"action"` // pause | resume | delete
+	IDs    []string `json:"ids"`
+}
+
+func (s *Server) bulkOp(w http.ResponseWriter, r *http.Request) {
+	var req bulkRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
+		return
+	}
+	ok := 0
+	var failed []string
+	for _, id := range req.IDs {
+		var err error
+		switch req.Action {
+		case "pause":
+			err = s.engine.Pause(id)
+		case "resume":
+			err = s.engine.Resume(id)
+		case "delete":
+			err = s.engine.RemoveTorrent(id)
+			if err == nil {
+				s.dropRecord(id)
+			}
+		default:
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "unknown action"})
+			return
+		}
+		if err != nil {
+			failed = append(failed, id)
+		} else {
+			ok++
+		}
+	}
+	writeJSON(w, http.StatusOK, map[string]interface{}{"ok": ok, "failed": failed})
+}
+
+// fileEntry is one entry of the file browser.
+type fileEntry struct {
+	Name  string `json:"name"`
+	Path  string `json:"path"`
+	IsDir bool   `json:"is_dir"`
+	Size  int64  `json:"size"`
+}
+
+func (s *Server) listFiles(w http.ResponseWriter, r *http.Request) {
+	rel := strings.TrimSpace(r.URL.Query().Get("path"))
+	if rel != "" {
+		clean := filepath.ToSlash(filepath.Clean(filepath.FromSlash(rel)))
+		if clean == ".." || strings.HasPrefix(clean, "../") || filepath.IsAbs(clean) {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid path"})
+			return
+		}
+		rel = clean
+	}
+	dir := filepath.Join(s.saveDir, filepath.FromSlash(rel))
+	full, err := filepath.Abs(dir)
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		return
+	}
+	base, err := filepath.Abs(s.saveDir)
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		return
+	}
+	// Guard against traversal outside the base save dir.
+	if full != base && !strings.HasPrefix(full, base+string(os.PathSeparator)) {
+		writeJSON(w, http.StatusForbidden, map[string]string{"error": "outside save dir"})
+		return
+	}
+	entries, err := os.ReadDir(full)
+	if err != nil {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": err.Error()})
+		return
+	}
+	out := make([]fileEntry, 0, len(entries))
+	for _, e := range entries {
+		info, _ := e.Info()
+		var size int64
+		if info != nil {
+			size = info.Size()
+		}
+		p := e.Name()
+		if rel != "" {
+			p = rel + "/" + e.Name()
+		}
+		out = append(out, fileEntry{Name: e.Name(), Path: p, IsDir: e.IsDir(), Size: size})
+	}
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].IsDir != out[j].IsDir {
+			return out[i].IsDir
+		}
+		return out[i].Name < out[j].Name
+	})
+	writeJSON(w, http.StatusOK, out)
 }

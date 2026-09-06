@@ -24,6 +24,7 @@ const (
 	MsgPiece         = 7
 	MsgCancel        = 8
 	MsgPort          = 9
+	MsgExtended      = 20
 
 	MessageIDExtended = 20
 	MessageIDEHD      = 21
@@ -31,10 +32,15 @@ const (
 	BlockSize = 16384 // 16 KiB
 )
 
+// BEP-10 extension protocol reserved-bit (bit 20, byte 5 bit 0x10).
+const ExtensionBit byte = 0x10
+
 // Message is a decapsulated peer wire message.
 type Message struct {
 	ID      byte
 	Payload []byte
+	// ExtendedID is the BEP-10 extension message id (valid when ID == MsgExtended).
+	ExtendedID byte
 	// For Request / Piece
 	Index  uint32
 	Begin  uint32
@@ -70,6 +76,7 @@ func NewConn(c net.Conn, infoHash [20]byte, peerID [20]byte) *Conn {
 		infoHash: infoHash,
 		peerID:   peerID,
 		readTimeout: 60 * time.Second,
+		extensionEnabled: true,
 	}
 }
 
@@ -92,7 +99,11 @@ func (c *Conn) HandshakeOutgoing() error {
 	buf := make([]byte, 0, 68)
 	buf = append(buf, byte(len(ProtocolString)))
 	buf = append(buf, ProtocolString...)
-	buf = append(buf, make([]byte, 8)...) // reserved bytes (all zero)
+	reserved := make([]byte, 8)
+	if c.extensionEnabled {
+		reserved[5] |= ExtensionBit
+	}
+	buf = append(buf, reserved...)
 	buf = append(buf, c.infoHash[:]...)
 	buf = append(buf, c.peerID[:]...)
 	if _, err := c.w.Write(buf); err != nil {
@@ -123,7 +134,8 @@ func (c *Conn) ReadHandshake() (*Handshake, error) {
 	if _, err := io.ReadFull(c.r, reserved); err != nil {
 		return nil, err
 	}
-	// detect extension protocol (bit 20) - we do not implement it here
+	// BEP-10: bit 20 (byte 5, 0x10) announces extension protocol support.
+	c.extensionEnabled = reserved[5]&ExtensionBit != 0
 	infoHash := make([]byte, 20)
 	if _, err := io.ReadFull(c.r, infoHash); err != nil {
 		return nil, err
@@ -205,6 +217,11 @@ func (c *Conn) ReadMessage() (*Message, error) {
 			msg.Begin = binary.BigEndian.Uint32(msg.Payload[4:8])
 			msg.Payload = msg.Payload[8:]
 		}
+	case MsgExtended:
+		if len(msg.Payload) >= 1 {
+			msg.ExtendedID = msg.Payload[0]
+			msg.Payload = msg.Payload[1:]
+		}
 	}
 	return msg, nil
 }
@@ -281,6 +298,20 @@ func (c *Conn) SendKeepAlive() error {
 	}
 	return c.w.Flush()
 }
+
+// SendExtended sends a BEP-10 extended message to the peer.
+func (c *Conn) SendExtended(extID byte, body []byte) error {
+	payload := make([]byte, 0, len(body)+1)
+	payload = append(payload, extID)
+	payload = append(payload, body...)
+	return c.writeMessage(MsgExtended, payload)
+}
+
+// SupportsExtension reports whether the handshake negotiated BEP-10.
+func (c *Conn) SupportsExtension() bool { return c.extensionEnabled }
+
+// EnableExtension opts into sending the BEP-10 reserved bit in our handshake.
+func (c *Conn) EnableExtension() { c.extensionEnabled = true }
 
 // BitfieldFromIndexes builds a bitfield from a sorted list of piece indexes.
 func BitfieldFromIndexes(count int, have map[int]bool) []byte {

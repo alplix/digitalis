@@ -29,6 +29,11 @@ type peerSession struct {
 	bytesUp   int64
 	seededPeer bool // we have uploaded at least one block to this peer
 
+	// BEP-10 extension state
+	peerMetaID byte    // peer's ut_metadata message id (0 = unsupported)
+	peerPexID  byte    // peer's ut_pex message id (0 = unsupported)
+	metaReqAt  map[int]time.Time // metadata pieces we asked for, by requested time
+
 	stop chan struct{}
 }
 
@@ -41,6 +46,7 @@ func newPeerSession(e *Engine, t *Torrent, c *peerwire.Conn, addr string) *peerS
 		amChoked:     true,
 		currentPiece: -1,
 		outstanding:  make(map[int]struct{}),
+		metaReqAt:    make(map[int]time.Time),
 		stop:         make(chan struct{}),
 	}
 }
@@ -95,6 +101,7 @@ func (e *Engine) acceptLoop(ln net.Listener) {
 func (e *Engine) handleIncoming(conn net.Conn) {
 	conn.SetDeadline(time.Now().Add(30 * time.Second))
 	pc := peerwire.NewConn(conn, [20]byte{}, e.peerID)
+	e.markSelf(conn.LocalAddr().String())
 
 	// Read the remote handshake (they send first when connecting to us).
 	hs, err := pc.ReadHandshake()
@@ -136,6 +143,7 @@ func (e *Engine) connectToPeer(t *Torrent, ip string, port int) {
 		return
 	}
 	conn.SetDeadline(time.Now().Add(30 * time.Second))
+	e.markSelf(conn.LocalAddr().String())
 
 	var ih [20]byte
 	if _, err := hex.Decode(ih[:], []byte(t.InfoHash)); err != nil {
@@ -192,43 +200,59 @@ func (e *Engine) unregisterSession(s *peerSession) {
 // run is the message loop for a session.
 func (s *peerSession) run() {
 	defer func() {
+		if r := recover(); r != nil {
+			s.e.Logf("session panic (%s): %v", s.addr, r)
+		}
 		e := s.e
 		e.unregisterSession(s)
 		s.conn.Close()
 	}()
 
-	// Magnets without fetched metadata have no storage; there is nothing to
-	// download or seed yet, so hold the connection without a message loop.
-	if s.t.storage == nil {
-		return
-	}
-
-	s.peerBitfield = newBitfield(s.t.storage.PieceCount())
-
-	// Announce ourselves as interested and unchoke the peer (we share freely).
-	if err := s.conn.SendInterested(); err != nil {
-		return
-	}
-	if err := s.conn.SendUnchoke(); err != nil {
-		return
-	}
-
-	// Send our bitfield so peers know what we have (important for seeding).
-	bf := s.t.storage.Bitfield()
-	if len(bf) > 0 {
-		if err := s.conn.SendBitfield(bf); err != nil {
+	// BEP-10: announce our extensions right after the handshake, before
+	// exchanging any other messages.
+	if s.conn.SupportsExtension() {
+		if err := s.sendExtendedHandshake(); err != nil {
 			return
 		}
 	}
 
+	// Magnets start with no storage; we hold the loop open, exchange the
+	// extended handshake, fetch metadata, and only then sync for download.
+	initialSync := s.t.storage != nil
+	if initialSync {
+		s.doInitialSync()
+	}
+
 	keepAlive := time.NewTimer(60 * time.Second)
 	defer keepAlive.Stop()
+
+	lastMetaReq := time.Now()
+	lastPex := time.Now()
 
 	for {
 		select {
 		case <-s.stop:
 			return
 		default:
+		}
+
+		// If metadata just arrived via another session or this one, do the
+		// initial sync now so downloads can start on this connection.
+		if !initialSync && s.t.storage != nil {
+			initialSync = true
+			s.doInitialSync()
+		}
+
+		// Magnet: keep asking peers for metadata chunks over time.
+		if !initialSync && s.peerMetaID != 0 && time.Since(lastMetaReq) > 20*time.Second {
+			lastMetaReq = time.Now()
+			s.requestMetaPieces()
+		}
+
+		// Seeder: periodically advertise peers via PEX.
+		if s.peerPexID != 0 && s.t.storage != nil && time.Since(lastPex) > 60*time.Second {
+			lastPex = time.Now()
+			s.sendPexMessage()
 		}
 
 		s.conn.SetDeadline(time.Now().Add(120 * time.Second))
@@ -252,6 +276,9 @@ func (s *peerSession) run() {
 			s.peerInterested = false
 
 		case peerwire.MsgHave:
+			if s.t.storage == nil || s.peerBitfield == nil {
+				break
+			}
 			if msg.Payload != nil && len(msg.Payload) >= 4 {
 				idx := int(msg.Payload[0])<<24 | int(msg.Payload[1])<<16 | int(msg.Payload[2])<<8 | int(msg.Payload[3])
 				s.peerBitfield.Set(idx)
@@ -262,6 +289,9 @@ func (s *peerSession) run() {
 			}
 
 		case peerwire.MsgBitfield:
+			if s.t.storage == nil || s.peerBitfield == nil {
+				break
+			}
 			s.peerBitfield.setFrom(msg.Payload)
 			s.t.picker.peerBitfield(s, msg.Payload)
 			if s.currentPiece == -1 {
@@ -278,10 +308,29 @@ func (s *peerSession) run() {
 			// drop the outstanding block tracking for it
 			delete(s.outstanding, int(msg.Begin))
 			s.pendingBlocks--
+
+		case peerwire.MsgExtended:
+			s.handleExtended(msg)
 		}
 
 		// keep-alive timer reset
 		keepAlive.Reset(60 * time.Second)
+	}
+}
+
+// doInitialSync performs the one-time synchronization a session needs once it
+// has usable storage: interested, unchoke and our bitfield.
+func (s *peerSession) doInitialSync() {
+	s.peerBitfield = newBitfield(s.t.storage.PieceCount())
+	if err := s.conn.SendInterested(); err != nil {
+		return
+	}
+	if err := s.conn.SendUnchoke(); err != nil {
+		return
+	}
+	bf := s.t.storage.Bitfield()
+	if len(bf) > 0 {
+		_ = s.conn.SendBitfield(bf)
 	}
 }
 
@@ -290,7 +339,7 @@ const requestWindow = 16 // blocks in flight per peer (16 * 16KiB = 256 KiB)
 // pumpRequests keeps a fixed-size window of requests flowing. It should be
 // called whenever we are unchoked or learned about new availability.
 func (s *peerSession) pumpRequests() {
-	if s.amChoked {
+	if s.amChoked || s.t.storage == nil || s.peerBitfield == nil {
 		return
 	}
 	for s.pendingBlocks < requestWindow {
@@ -320,6 +369,18 @@ func (s *peerSession) pumpRequests() {
 		length := peerwire.BlockSize
 		if begin+length > pieceLen {
 			length = pieceLen - begin
+		}
+
+		// download rate limiting: wait for budget before each request.
+		if e := s.e; e.downloadLimiter != nil {
+			e.downloadLimiter.wait(length)
+		}
+		t := s.t
+		t.mu.Lock()
+		dl := t.dlRate
+		t.mu.Unlock()
+		if dl != nil {
+			dl.wait(length)
 		}
 
 		if err := s.conn.SendRequest(uint32(s.currentPiece), uint32(begin), uint32(length)); err != nil {
@@ -379,9 +440,13 @@ func (s *peerSession) handlePiece(msg *peerwire.Message) {
 		done := s.t.StoredBytes()
 		if done >= s.t.TotalWanted && s.t.TotalWanted > 0 && s.t.State == StateDownloading {
 			s.t.State = StateSeeding
+			name := s.t.Name
+			id := s.t.ID
+			total := s.t.TotalWanted
 			s.t.mu.Unlock()
 			go s.e.Announce(s.t, "completed")
-			s.e.Logf("%q seeding complete (%d bytes)", s.t.Name, s.t.TotalWanted)
+			s.e.notify(NoticeComplete, id, name)
+			s.e.Logf("%q seeding complete (%d bytes)", name, total)
 		} else {
 			s.t.mu.Unlock()
 		}
@@ -402,6 +467,9 @@ func (s *peerSession) abortPiece() {
 
 // handleRequest serves a block request (we are seeding or sharing).
 func (s *peerSession) handleRequest(msg *peerwire.Message) {
+	if s.t.storage == nil {
+		return
+	}
 	// daily upload limit reached: refuse new uploads until the day resets.
 	if s.e.UploadBlocked() {
 		return
