@@ -169,14 +169,14 @@ func (s *Server) rssPollLoop() {
 				if now.Sub(f.LastPoll) < time.Duration(iv)*time.Minute {
 					continue
 				}
-				s.pollFeed(f, true)
+				s.pollFeed(f)
 			}
 		}
 	}()
 }
 
 // pollFeed fetches a feed and adds torrents for new matching items.
-func (s *Server) pollFeed(f *rssFeed, background bool) error {
+func (s *Server) pollFeed(f *rssFeed) error {
 	client := &http.Client{Timeout: 45 * time.Second}
 	resp, err := client.Get(f.URL)
 	if err != nil {
@@ -517,7 +517,7 @@ func (s *Server) createRSS(w http.ResponseWriter, r *http.Request) {
 	// kick off an immediate poll in the background
 	if enabled {
 		fc := f
-		go s.pollFeed(&fc, true)
+		go s.pollFeed(&fc)
 	}
 	writeJSON(w, http.StatusOK, rssView(&f))
 }
@@ -552,7 +552,7 @@ func (s *Server) pollRSS(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusNotFound, map[string]string{"error": "feed not found"})
 		return
 	}
-	if err := s.pollFeed(f, false); err != nil {
+	if err := s.pollFeed(f); err != nil {
 		writeJSON(w, http.StatusBadGateway, map[string]string{"error": err.Error()})
 		return
 	}

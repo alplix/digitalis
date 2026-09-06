@@ -1496,6 +1496,18 @@ async function refreshDetail(id) {
   }
 }
 
+async function setRatio(id) {
+  const el = document.getElementById('rr-' + id);
+  if (!el) return;
+  let v = parseFloat(el.value.trim());
+  if (isNaN(v) || v < 0) v = 0;
+  try {
+    await api('/torrents/' + id, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ratio_target: v }) });
+    refreshDetail(id);
+    refreshTorrentsFromAPI();
+  } catch (e) { alert(e.message); }
+}
+
 function renderPieceMap(pieces) {
   if (!pieces || !pieces.length) return `<span class="text-xs tx3">${esc(t('noPieces'))}</span>`;
   return `<div class="pgrid">` + pieces.map(p =>
@@ -1590,7 +1602,7 @@ function renderDetail(d) {
       <div class="rounded-xl p-3" style="background:var(--panel2);border:1px solid var(--border)"><div class="tx2">${t('vSize')}</div><b class="font-mono">${fmtBytes(d.size)}</b></div>
       <div class="rounded-xl p-3" style="background:var(--panel2);border:1px solid var(--border)"><div class="tx2">${t('download')}</div><b class="font-mono" style="color:var(--down)">${fmtSpeed(d.download_speed)}</b></div>
       <div class="rounded-xl p-3" style="background:var(--panel2);border:1px solid var(--border)"><div class="tx2">${t('upload')}</div><b class="font-mono" style="color:var(--accent2)">${fmtSpeed(d.upload_speed)}</b></div>
-      <div class="rounded-xl p-3" style="background:var(--panel2);border:1px solid var(--border)"><div class="tx2">${t('ratio')}</div><b class="font-mono">${fmtRatio(d.ratio)}</b></div>
+      <div class="rounded-xl p-3" style="background:var(--panel2);border:1px solid var(--border)"><div class="tx2">${t('ratio')}</div><b class="font-mono">${fmtRatio(d.ratio)}</b><div class="flex items-center gap-1 mt-1"><input id="rr-${d.id}" type="number" min="0" step="0.1" value="${d.ratio_target>0?d.ratio_target:''}" placeholder="0" class="w-16 rounded-md px-1 py-0.5 inp text-[11px] font-mono focus:outline-none" title="${esc(t('ratioTarget'))}"><button onclick="setRatio('${d.id}')" class="px-1.5 py-0.5 rounded-md inp text-[11px] hover:border-[var(--border2)] transition" title="${esc(t('save'))}">✓</button></div></div>
       <div class="rounded-xl p-3" style="background:var(--panel2);border:1px solid var(--border)"><div class="tx2">${t('health')}</div><b class="font-mono">${health} <span class="tx3">${t('seedersLechers')}</span></b></div>
       <div class="rounded-xl p-3" style="background:var(--panel2);border:1px solid var(--border)"><div class="tx2">${t('peers')}</div><b class="font-mono">${d.peers_connected} <span class="tx3">${t('activePeers')}</span></b></div>
       <div class="rounded-xl p-3 col-span-2" style="background:var(--panel2);border:1px solid var(--border)"><div class="tx2">${t('pieces')}</div><b class="font-mono">${d.pieces_have}/${d.pieces_total}</b> <span class="tx3">${t('bytesDone')}</span></div>
