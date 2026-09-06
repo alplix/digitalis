@@ -106,6 +106,9 @@ func (e *Engine) upgradeMagnet(t *Torrent, rawInfo []byte) error {
 	if done >= t.TotalWanted && t.TotalWanted > 0 {
 		t.State = StateSeeding
 	}
+	if t.Category == "" {
+		t.Category = Categorize(t.Name, mi.Info.Files)
+	}
 	t.mu.Unlock()
 
 	go e.Announce(t, "started")
@@ -144,4 +147,30 @@ func (e *Engine) TorrentDownloadLimit(id string) int64 {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	return t.DownloadLimit
+}
+
+// SetTorrentRatioTarget sets a per-torrent ratio goal (0 = use global setting).
+func (e *Engine) SetTorrentRatioTarget(id string, ratio float64) error {
+	t, ok := e.GetTorrent(id)
+	if !ok {
+		return fmt.Errorf("torrent not found")
+	}
+	if ratio < 0 {
+		ratio = 0
+	}
+	t.mu.Lock()
+	t.RatioTarget = ratio
+	t.mu.Unlock()
+	return nil
+}
+
+// TorrentRatioTarget returns the per-torrent ratio goal (0 = use global).
+func (e *Engine) TorrentRatioTarget(id string) float64 {
+	t, ok := e.GetTorrent(id)
+	if !ok {
+		return 0
+	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.RatioTarget
 }

@@ -13,6 +13,20 @@ type Settings struct {
 	UploadLimit      int64  `json:"upload_limit"`
 	DownloadLimit    int64  `json:"download_limit"`
 	DailyUploadLimit int64  `json:"daily_upload_limit"`
+
+	// Night mode: during [NightStart,NightEnd) the transfer rate is capped at
+	// NightUpload/NightDownload (0 = keep the daytime limit unchanged).
+	NightMode     bool   `json:"night_mode"`
+	NightStart    string `json:"night_start"`   // "HH:MM"
+	NightEnd      string `json:"night_end"`     // "HH:MM", may wrap midnight
+	NightUpload   int64  `json:"night_upload"`  // bytes/sec during night
+	NightDownload int64  `json:"night_download"`
+
+	// Ratio target: once a fully-downloaded torrent's ratio reaches the target
+	// it is stopped or removed. 0 disables. Per-torrent overrides win.
+	RatioTarget float64 `json:"ratio_target"`
+	RatioStop   bool    `json:"ratio_stop"`
+	RatioRemove bool    `json:"ratio_remove"`
 }
 
 // DefaultSettings returns sane defaults.
@@ -83,6 +97,14 @@ func (e *Engine) UpdateSettings(patch Settings) (Settings, error) {
 	cur.UploadLimit = patch.UploadLimit
 	cur.DownloadLimit = patch.DownloadLimit
 	cur.DailyUploadLimit = patch.DailyUploadLimit
+	cur.NightMode = patch.NightMode
+	cur.NightStart = patch.NightStart
+	cur.NightEnd = patch.NightEnd
+	cur.NightUpload = patch.NightUpload
+	cur.NightDownload = patch.NightDownload
+	cur.RatioTarget = patch.RatioTarget
+	cur.RatioStop = patch.RatioStop
+	cur.RatioRemove = patch.RatioRemove
 	e.settings = cur
 	e.mu.Unlock()
 

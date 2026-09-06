@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Digitalis</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/logo.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#0e1712">
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
   :root {
@@ -154,6 +158,15 @@
 
   .bulk-btn { padding: .3rem .7rem; border-radius: .5rem; font-size: .72rem; font-weight: 500; transition: filter .15s ease; }
   .bulk-btn:hover { filter: brightness(1.1); }
+
+  .switch { position: relative; display: inline-block; width: 42px; height: 23px; border-radius: 999px; background: var(--panel2); border: 1px solid var(--border); cursor: pointer; transition: background .2s ease; flex-shrink: 0; }
+  .switch .knob { position: absolute; top: 2px; left: 2px; width: 17px; height: 17px; border-radius: 50%; background: #64748b; transition: left .2s ease, background .2s ease; }
+  .switch.on { background: rgba(163, 230, 53, .25); border-color: var(--border2); }
+  .switch.on .knob { left: 21px; background: #a3e635; }
+
+  .playbtn { padding: .15rem .6rem; border-radius: .4rem; font-size: .7rem; font-weight: 600; color: var(--accent); background: var(--panel2); border: 1px solid var(--border2); cursor: pointer; transition: filter .15s ease; }
+  .playbtn:hover { filter: brightness(1.15); }
+  #playerVideo { width: 100%; max-height: 70vh; background: #000; border-radius: .75rem; outline: none; }
 </style>
 </head>
 <body class="font-sans">
@@ -165,22 +178,41 @@
     <div class="flex items-center gap-2.5 px-1 md:px-2 mb-4 mt-1" onclick="show('dashboard')" style="cursor:pointer">
       <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#14532d] to-[#052e16] flex items-center justify-center shadow-lg shadow-black/30 shrink-0">
         <svg class="logo-bloom w-6 h-6" viewBox="0 0 24 24" fill="none">
-          <path d="M12 21v-8" stroke="#34d399" stroke-width="1.3" stroke-linecap="round" opacity="0.9"/>
-          <path d="M12 3.6 C10.3 4.0 9.6 5.0 9.6 6.5 C9.6 7.8 10.6 9.0 11.9 9.6 C13.4 9.0 14.4 7.8 14.4 6.5 C14.4 5.0 13.7 4.0 12 3.6 Z" fill="url(#dvB1)"/>
-          <path d="M12 8.2 C10.6 8.5 10.1 9.4 10.1 10.7 C10.1 11.9 10.9 12.9 12 13.4 C13.1 12.9 13.9 11.9 13.9 10.7 C13.9 9.4 13.4 8.5 12 8.2 Z" fill="url(#dvB2)"/>
-          <path d="M12 12.6 C10.8 12.9 10.4 13.6 10.4 14.8 C10.4 15.9 11.1 16.8 12 17.2 C12.9 16.8 13.6 15.9 13.6 14.8 C13.6 13.6 13.2 12.9 12 12.6 Z" fill="url(#dvB3)"/>
-          <circle cx="11" cy="5.6" r="0.6" fill="#052e16" opacity="0.5"/>
-          <circle cx="12.4" cy="5.3" r="0.6" fill="#052e16" opacity="0.5"/>
-          <circle cx="11.2" cy="10" r="0.6" fill="#052e16" opacity="0.5"/>
-          <circle cx="12.6" cy="9.7" r="0.6" fill="#052e16" opacity="0.5"/>
-          <circle cx="11.2" cy="14.2" r="0.6" fill="#052e16" opacity="0.5"/>
-          <circle cx="12.6" cy="13.9" r="0.6" fill="#052e16" opacity="0.5"/>
-          <path d="M12 21c-1.2-2.6-.5-4.3.8-4.9.3 1.5.1 3.2-.4 4.9z" fill="#15803d" opacity="0.9"/>
           <defs>
-            <linearGradient id="dvB1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9f99d"/><stop offset="1" stop-color="#a3e635"/></linearGradient>
-            <linearGradient id="dvB2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a3e635"/><stop offset="1" stop-color="#4ade80"/></linearGradient>
-            <linearGradient id="dvB3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4ade80"/><stop offset="1" stop-color="#2dd4bf"/></linearGradient>
+            <linearGradient id="dgNode" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d9f99d"/><stop offset="0.6" stop-color="#84cc16"/><stop offset="1" stop-color="#14b8a6"/></linearGradient>
+            <linearGradient id="dgRing" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a3e635"/><stop offset="0.55" stop-color="#4ade80"/><stop offset="1" stop-color="#2dd4bf"/></linearGradient>
+            <linearGradient id="dgPetal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ecfccb"/><stop offset="1" stop-color="#a3e635"/></linearGradient>
           </defs>
+          <path d="M18 12 L15 6.8 L9 6.8 L6 12 L9 17.2 L15 17.2 Z" stroke="url(#dgRing)" stroke-width="1" stroke-linejoin="round" opacity="0.6"/>
+          <g stroke="#4ade80" stroke-width="0.7" opacity="0.35" stroke-linecap="round">
+            <path d="M12 12 L12 7"/><path d="M12 12 L16 8"/><path d="M12 12 L16 16"/>
+            <path d="M12 12 L12 17"/><path d="M12 12 L8 16"/><path d="M12 12 L8 8"/>
+          </g>
+          <g fill="url(#dgPetal)">
+            <ellipse cx="12" cy="10" rx="1.6" ry="2.6" transform="rotate(0 12 12)"/>
+            <ellipse cx="12" cy="10" rx="1.6" ry="2.6" transform="rotate(60 12 12)"/>
+            <ellipse cx="12" cy="10" rx="1.6" ry="2.6" transform="rotate(120 12 12)"/>
+            <ellipse cx="12" cy="10" rx="1.6" ry="2.6" transform="rotate(180 12 12)"/>
+            <ellipse cx="12" cy="10" rx="1.6" ry="2.6" transform="rotate(240 12 12)"/>
+            <ellipse cx="12" cy="10" rx="1.6" ry="2.6" transform="rotate(300 12 12)"/>
+          </g>
+          <circle cx="12" cy="12" r="1.2" fill="#f2ffd9"/>
+          <g fill="url(#dgNode)">
+            <circle cx="12" cy="4.4" r="2.3"/>
+            <circle cx="17.9" cy="8.2" r="2.3"/>
+            <circle cx="17.9" cy="15.8" r="2.3"/>
+            <circle cx="12" cy="19.6" r="2.3"/>
+            <circle cx="6.1" cy="15.8" r="2.3"/>
+            <circle cx="6.1" cy="8.2" r="2.3"/>
+          </g>
+          <g fill="#fff" opacity="0.9">
+            <circle cx="12" cy="4.4" r="0.7"/>
+            <circle cx="17.9" cy="8.2" r="0.7"/>
+            <circle cx="17.9" cy="15.8" r="0.7"/>
+            <circle cx="12" cy="19.6" r="0.7"/>
+            <circle cx="6.1" cy="15.8" r="0.7"/>
+            <circle cx="6.1" cy="8.2" r="0.7"/>
+          </g>
         </svg>
       </div>
       <div class="hidden md:block">
@@ -209,6 +241,10 @@
       <div class="nav-item rounded-lg px-2 md:px-3 py-2 flex items-center gap-2.5" data-view="categories" onclick="show('categories')">
         <svg class="nav-ico w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7l9-4 9 4M3 7v10l9 4 9-4V7"/></svg>
         <span class="hidden md:inline" data-i18n="categories">Categories</span>
+      </div>
+      <div class="nav-item rounded-lg px-2 md:px-3 py-2 flex items-center gap-2.5" data-view="rss" onclick="show('rss'); renderRSS()">
+        <svg class="nav-ico w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3a1 1 0 00-1 1 17 17 0 0017 17 1 1 0 001-1v-3a1 1 0 00-1-1 10 10 0 01-9-9 1 1 0 00-1-1H5zM5.5 21a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg>
+        <span class="hidden md:inline">RSS</span>
       </div>
       <div class="nav-item rounded-lg px-2 md:px-3 py-2 flex items-center gap-2.5" data-view="settings" onclick="show('settings')">
         <svg class="nav-ico w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15a3 3 0 100-6 3 3 0 000 6zM19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33h0a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51h0a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82v0a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
@@ -447,6 +483,55 @@
         <div class="text-xs tx3 mt-2" data-i18n="createFolders">Nested folders, e.g. unix/linux/debian</div>
       </section>
 
+      <!-- ============ RSS ============ -->
+      <section id="view-rss" class="view">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <h1 class="text-xl md:text-2xl font-bold">RSS</h1>
+          <button onclick="toggleRSSForm()" class="px-4 py-2 rounded-xl btn-primary text-sm font-medium shadow transition">＋ <span data-i18n="addFeed">Add feed</span></button>
+        </div>
+
+        <div id="rssForm" class="card rounded-2xl p-4 mb-4 hidden">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs tx2 mb-1" data-i18n="feedName">Feed name</label>
+              <input id="rss-name" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono" spellcheck="false">
+            </div>
+            <div>
+              <label class="block text-xs tx2 mb-1" data-i18n="feedUrl">Feed URL (RSS/Atom)</label>
+              <input id="rss-url" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono" spellcheck="false" placeholder="https://example.com/feed.xml">
+            </div>
+            <div>
+              <label class="block text-xs tx2 mb-1" data-i18n="feedKeywords">Keywords (space separated, any match)</label>
+              <input id="rss-kw" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none" placeholder="1080p x265">
+            </div>
+            <div>
+              <label class="block text-xs tx2 mb-1" data-i18n="feedBlacklist">Blacklist (space separated)</label>
+              <input id="rss-bl" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none" placeholder="german french">
+            </div>
+            <div>
+              <label class="block text-xs tx2 mb-1" data-i18n="feedCategory">Target folder (optional)</label>
+              <input id="rss-cat" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono" placeholder="movies/1080p">
+            </div>
+            <div>
+              <label class="block text-xs tx2 mb-1" data-i18n="feedInterval">Interval (minutes, 0=15)</label>
+              <input id="rss-int" type="number" min="0" value="15" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono">
+            </div>
+          </div>
+          <label class="flex items-center gap-2 my-3 text-xs tx2 cursor-pointer">
+            <input id="rss-enabled" type="checkbox" class="selchk" checked>
+            <span data-i18n="feedEnabled">Enabled</span>
+          </label>
+          <div class="flex gap-2 justify-end">
+            <button onclick="toggleRSSForm()" class="px-4 py-2 rounded-xl inp text-sm">✕</button>
+            <button onclick="addRSS()" class="px-5 py-2 rounded-xl btn-primary text-sm font-medium shadow" data-i18n="save">Save</button>
+          </div>
+        </div>
+
+        <div id="rssList" class="space-y-3">
+          <div class="tx2 text-sm" data-i18n="loading">Loading...</div>
+        </div>
+      </section>
+
       <!-- ============ SETTINGS ============ -->
       <section id="view-settings" class="view">
         <div class="flex items-center justify-between gap-3 mb-5">
@@ -477,6 +562,52 @@
                 <input id="set-daily" type="number" min="0" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono">
                 <p class="text-[11px] tx3 mt-1" data-i18n="dailyHint">Uploads pause for the day when reached; resets at midnight.</p>
               </div>
+              <div class="border-t border-[var(--border)] pt-3">
+                <label class="flex items-center justify-between gap-3 cursor-pointer">
+                  <span class="tx2" data-i18n="nightMode">Night mode (quiet hours)</span>
+                  <span id="nightSwitch" class="switch" onclick="toggleNight()">
+                    <span class="knob"></span>
+                  </span>
+                </label>
+                <div class="grid grid-cols-2 gap-2 mt-2">
+                  <div>
+                    <label class="block text-xs tx2 mb-1" data-i18n="nightStart">From</label>
+                    <input id="set-night-start" type="time" class="w-full rounded-xl px-2 py-2 inp text-sm focus:outline-none font-mono">
+                  </div>
+                  <div>
+                    <label class="block text-xs tx2 mb-1" data-i18n="nightEnd">To (may pass midnight)</label>
+                    <input id="set-night-end" type="time" class="w-full rounded-xl px-2 py-2 inp text-sm focus:outline-none font-mono">
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 mt-2">
+                  <div>
+                    <label class="block text-xs tx2 mb-1" data-i18n="nightUp">Cap upload (B/s, 0=keep)</label>
+                    <input id="set-night-up" type="number" min="0" class="w-full rounded-xl px-2 py-2 inp text-sm focus:outline-none font-mono">
+                  </div>
+                  <div>
+                    <label class="block text-xs tx2 mb-1" data-i18n="nightDown">Cap download (B/s, 0=keep)</label>
+                    <input id="set-night-down" type="number" min="0" class="w-full rounded-xl px-2 py-2 inp text-sm focus:outline-none font-mono">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card rounded-2xl p-4">
+            <h3 class="text-sm font-semibold mb-3" data-i18n="ratioGoal">Ratio goal</h3>
+            <div class="space-y-3">
+              <div>
+                <label class="block text-xs tx2 mb-1" data-i18n="ratioTarget">Seeding stops at ratio (0=off)</label>
+                <input id="set-ratio" type="number" min="0" step="0.1" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono">
+              </div>
+              <label class="flex items-center justify-between gap-3 text-xs cursor-pointer">
+                <span class="tx2" data-i18n="ratioStop">Pause seeding when reached</span>
+                <input id="set-ratio-stop" type="checkbox" class="selchk">
+              </label>
+              <label class="flex items-center justify-between gap-3 text-xs cursor-pointer">
+                <span class="tx2" data-i18n="ratioRemove">Remove torrent when reached</span>
+                <input id="set-ratio-remove" type="checkbox" class="selchk">
+              </label>
             </div>
           </div>
         </div>
@@ -487,6 +618,24 @@
             <div class="flex justify-between gap-2"><span class="tx2" data-i18n="peerPort">Peer port</span><span class="font-mono" id="set-port">—</span></div>
             <div class="flex justify-between gap-2"><span class="tx2" data-i18n="baseDirRoot">Base dir</span><span class="font-mono" id="set-basedir">—</span></div>
             <div class="flex justify-between gap-2"><span class="tx2" data-i18n="version">Version</span><span class="font-mono" id="set-version">—</span></div>
+          </div>
+        </div>
+
+        <div class="card rounded-2xl p-4 mt-4">
+          <h3 class="text-sm font-semibold mb-3" data-i18n="notifTitle">Notifications &amp; sound</h3>
+          <div class="space-y-3 text-xs">
+            <label class="flex items-center justify-between gap-3 cursor-pointer">
+              <span class="tx2" data-i18n="notifOS">Desktop notifications (when tab is hidden)</span>
+              <span class="switch" onclick="toggleNotif('os')">
+                <span class="knob"></span>
+              </span>
+            </label>
+            <label class="flex items-center justify-between gap-3 cursor-pointer">
+              <span class="tx2" data-i18n="notifSound">Completion sound</span>
+              <span class="switch" onclick="toggleNotif('sound')">
+                <span class="knob"></span>
+              </span>
+            </label>
           </div>
         </div>
 
@@ -528,6 +677,10 @@ const I18N = {
     add: 'Add', torrentFile: '.torrent File', loading: 'Loading...', noTorrents: 'No torrents yet. Add a magnet link or .torrent file above.',
     connError: 'Connection error:', adding: 'added', errors: 'errors', added: 'File added', newFolder: 'New folder',
     pausing: 'Pause', resuming: 'Resume', deleting: 'Delete', queued: 'Queued', stopped: 'Stopped', error: 'Error', paused: 'Paused',
+    install: 'Install', installApp: 'Install Digitalis as an app for fast access', watch: 'Watch',
+    share: 'Share', copyMagnet: 'Copy magnet', sharePage: 'Copy page link',
+    notifTitle: 'Notifications & sound', notifOS: 'Desktop notifications (when tab is hidden)', notifSound: 'Completion sound',
+    addFeed: 'Add feed', feedName: 'Feed name', feedUrl: 'Feed URL (RSS/Atom)', feedKeywords: 'Keywords (space separated, any match)', feedBlacklist: 'Blacklist (space separated)', feedCategory: 'Target folder (optional)', feedInterval: 'Interval (minutes, 0=15)', feedEnabled: 'Enabled', checkNow: 'Check now', noFeeds: 'No feeds yet.', noMatches: 'No items matched yet.',
     ratio: 'Ratio', seededTo: 'Uploaded to', peers: 'peers', working: 'working', down: 'down',
     announce: 'Announces', ok: 'ok', fail: 'fail', seeders: 'Seeders', leechers: 'Leechers',
     lastSuccess: 'Last success', never: 'never', details: 'Details',
@@ -538,6 +691,8 @@ const I18N = {
     directories: 'Directories', saveDir: 'Save directory', dirHint: 'New torrents save here. Existing torrents keep their current folder.',
     dashRateLimits: 'Rate limits', upLimit: 'Upload limit (bytes/s, 0=∞)', downLimit: 'Download limit (bytes/s, 0=∞)',
     dailyUpload: 'Daily upload limit (bytes, 0=off)', dailyHint: 'Uploads pause for the day when reached; resets at midnight.',
+    nightMode: 'Night mode (quiet hours)', nightStart: 'From', nightEnd: 'To (may pass midnight)', nightUp: 'Cap upload (B/s, 0=keep)', nightDown: 'Cap download (B/s, 0=keep)',
+    ratioGoal: 'Ratio goal', ratioTarget: 'Seeding stops at ratio (0=off)', ratioStop: 'Pause seeding when reached', ratioRemove: 'Remove torrent when reached',
     peerInfo: 'Client', peerPort: 'Peer port', baseDirRoot: 'Base dir', version: 'Version', save: 'Save', saved: 'Settings saved',
     trackerAdded: 'tracker added', trackerRemoved: 'tracker removed', addTracker: 'Add tracker', remove: 'Remove',
     torrentsUsing: 'torrents', lastError: 'Last error', seedersLechers: 'Seeds/Leeches',
@@ -563,6 +718,8 @@ const I18N = {
     add: 'Ekle', torrentFile: '.torrent Dosyası', loading: 'Yükleniyor...', noTorrents: 'Henüz torrent yok. Yukarıdan magnet linki veya .torrent dosyası ekleyin.',
     connError: 'Bağlantı hatası:', adding: 'eklendi', errors: 'hata', added: 'Dosya eklendi', newFolder: 'Yeni klasör',
     pausing: 'Duraklat', resuming: 'Devam', deleting: 'Sil', queued: 'Sırada', stopped: 'Durduruldu', error: 'Hata', paused: 'Duraklatıldı',
+    install: 'Yükle', installApp: 'Digitalis\'i hızlı erişim için uygulama olarak kur', watch: 'İzle',
+    notifTitle: 'Bildirimler & ses', notifOS: 'Masaüstü bildirimleri (sekme gizliyken)', notifSound: 'Tamamlanma sesi',
     ratio: 'Oran', seededTo: 'Yükleme yapılan', peers: 'peer', working: 'çalışıyor', down: 'çalışmıyor',
     announce: 'Anounce', ok: 'başarılı', fail: 'hata', seeders: 'Seed', leechers: 'Leech',
     lastSuccess: 'Son başarı', never: 'hiç', details: 'Detaylar',
@@ -1246,6 +1403,45 @@ function toast(kind, id, name) {
   setTimeout(() => { if (el.parentNode) el.remove(); }, 9000);
 }
 
+function ding() {
+  try {
+    const ac = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(880, ac.currentTime);
+    o.frequency.exponentialRampToValueAtTime(1320, ac.currentTime + 0.12);
+    g.gain.setValueAtTime(0.04, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.35);
+    o.connect(g); g.connect(ac.destination);
+    o.start(ac.currentTime); o.stop(ac.currentTime + 0.36);
+  } catch (e) {}
+}
+
+function notifyUser(kind, id, name) {
+  const prefs = JSON.parse(localStorage.getItem('dg-notify') || '{"os":true,"sound":true}');
+  if (prefs.sound && !document.hidden) ding();
+  if (prefs.os && 'Notification' in window && Notification.permission === 'granted' && document.hidden) {
+    const label = kind === 'complete' ? t('noticeComplete') : (kind === 'metadata' ? t('noticeMetadata') : kind);
+    try { new Notification('Digitalis · ' + label, { body: name || id || '', icon: '/favicon.svg' }); } catch (e) {}
+  }
+}
+
+function notifPrefs() { return JSON.parse(localStorage.getItem('dg-notify') || '{"os":true,"sound":true}'); }
+function applyNotifUI() {
+  const p = notifPrefs();
+  const sw = document.querySelectorAll('.switch');
+  sw.forEach((el, i) => el.classList.toggle('on', i === 0 ? !!p.os : !!p.sound));
+}
+function toggleNotif(key) {
+  const p = notifPrefs();
+  p[key] = !p[key];
+  localStorage.setItem('dg-notify', JSON.stringify(p));
+  applyNotifUI();
+  if (key === 'os' && p.os && 'Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission().catch(() => {});
+  }
+}
+
 // ---------- guide ----------
 function guideContent(l) {
   const tr = l === 'tr';
@@ -1310,16 +1506,66 @@ function renderFiles(files) {
   if (!files || !files.length) return `<span class="text-xs tx3">${esc(t('noFiles'))}</span>`;
   return files.map(f => {
     const pct = Math.min(100, Math.round(f.pct * 100));
+    const ext = (f.path.split('.').pop() || '').toLowerCase();
+    const playable = ['mp4','m4v','mkv','webm','mov','avi','ogv','3gp','mpeg','mpg','ts','mp3','m4a','aac','ogg','wav','flac','opus'].includes(ext);
     return `<div class="frow py-2 border-b border-[var(--border)]">
       <div class="flex items-center justify-between gap-2 text-xs mb-1">
         <span class="truncate font-mono" style="color:var(--txt2)">${esc(f.path)}</span>
-        <span class="shrink-0 tx3">${fmtBytes(f.done)} / ${fmtBytes(f.size)}</span>
+        <span class="shrink-0 flex items-center gap-2">
+          ${playable ? `<button onclick="openStream('${detailId}', ${f.index})" class="playbtn" title="${esc(t('watch'))}">▶ ${esc(t('watch'))}</button>` : ''}
+          <span class="tx3">${fmtBytes(f.done)} / ${fmtBytes(f.size)}</span>
+        </span>
       </div>
       <div class="h-1.5 rounded-full overflow-hidden" style="background:var(--bg0)">
         <div class="h-full rounded-full" style="width:${pct}%;background:var(--dn-grad)"></div>
       </div>
     </div>`;
   }).join('');
+}
+
+function openStream(id, idx) {
+  document.getElementById('playerBackdrop').classList.remove('hidden');
+  const v = document.getElementById('playerVideo');
+  v.src = `/api/torrents/${id}/stream/${idx}`;
+  v.load();
+  v.play().catch(() => {});
+  return false;
+}
+function closePlayer() {
+  const v = document.getElementById('playerVideo');
+  v.pause();
+  v.removeAttribute('src');
+  v.load();
+  document.getElementById('playerBackdrop').classList.add('hidden');
+}
+
+let qrInfo = null;
+function openQR(hash) {
+  qrInfo = { hash: hash };
+  const magnet = `magnet:?xt=urn:btih:${hash}`;
+  document.getElementById('qrText').textContent = magnet;
+  document.getElementById('qrBox').innerHTML = '';
+  try {
+    new QRCode(document.getElementById('qrBox'), { text: magnet, width: 200, height: 200, colorDark: '#0b160c', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
+  } catch (e) { document.getElementById('qrBox').textContent = magnet; }
+  document.getElementById('qrBackdrop').classList.remove('hidden');
+}
+function closeQR() { qrInfo = null; document.getElementById('qrBackdrop').classList.add('hidden'); }
+function qrCopyMagnet() {
+  if (!qrInfo) return;
+  const magnet = `magnet:?xt=urn:btih:${qrInfo.hash}`;
+  (navigator.clipboard ? navigator.clipboard.writeText(magnet) : Promise.reject()).then(
+    () => toast('info', qrInfo.hash, 'magnet copied'),
+    () => { prompt('Copy magnet:', magnet); }
+  );
+}
+function qrSharePage() {
+  if (!qrInfo) return;
+  const url = location.origin + '/?ih=' + qrInfo.hash;
+  (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(
+    () => toast('info', qrInfo.hash, 'link copied'),
+    () => { prompt('Copy link:', url); }
+  );
 }
 
 function renderDetail(d) {
@@ -1331,7 +1577,10 @@ function renderDetail(d) {
         <h2 class="font-bold text-lg leading-tight break-words" style="color:var(--txt)">${esc(d.name)}</h2>
         <p class="text-[11px] font-mono tx3 mt-1 break-all">${esc(d.info_hash)}</p>
       </div>
-      <button onclick="closeDetail()" class="shrink-0 inp rounded-lg px-2 py-1 text-sm">✕</button>
+      <div class="shrink-0 flex items-center gap-2">
+        <button onclick="openQR('${esc(d.info_hash)}')" class="inp rounded-lg px-2 py-1 text-sm hover:border-[var(--border2)] transition" title="${esc(t('share'))}">⑃</button>
+        <button onclick="closeDetail()" class="shrink-0 inp rounded-lg px-2 py-1 text-sm">✕</button>
+      </div>
     </div>
 
     <div class="flex flex-wrap gap-2 mb-4">${stateBadge(d.state)}<span class="px-2 py-0.5 rounded-full chip text-xs tx2">📁 ${esc(d.category || t('root'))}</span></div>
@@ -1422,6 +1671,62 @@ async function refreshTrackers() {
         </div>`).join('')}
     </div>`;
   } catch (e) { el.innerHTML = `<span class="text-sm" style="color:var(--bad)">${esc(t('connError'))} ${esc(e.message)}</span>`; }
+}
+
+// ---------- RSS ----------
+function toggleRSSForm() { document.getElementById('rssForm').classList.toggle('hidden'); }
+
+async function renderRSS() {
+  const el = document.getElementById('rssList');
+  if (!el) return;
+  try {
+    const feeds = await api('/rss');
+    if (!feeds.length) { el.innerHTML = `<div class="card rounded-2xl p-4 text-sm tx2"><span data-i18n="noFeeds">No feeds yet.</span></div>`; return; }
+    el.innerHTML = feeds.map(f => `
+      <div class="card rounded-2xl p-4">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+          <span class="font-semibold text-sm flex items-center gap-2" style="color:var(--txt)">
+            ${f.enabled ? '🔔' : '🔕'} ${esc(f.name)}
+            ${f.category ? `<span class="px-2 py-0.5 rounded-full chip text-[11px] tx2">📁 ${esc(f.category)}</span>` : ''}
+          </span>
+          <span class="flex items-center gap-2">
+            <button onclick="pollRSS('${f.id}')" class="px-2 py-1 rounded-md inp text-[11px] hover:border-[var(--border2)] transition" data-i18n="checkNow">Check now</button>
+            <button onclick="deleteRSS('${f.id}')" class="px-2 py-1 rounded-md inp text-[11px] hover:border-[var(--bad)] transition" style="color:var(--bad)">✕</button>
+          </span>
+        </div>
+        <div class="text-[11px] font-mono break-all tx3 mb-2">${esc(f.url)}</div>
+        ${(f.keywords || []).length ? `<div class="text-[11px] tx2 mb-1">🔍 ${esc((f.keywords||[]).join(', '))}</div>` : ''}
+        ${(f.recent || []).length ? `<div class="text-[11px] tx2">` + f.recent.map(it =>
+          `<div class="flex gap-2 py-1 border-t border-[var(--border)]">` +
+          `<span class="text-emerald-400">＋</span><span class="min-w-0 flex-1 truncate">${esc(it.title)}</span>` +
+          `<span class="tx3 shrink-0 font-mono">${fmtBytes(it.size)}</span></div>`).join('') + `</div>`
+        : `<div class="text-[11px] tx3" data-i18n="noMatches">No items matched yet.</div>`}
+      </div>`).join('');
+  } catch (e) { el.innerHTML = `<span class="text-sm" style="color:var(--bad)">${esc(t('connError'))} ${esc(e.message)}</span>`; }
+}
+
+async function addRSS() {
+  const body = {
+    name: document.getElementById('rss-name').value.trim(),
+    url: document.getElementById('rss-url').value.trim(),
+    keywords: (document.getElementById('rss-kw').value || '').split(/\s+/).filter(Boolean),
+    blacklist: (document.getElementById('rss-bl').value || '').split(/\s+/).filter(Boolean),
+    category: document.getElementById('rss-cat').value.trim(),
+    interval: parseInt(document.getElementById('rss-int').value) || 15,
+    enabled: document.getElementById('rss-enabled').checked
+  };
+  try {
+    await api('/rss', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    ['rss-name','rss-url','rss-kw','rss-bl','rss-cat'].forEach(i => document.getElementById(i).value = '');
+    toggleRSSForm();
+    renderRSS();
+  } catch (e) { alert(e.message); }
+}
+async function deleteRSS(id) {
+  try { await api('/rss/' + id, { method: 'DELETE' }); renderRSS(); } catch (e) { alert(e.message); }
+}
+async function pollRSS(id) {
+  try { await api('/rss/' + id + '/poll', { method: 'POST' }); renderRSS(); } catch (e) { alert(e.message); }
 }
 
 // ---------- dashboard ----------
@@ -1531,6 +1836,7 @@ function connectWS() {
       const m = JSON.parse(ev.data);
       if (m.type === 'notice') {
         toast(m.kind || 'info', m.id, m.name);
+        notifyUser(m.kind || 'info', m.id, m.name);
         if (m.kind === 'complete' || m.kind === 'metadata') refreshTorrentsFromAPI();
         return;
       }
@@ -1579,10 +1885,22 @@ async function loadSettings() {
     document.getElementById('set-up').value = s.upload_limit || 0;
     document.getElementById('set-down').value = s.download_limit || 0;
     document.getElementById('set-daily').value = s.daily_upload_limit || 0;
+    document.getElementById('set-night-start').value = s.night_start || '';
+    document.getElementById('set-night-end').value = s.night_end || '';
+    document.getElementById('set-night-up').value = s.night_upload || 0;
+    document.getElementById('set-night-down').value = s.night_download || 0;
+    document.getElementById('set-ratio').value = s.ratio_target || 0;
+    document.getElementById('set-ratio-stop').checked = !!s.ratio_stop;
+    document.getElementById('set-ratio-remove').checked = !!s.ratio_remove;
+    document.getElementById('nightSwitch').classList.toggle('on', !!s.night_mode);
     document.getElementById('set-port').textContent = s.peer_port;
     document.getElementById('set-basedir').textContent = s.base_dir || '';
     document.getElementById('set-version').textContent = s.version;
   } catch (e) { /* ignore */ }
+}
+
+function toggleNight() {
+  document.getElementById('nightSwitch').classList.toggle('on');
 }
 
 async function saveSettings() {
@@ -1590,7 +1908,15 @@ async function saveSettings() {
     base_dir: document.getElementById('set-dir').value.trim(),
     upload_limit: parseInt(document.getElementById('set-up').value) || 0,
     download_limit: parseInt(document.getElementById('set-down').value) || 0,
-    daily_upload_limit: parseInt(document.getElementById('set-daily').value) || 0
+    daily_upload_limit: parseInt(document.getElementById('set-daily').value) || 0,
+    night_mode: document.getElementById('nightSwitch').classList.contains('on'),
+    night_start: document.getElementById('set-night-start').value || '',
+    night_end: document.getElementById('set-night-end').value || '',
+    night_upload: parseInt(document.getElementById('set-night-up').value) || 0,
+    night_download: parseInt(document.getElementById('set-night-down').value) || 0,
+    ratio_target: parseFloat(document.getElementById('set-ratio').value) || 0,
+    ratio_stop: document.getElementById('set-ratio-stop').checked,
+    ratio_remove: document.getElementById('set-ratio-remove').checked
   };
   try {
     await api('/settings', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
@@ -1606,11 +1932,67 @@ async function saveSettings() {
 // ---------- init ----------
 applyTheme();
 applyLang();
+applyNotifUI();
 connectWS();
 setInterval(refreshTorrentsFromAPI, 4000);
 setInterval(refreshStats, 4000);
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+let dgInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); dgInstallPrompt = e; showInstallBanner(); });
+window.addEventListener('appinstalled', () => { const b = document.getElementById('pwaBanner'); if (b) b.remove(); });
+
+function showInstallBanner() {
+  let b = document.getElementById('pwaBanner');
+  if (b) return;
+  b = document.createElement('div');
+  b.id = 'pwaBanner';
+  b.className = 'card rounded-xl p-3 flex items-center gap-3 fixed bottom-4 right-4 z-[80]';
+  b.innerHTML = `<span class="text-base">📲</span><span class="text-xs flex-1" style="color:var(--txt2)">${esc(t('installApp'))}</span>
+    <button onclick="installApp()" class="px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer border" style="color:var(--accent);border-color:var(--border2);background:var(--panel2)">${esc(t('install'))}</button>
+    <button class="tx3 shrink-0" onclick="this.closest('#pwaBanner').remove()">✕</button>`;
+  document.body.appendChild(b);
+}
+function installApp() {
+  if (dgInstallPrompt) { dgInstallPrompt.prompt(); dgInstallPrompt = null; }
+}
 setInterval(refreshTrackers, 5000);
 show('dashboard');
+
+// deep-link: ?ih=<infohash> opens the torrent detail or prefills the add box
+(function() {
+  const ih = new URLSearchParams(location.search).get('ih');
+  if (!ih || !/^[0-9a-f]{40}$/i.test(ih)) return;
+  fetch(`/api/torrents/${ih.slice(0, 16)}`).then(r => r.json()).then(d => {
+    if (d && d.id) { show('torrents'); openDetail(d.id); return; }
+    const el = document.getElementById('src');
+    if (el) { el.value = `magnet:?xt=urn:btih:${ih}`; show('torrents'); el.focus(); }
+  }).catch(() => {});
+})();
 </script>
+<div id="playerBackdrop" class="fixed inset-0 z-[90] hidden flex items-center justify-center p-4" style="background:rgba(0,0,0,.85)" onclick="if(event.target===this)closePlayer()">
+  <div class="relative w-full max-w-3xl">
+    <button onclick="closePlayer()" class="absolute -top-10 right-0 text-white/70 hover:text-white text-lg" style="background:none;border:none;cursor:pointer">✕</button>
+    <video id="playerVideo" controls playsinline preload="auto"></video>
+  </div>
+</div>
+<div id="qrBackdrop" class="fixed inset-0 z-[95] hidden flex items-center justify-center p-4" style="background:rgba(0,0,0,.7)" onclick="if(event.target===this)closeQR()">
+  <div class="card rounded-2xl p-5 w-full max-w-sm">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="font-semibold text-sm" style="color:var(--txt)">${esc(t('share'))}</h3>
+      <button onclick="closeQR()" class="tx3" style="background:none;border:none;cursor:pointer">✕</button>
+    </div>
+    <div class="flex items-center justify-center p-3 rounded-xl mb-3" style="background:#fff">
+      <div id="qrBox"></div>
+    </div>
+    <div class="text-[11px] font-mono break-all tx2 mb-3 px-2 max-h-20 overflow-y-auto" id="qrText"></div>
+    <div class="flex gap-2">
+      <button onclick="qrCopyMagnet()" class="flex-1 px-3 py-2 rounded-xl btn-primary text-sm font-medium" data-i18n="copyMagnet">Copy magnet</button>
+      <button onclick="qrSharePage()" class="flex-1 px-3 py-2 rounded-xl btn-primary text-sm font-medium" data-i18n="sharePage">Share page</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>

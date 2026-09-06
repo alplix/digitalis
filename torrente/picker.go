@@ -15,6 +15,8 @@ type picker struct {
 	reserved      map[int]*peerSession // piece index -> session downloading it
 	peerHaveCount map[int]int          // piece index -> count of connected peers that have it
 	coveredBy     map[*peerSession]map[int]struct{} // reverse index for cleanup
+	priorityLo    int // inclusive active streaming window (-1 = off)
+	priorityHi    int
 }
 
 func newPicker(t *Torrent) *picker {
@@ -23,7 +25,38 @@ func newPicker(t *Torrent) *picker {
 		reserved:      make(map[int]*peerSession),
 		peerHaveCount: make(map[int]int),
 		coveredBy:     make(map[*peerSession]map[int]struct{}),
+		priorityLo:    -1,
+		priorityHi:    -1,
 	}
+}
+
+// SetPriority marks an inclusive piece range as the active streaming priority.
+// The picker will prefer missing pieces of this window in order until the whole
+// window is downloaded, then the window is cleared automatically.
+func (p *picker) SetPriority(lo, hi int) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if hi < lo {
+		p.priorityLo, p.priorityHi = -1, -1
+		return
+	}
+	total := p.t.storage.PieceCount()
+	if total > 0 {
+		if lo < 0 {
+			lo = 0
+		}
+		if hi >= total {
+			hi = total - 1
+		}
+	}
+	p.priorityLo, p.priorityHi = lo, hi
+}
+
+// PriorityWindow returns the current priority range, or (-1,-1) if off.
+func (p *picker) PriorityWindow() (int, int) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.priorityLo, p.priorityHi
 }
 
 // addPeer registers a session. After the session's bitfield/have messages
@@ -113,12 +146,11 @@ func (p *picker) acquire(s *peerSession) int {
 	if s.peerBitfield == nil {
 		return -1
 	}
-	p.mu.Lock()
+p.mu.Lock()
 	defer p.mu.Unlock()
 
 	total := p.t.storage.PieceCount()
 	if total < 30 {
-		// For small torrents just take the first missing piece.
 		for i := 0; i < total; i++ {
 			if !p.t.storage.PiecePresent(i) {
 				if _, reserved := p.reserved[i]; !reserved {
@@ -130,6 +162,27 @@ func (p *picker) acquire(s *peerSession) int {
 			}
 		}
 		return -1
+	}
+
+	// Streaming priority window first: prefer the earliest missing piece in order.
+	if p.priorityLo >= 0 {
+		all := true
+		for i := p.priorityLo; i <= p.priorityHi; i++ {
+			if p.t.storage.PiecePresent(i) {
+				continue
+			}
+			all = false
+			if _, reserved := p.reserved[i]; reserved {
+				continue
+			}
+			if s.peerBitfield.Has(i) {
+				p.reserved[i] = s
+				return i
+			}
+		}
+		if all {
+			p.priorityLo, p.priorityHi = -1, -1 // window completed -> clear
+		}
 	}
 
 	// Rare-first for larger torrents.

@@ -1,0 +1,13 @@
+{
+  "name": "Digitalis",
+  "short_name": "Digitalis",
+  "description": "P2P torrent istemcisi · coded by Alperen Yavuz",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#040c07",
+  "theme_color": "#0e1712",
+  "icons": [
+    { "src": "/logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

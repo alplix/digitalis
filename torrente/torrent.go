@@ -77,6 +77,7 @@ type Torrent struct {
 	RemovedTrackers map[string]bool   `json:"removed_trackers"`
 	AnnounceCount   map[string]int64   `json:"announce_count"`
 	DownloadLimit   int64             `json:"download_limit"`
+	RatioTarget     float64           `json:"ratio_target"` // per-torrent ratio goal; 0 = use global
 
 	storage *storage.Storage
 	engine  *Engine
@@ -171,6 +172,7 @@ func (t *Torrent) setState(s State) {
 const (
 	NoticeComplete string = "complete" // torrent finished downloading
 	NoticeMetadata string = "metadata" // magnet resolved its metadata
+	NoticeRatio    string = "ratio"    // torrent reached its ratio target (stopped/removed)
 )
 
 // Engine manages all torrents and peer connections.
@@ -207,6 +209,7 @@ type Engine struct {
 	settingsFile string
 	settings     Settings
 	uploadPaused bool
+	nightApplied bool
 
 	// absolute byte counters for this process
 	byteUpRun   int64
@@ -634,6 +637,69 @@ func (t *Torrent) SetCategory(category string) {
 	t.mu.Lock()
 	t.Category = category
 	t.mu.Unlock()
+}
+
+// SetPriorityPieces sets an inclusive piece window that the piece picker will
+// prioritize for streaming. After the window is fully downloaded it clears.
+func (e *Engine) SetPriorityPieces(id string, lo, hi int) error {
+	e.mu.Lock()
+	t, ok := e.torrents[id]
+	e.mu.Unlock()
+	if !ok {
+		return fmt.Errorf("torrent not found")
+	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.picker == nil {
+		return fmt.Errorf("picker unavailable")
+	}
+	t.picker.SetPriority(lo, hi)
+	return nil
+}
+
+// PriorityPieces returns the current streaming priority window as (lo, hi),
+// or (-1, -1) when no window is active.
+func (e *Engine) PriorityPieces(id string) (int, int) {
+	e.mu.Lock()
+	t, ok := e.torrents[id]
+	e.mu.Unlock()
+	if !ok {
+		return -1, -1
+	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.picker == nil {
+		return -1, -1
+	}
+	return t.picker.PriorityWindow()
+}
+
+// StorageAvailable reports whether on-disk storage exists (metadata resolved).
+func (t *Torrent) StorageAvailable() bool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.storage != nil
+}
+
+// ReadPieceRange reads length bytes starting at begin inside piece, straight
+// from disk. Missing pieces yield zero bytes so media playback can start early.
+func (t *Torrent) ReadPieceRange(piece int, begin int64, length int) ([]byte, error) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.storage == nil {
+		return nil, fmt.Errorf("storage unavailable")
+	}
+	return t.storage.ReadBlock(piece, begin, length)
+}
+
+// StoragePieceCount returns the number of pieces once metadata is resolved.
+func (t *Torrent) StoragePieceCount() int {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.storage == nil {
+		return 0
+	}
+	return t.storage.PieceCount()
 }
 
 // GetTorrent returns a torrent by id.

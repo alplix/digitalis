@@ -30,6 +30,10 @@ type Server struct {
 	cfgDir    string
 	recordsMu sync.Mutex
 	records   []torrentRecord
+
+	rssMu      sync.Mutex
+	feeds      []rssFeed
+	rssSpawned bool
 }
 
 // NewServer creates a web server around an engine. cfgDir is the persistent
@@ -46,12 +50,28 @@ func NewServer(engine *torrente.Engine, saveDir, cfgDir string) *Server {
 	// Streaming notifications (download complete, magnet metadata resolved).
 	engine.OnNotice = func(kind, id, name string) {
 		s.broadcastNotice(kind, id, name)
+		switch kind {
+		case torrente.NoticeMetadata:
+			s.syncSmartCategory(id)
+		case torrente.NoticeRatio:
+			// a ratio-autoremoved torrent must not come back on restart
+			s.dropRecord(id)
+		}
 	}
 
 	// Restore persisted torrents.
 	if cfgDir != "" {
 		s.records = loadRecords(cfgDir)
 		s.restoreRecords(s.records)
+	}
+
+	// Load RSS subscriptions and start the poller.
+	if cfgDir != "" {
+		s.feeds = loadRSSFeeds(cfgDir)
+	}
+	if !s.rssSpawned {
+		s.rssSpawned = true
+		s.rssPollLoop()
 	}
 	return s
 }
@@ -74,6 +94,7 @@ type torrentView struct {
 	PiecesHave     int       `json:"pieces_have"`
 	PiecesTotal    int       `json:"pieces_total"`
 	Ratio          float64   `json:"ratio"`
+	RatioTarget    float64   `json:"ratio_target"`
 	SeededTo       int       `json:"seeded_to"`
 	SeededFirst    time.Time `json:"seeded_first"`
 	LastSeen       time.Time `json:"last_seen"`
@@ -134,6 +155,7 @@ func (s *Server) snapshot(t *torrente.Torrent) torrentView {
 		PiecesHave:     t.PiecesHave,
 		PiecesTotal:    t.PiecesTotal,
 		Ratio:          t.Ratio(),
+		RatioTarget:    s.engine.TorrentRatioTarget(t.ID),
 		SeededTo:       t.SeededTo,
 		SeededFirst:    t.SeededFirst,
 		LastSeen:       t.LastSeen,
@@ -166,8 +188,15 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /{$}", s.index)
 	mux.HandleFunc("GET /", s.index)
 
+	mux.HandleFunc("GET /logo.svg", s.serveTpl("logo.svg", "image/svg+xml"))
+	mux.HandleFunc("GET /favicon.svg", s.serveTpl("logo.svg", "image/svg+xml"))
+	mux.HandleFunc("GET /manifest.webmanifest", s.serveTpl("manifest.webmanifest", "application/manifest+json"))
+	mux.HandleFunc("GET /sw.js", s.serveTpl("sw.js", "text/javascript"))
+	mux.HandleFunc("GET /qrcode.min.js", s.serveTpl("qrcode.min.js", "text/javascript"))
+
 	mux.HandleFunc("GET /api/torrents", s.listTorrents)
 	mux.HandleFunc("GET /api/torrents/{id}", s.getTorrentDetail)
+	mux.HandleFunc("GET /api/torrents/{id}/stream/{idx}", s.streamFile)
 	mux.HandleFunc("POST /api/torrents", s.addTorrent)
 	mux.HandleFunc("PATCH /api/torrents/{id}", s.patchTorrent)
 	mux.HandleFunc("POST /api/torrents/{id}/pause", s.pause)
@@ -190,6 +219,11 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /api/torrents/{id}/trackers", s.addTorrentTracker)
 	mux.HandleFunc("DELETE /api/torrents/{id}/trackers", s.removeTorrentTracker)
 
+	mux.HandleFunc("GET /api/rss", s.listRSS)
+	mux.HandleFunc("POST /api/rss", s.createRSS)
+	mux.HandleFunc("DELETE /api/rss/{id}", s.deleteRSS)
+	mux.HandleFunc("POST /api/rss/{id}/poll", s.pollRSS)
+
 	return s.withLogging(mux)
 }
 
@@ -211,18 +245,63 @@ func (s *Server) index(w http.ResponseWriter, r *http.Request) {
 	w.Write(html)
 }
 
+// serveTpl returns a handler that serves an embedded template asset.
+func (s *Server) serveTpl(name, ctype string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		data, err := templatesFS.ReadFile("templates/" + name)
+		if err != nil {
+			http.Error(w, "not found", http.StatusNotFound)
+			return
+		}
+		w.Header().Set("Content-Type", ctype)
+		if name == "sw.js" || name == "manifest.webmanifest" {
+			w.Header().Set("Cache-Control", "no-cache")
+		}
+		w.Write(data)
+	}
+}
+
 func (s *Server) getStats(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, s.engine.StatsSnapshot())
 }
 
+// syncSmartCategory persists the auto-assigned category once a magnet's
+// metadata arrives, so the folder choice survives a restart.
+func (s *Server) syncSmartCategory(id string) {
+	t, ok := s.engine.GetTorrent(id)
+	if !ok {
+		return
+	}
+	s.recordsMu.Lock()
+	defer s.recordsMu.Unlock()
+	changed := false
+	for i := range s.records {
+		if s.records[i].ID == id && s.records[i].Category != t.Category {
+			s.records[i].Category = t.Category
+			changed = true
+		}
+	}
+	if changed && s.cfgDir != "" {
+		_ = saveRecords(s.cfgDir, s.records)
+	}
+}
+
 // settingsView is the settings JSON used by the UI.
 type settingsView struct {
-	BaseDir          string `json:"base_dir"`
-	UploadLimit      int64  `json:"upload_limit"`
-	DownloadLimit    int64  `json:"download_limit"`
-	DailyUploadLimit int64  `json:"daily_upload_limit"`
-	PeerPort         int    `json:"peer_port"`
-	Version          string `json:"version"`
+	BaseDir          string  `json:"base_dir"`
+	UploadLimit      int64   `json:"upload_limit"`
+	DownloadLimit    int64   `json:"download_limit"`
+	DailyUploadLimit int64   `json:"daily_upload_limit"`
+	NightMode        bool    `json:"night_mode"`
+	NightStart       string  `json:"night_start"`
+	NightEnd         string  `json:"night_end"`
+	NightUpload      int64   `json:"night_upload"`
+	NightDownload    int64   `json:"night_download"`
+	RatioTarget      float64 `json:"ratio_target"`
+	RatioStop        bool    `json:"ratio_stop"`
+	RatioRemove      bool    `json:"ratio_remove"`
+	PeerPort         int     `json:"peer_port"`
+	Version          string  `json:"version"`
 }
 
 func (s *Server) settingsView() settingsView {
@@ -232,6 +311,14 @@ func (s *Server) settingsView() settingsView {
 		UploadLimit:      v.UploadLimit,
 		DownloadLimit:    v.DownloadLimit,
 		DailyUploadLimit: v.DailyUploadLimit,
+		NightMode:        v.NightMode,
+		NightStart:       v.NightStart,
+		NightEnd:         v.NightEnd,
+		NightUpload:      v.NightUpload,
+		NightDownload:    v.NightDownload,
+		RatioTarget:      v.RatioTarget,
+		RatioStop:        v.RatioStop,
+		RatioRemove:      v.RatioRemove,
 		PeerPort:         s.engine.Port(),
 		Version:          "digitalis 0.9",
 	}
@@ -492,6 +579,9 @@ func (s *Server) addTorrent(w http.ResponseWriter, r *http.Request) {
 			writeJSON(w, http.StatusConflict, map[string]string{"error": err.Error()})
 			return
 		}
+		if category == "" {
+			category = torrente.Categorize(t.Name, t.MetaInfo.Info.Files)
+		}
 		t.SetCategory(category)
 		persist(t)
 		addResp(t)
@@ -504,6 +594,9 @@ func (s *Server) addTorrent(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			writeJSON(w, http.StatusConflict, map[string]string{"error": err.Error()})
 			return
+		}
+		if category == "" {
+			category = torrente.Categorize(t.Name, t.MetaInfo.Info.Files)
 		}
 		t.SetCategory(category)
 		persist(t)
@@ -705,7 +798,8 @@ func (s *Server) deleteCategory(w http.ResponseWriter, r *http.Request) {
 
 // patchRequest carries the per-torrent settings accepted by PATCH.
 type patchRequest struct {
-	DownloadLimit *int64 `json:"download_limit"`
+	DownloadLimit *int64  `json:"download_limit"`
+	RatioTarget   *float64 `json:"ratio_target"`
 }
 
 func (s *Server) patchTorrent(w http.ResponseWriter, r *http.Request) {
@@ -721,6 +815,12 @@ func (s *Server) patchTorrent(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.DownloadLimit != nil {
 		if err := s.engine.SetTorrentDownloadLimit(id, *req.DownloadLimit); err != nil {
+			writeJSON(w, http.StatusConflict, map[string]string{"error": err.Error()})
+			return
+		}
+	}
+	if req.RatioTarget != nil {
+		if err := s.engine.SetTorrentRatioTarget(id, *req.RatioTarget); err != nil {
 			writeJSON(w, http.StatusConflict, map[string]string{"error": err.Error()})
 			return
 		}

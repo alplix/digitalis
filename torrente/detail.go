@@ -16,10 +16,11 @@ type PieceCell struct {
 
 // FileRow is one file of a torrent with its verified progress.
 type FileRow struct {
-	Path string  `json:"path"`
-	Size int64   `json:"size"`
-	Done int64   `json:"done"`
-	Pct  float64 `json:"pct"`
+	Index int     `json:"index"`
+	Path  string  `json:"path"`
+	Size  int64   `json:"size"`
+	Done  int64   `json:"done"`
+	Pct   float64 `json:"pct"`
 }
 
 // Detail is the detailed per-torrent view used by the detail panel.
@@ -40,6 +41,7 @@ type Detail struct {
 	PiecesHave     int       `json:"pieces_have"`
 	PiecesTotal    int       `json:"pieces_total"`
 	Ratio          float64   `json:"ratio"`
+	RatioTarget    float64   `json:"ratio_target"`
 	SeededTo       int       `json:"seeded_to"`
 	SeededFirst    time.Time `json:"seeded_first"`
 	LastSeen       time.Time `json:"last_seen"`
@@ -81,6 +83,10 @@ func (e *Engine) Detail(id string) (*Detail, error) {
 		UploadSpeed:     t.UploadSpeed,
 		Seeders:         t.Seeders,
 		Leechers:        t.Leechers,
+		PiecesHave:      t.PiecesHave,
+		PiecesTotal:     t.PiecesTotal,
+		Ratio:           t.Ratio(),
+		RatioTarget:     t.RatioTarget,
 		SeededTo:        t.SeededTo,
 		SeededFirst:     t.SeededFirst,
 		LastSeen:        t.LastSeen,
@@ -104,7 +110,7 @@ func (e *Engine) Detail(id string) (*Detail, error) {
 		for i, p := range snaps {
 			d.Pieces[i] = PieceCell{Index: i, Have: p.Present, Active: p.InFlight > 0 || p.Verifying}
 		}
-		for _, f := range t.storage.FilesSnapshot() {
+		for i, f := range t.storage.FilesSnapshot() {
 			rel := f.Path
 			if strings.HasPrefix(rel, d.SaveDir) {
 				rel = strings.TrimPrefix(rel, d.SaveDir)
@@ -114,7 +120,7 @@ func (e *Engine) Detail(id string) (*Detail, error) {
 			if f.Length > 0 {
 				pct = float64(f.Done) / float64(f.Length)
 			}
-			d.Files = append(d.Files, FileRow{Path: rel, Size: f.Length, Done: f.Done, Pct: pct})
+			d.Files = append(d.Files, FileRow{Index: i, Path: rel, Size: f.Length, Done: f.Done, Pct: pct})
 		}
 	}
 	d.Ratio = t.Ratio()

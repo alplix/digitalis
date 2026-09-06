@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strconv"
 	"sync/atomic"
 	"time"
 
@@ -198,6 +199,117 @@ func (e *Engine) statsTick() {
 	} else {
 		e.setUploadPaused(false)
 	}
+
+	// apply the night schedule (rate caps) and ratio targets
+	e.applySchedule(cur)
+}
+
+// applySchedule applies night-mode rate caps and per-torrent ratio targets.
+// It runs from the stats loop so timing changes happen without user action.
+func (e *Engine) applySchedule(cur Settings) {
+	inNight := cur.NightMode && nightIsActive(cur.NightStart, cur.NightEnd, time.Now())
+
+	e.mu.Lock()
+	applied := e.nightApplied
+	e.mu.Unlock()
+
+	if inNight && !applied {
+		if cur.NightUpload > 0 {
+			e.SetUploadLimit(cur.NightUpload)
+		}
+		if cur.NightDownload > 0 {
+			e.SetDownloadLimit(cur.NightDownload)
+		}
+		e.mu.Lock()
+		e.nightApplied = true
+		e.mu.Unlock()
+		e.Logf("night mode started (up=%d/down=%d)", cur.NightUpload, cur.NightDownload)
+	} else if !inNight && applied {
+		e.SetUploadLimit(cur.UploadLimit)
+		e.SetDownloadLimit(cur.DownloadLimit)
+		e.mu.Lock()
+		e.nightApplied = false
+		e.mu.Unlock()
+		e.Logf("night mode ended, restored limits")
+	}
+
+	if cur.RatioTarget <= 0 {
+		return
+	}
+	e.mu.Lock()
+	var list []*Torrent
+	for _, t := range e.torrents {
+		list = append(list, t)
+	}
+	e.mu.Unlock()
+	for _, t := range list {
+		t.mu.Lock()
+		target := t.RatioTarget
+		if target <= 0 {
+			target = cur.RatioTarget
+		}
+		seeding := t.State == StateSeeding
+		up, down := t.Uploaded, t.Downloaded
+		name := t.Name
+		t.mu.Unlock()
+		if !seeding || target <= 0 {
+			continue
+		}
+		ratio := float64(0)
+		if down > 0 {
+			ratio = float64(up) / float64(down)
+		} else if up > 0 {
+			ratio = float64(up)
+		}
+		if ratio < target {
+			continue
+		}
+		if cur.RatioRemove {
+			e.Logf("ratio %.2f >= %.2f reached, removing %q", ratio, target, name)
+			if err := e.RemoveTorrent(t.ID); err != nil {
+				e.Logf("ratio remove %q failed: %v", name, err)
+				continue
+			}
+			e.notify(NoticeRatio, t.ID, name)
+		} else if cur.RatioStop {
+			e.Logf("ratio %.2f >= %.2f reached, stopping %q", ratio, target, name)
+			t.setState(StatePaused)
+			e.notify(NoticeRatio, t.ID, name)
+		}
+	}
+}
+
+// nightIsActive reports whether now is inside the [start,end) night window.
+// The window may wrap midnight (e.g. 23:00 -> 07:00).
+func nightIsActive(start, end string, now time.Time) bool {
+	if start == "" || end == "" {
+		return false
+	}
+	sh, sm := parseClock(start)
+	eh, em := parseClock(end)
+	if sh < 0 || eh < 0 {
+		return false
+	}
+	cur := now.Hour()*60 + now.Minute()
+	s := sh*60 + sm
+	f := eh*60 + em
+	if s < f {
+		return cur >= s && cur < f
+	}
+	return cur >= s || cur < f
+}
+
+// parseClock parses "HH:MM" into hour and minute (-1,-1 when invalid).
+func parseClock(v string) (int, int) {
+	if len(v) != 5 || v[2] != ':' {
+		return -1, -1
+	}
+	h, err1 := strconv.Atoi(v[:2])
+	m, err2 := strconv.Atoi(v[3:])
+	if err1 != nil || err2 != nil || h < 0 || h > 23 || m < 0 || m > 59 {
+		return -1, -1
+	}
+	return h, m
 }
 
 // upToday returns uploaded bytes in the current calendar day.
