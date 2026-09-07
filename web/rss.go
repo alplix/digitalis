@@ -275,6 +275,7 @@ func (s *Server) pollFeed(f *rssFeed) error {
 		if len(l.Recent) > rssMaxRecent {
 			l.Recent = l.Recent[:rssMaxRecent]
 		}
+		l.LastPoll = now
 		l.LastError = ""
 		l.LastOk = now
 	}
@@ -307,6 +308,7 @@ func (s *Server) rssAdd(f *rssFeed, src string, size int64) {
 	}
 	t.SetCategory(cat)
 	s.persistRecord(torrentRecord{Kind: rssKind(src), ID: t.ID, Source: src, Category: cat})
+	s.engine.Notify(torrente.NoticeRSS, t.ID, t.Name)
 	s.engine.Logf("rss added %q", t.Name)
 }
 
@@ -584,4 +586,27 @@ func (s *Server) pollRSS(w http.ResponseWriter, r *http.Request) {
 	v := rssView(s.findFeed(id))
 	s.rssMu.Unlock()
 	writeJSON(w, http.StatusOK, v)
+}
+
+// pollAllRSS force-polls every enabled feed immediately, regardless of the
+// per-feed interval. Work happens in the background; 202 is returned at once.
+func (s *Server) pollAllRSS(w http.ResponseWriter, r *http.Request) {
+	s.rssMu.Lock()
+	feeds := append([]rssFeed(nil), s.feeds...)
+	s.rssMu.Unlock()
+	enabled := 0
+	for i := range feeds {
+		if feeds[i].Enabled {
+			enabled++
+		}
+	}
+	s.engine.Logf("rss: manual check of %d enabled feed(s)", enabled)
+	for i := range feeds {
+		if !feeds[i].Enabled {
+			continue
+		}
+		f := feeds[i]
+		go s.pollFeed(&f)
+	}
+	writeJSON(w, http.StatusAccepted, map[string]string{"ok": "polling started", "feeds": fmt.Sprintf("%d", enabled)})
 }

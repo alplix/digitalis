@@ -2,6 +2,7 @@
 package web
 
 import (
+	"crypto/subtle"
 	"embed"
 	"encoding/json"
 	"errors"
@@ -223,8 +224,120 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /api/rss", s.createRSS)
 	mux.HandleFunc("DELETE /api/rss/{id}", s.deleteRSS)
 	mux.HandleFunc("POST /api/rss/{id}/poll", s.pollRSS)
+	mux.HandleFunc("POST /api/rss/poll", s.pollAllRSS)
 
-	return s.withLogging(mux)
+	mux.HandleFunc("POST /api/auth", s.checkAuth)
+	mux.HandleFunc("POST /api/settings/auth", s.postAuth)
+
+	return s.withLogging(s.withAuth(mux))
+}
+
+// authPublic routes never require the access token: the shell page and its
+// static assets carry no secrets, and /api/auth verifies the token itself.
+func authPublic(p string) bool {
+	switch p {
+	case "/", "/logo.svg", "/favicon.svg", "/manifest.webmanifest", "/sw.js", "/qrcode.min.js", "/api/auth":
+		return true
+	}
+	return false
+}
+
+// withAuth guards every non-public route with the configured access token.
+func (s *Server) withAuth(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tok := s.engine.ServerToken()
+		if tok == "" || authPublic(r.URL.Path) {
+			next.ServeHTTP(w, r)
+			return
+		}
+		if s.tokenMatches(r, tok) {
+			next.ServeHTTP(w, r)
+			return
+		}
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+	})
+}
+
+// tokenMatches checks the request credentials (Bearer header, X-Auth-Token
+// header, or ?token= query — the latter lets media streams and WebSocket
+// connections authenticate) against the configured token in constant time.
+func (s *Server) tokenMatches(r *http.Request, tok string) bool {
+	var given string
+	if a := r.Header.Get("Authorization"); strings.HasPrefix(a, "Bearer ") {
+		given = strings.TrimSpace(a[len("Bearer "):])
+	}
+	if given == "" {
+		if x := r.Header.Get("X-Auth-Token"); x != "" {
+			given = x
+		}
+	}
+	if given == "" {
+		given = r.URL.Query().Get("token")
+	}
+	if given == "" {
+		return false
+	}
+	return subtle.ConstantTimeCompare([]byte(given), []byte(tok)) == 1
+}
+
+// checkAuth validates a client-provided token. Exempt from the middleware via
+// authPublic so it can bootstrap the login screen.
+func (s *Server) checkAuth(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Token string `json:"token"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
+		return
+	}
+	tok := s.engine.ServerToken()
+	if tok == "" {
+		writeJSON(w, http.StatusOK, map[string]string{"ok": "open"})
+		return
+	}
+	if subtle.ConstantTimeCompare([]byte(req.Token), []byte(tok)) == 1 {
+		writeJSON(w, http.StatusOK, map[string]string{"ok": "true"})
+		return
+	}
+	writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid token"})
+}
+
+// postAuth sets, changes or clears the access token. It sits behind the
+// middleware, so reaching it already proves knowledge of the current token
+// (or an open server, in which case the first token can be bootstrapped).
+func (s *Server) postAuth(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Token string `json:"token"`
+		Clear bool   `json:"clear"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
+		return
+	}
+	if req.Clear {
+		if err := s.engine.ClearServerToken(); err != nil {
+			writeJSON(w, http.StatusConflict, map[string]string{"error": err.Error()})
+			return
+		}
+		s.engine.Logf("server access protection removed")
+		writeJSON(w, http.StatusOK, map[string]string{"ok": "cleared"})
+		return
+	}
+	req.Token = strings.TrimSpace(req.Token)
+	if req.Token == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "token required"})
+		return
+	}
+	if len(req.Token) < 6 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "token too short"})
+		return
+	}
+	if err := s.engine.SetServerToken(req.Token); err != nil {
+		writeJSON(w, http.StatusConflict, map[string]string{"error": err.Error()})
+		return
+	}
+	s.engine.Logf("server access protection enabled")
+	writeJSON(w, http.StatusOK, map[string]string{"ok": "set"})
 }
 
 func (s *Server) withLogging(next http.Handler) http.Handler {
@@ -301,6 +414,7 @@ type settingsView struct {
 	RatioTarget      float64 `json:"ratio_target"`
 	RatioStop        bool    `json:"ratio_stop"`
 	RatioRemove      bool    `json:"ratio_remove"`
+	ServerTokenSet   bool    `json:"server_token_set"`
 	PeerPort         int     `json:"peer_port"`
 	Version          string  `json:"version"`
 }
@@ -321,6 +435,7 @@ func (s *Server) settingsView() settingsView {
 		RatioTarget:      v.RatioTarget,
 		RatioStop:        v.RatioStop,
 		RatioRemove:      v.RatioRemove,
+		ServerTokenSet:   v.ServerToken != "",
 		PeerPort:         s.engine.Port(),
 		Version:          "digitalis 0.9",
 	}

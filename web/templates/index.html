@@ -337,6 +337,14 @@
           </div>
         </div>
 
+        <div class="card rounded-2xl p-4 mb-6">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-semibold" data-i18n="feeds">Feeds</h3>
+            <button onclick="pollAllRSS()" class="px-3 py-1 rounded-md inp text-[11px] hover:border-[var(--border2)] transition" data-i18n="checkAll">Check all</button>
+          </div>
+          <div id="dashFeeds" class="text-sm tx2"><div data-i18n="loading">Loading...</div></div>
+        </div>
+
         <div class="grid grid-cols-1 gap-4">
           <div class="card rounded-2xl p-4">
             <div class="flex items-center justify-between mb-3">
@@ -488,6 +496,7 @@
         <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
           <h1 class="text-xl md:text-2xl font-bold">RSS</h1>
           <button onclick="toggleRSSForm()" class="px-4 py-2 rounded-xl btn-primary text-sm font-medium shadow transition">＋ <span data-i18n="addFeed">Add feed</span></button>
+          <button onclick="pollAllRSS()" class="px-4 py-2 rounded-xl inp text-sm font-medium transition">⟳ <span data-i18n="checkAll">Check all</span></button>
         </div>
 
         <div id="rssForm" class="card rounded-2xl p-4 mb-4 hidden">
@@ -643,6 +652,23 @@
           </div>
         </div>
 
+        <div class="card rounded-2xl p-4 mt-4">
+          <h3 class="text-sm font-semibold mb-3" data-i18n="authTitle">Access protection</h3>
+          <div class="text-xs space-y-3">
+            <div class="flex items-center justify-between gap-3">
+              <span class="tx2" data-i18n="authState">Protection</span>
+              <span id="set-auth-state" class="px-2 py-0.5 rounded-full chip font-semibold text-[11px]">—</span>
+            </div>
+            <label class="block text-xs tx2 mb-1" data-i18n="authToken">Access token (blank = keep current)</label>
+            <div class="flex gap-2">
+              <input id="set-auth-token" type="password" autocomplete="new-password" class="flex-1 rounded-xl px-2 py-2 inp text-sm focus:outline-none font-mono">
+              <button onclick="setAuth()" class="px-4 py-2 rounded-lg btn-primary text-xs font-medium" data-i18n="authSet">Set token</button>
+            </div>
+            <p class="text-[11px] tx3" data-i18n="authHint">When a token is set, the web UI and every API request require it. Media streams and WebSocket connections carry it automatically.</p>
+            <button onclick="clearAuth()" id="set-auth-clear" class="hidden px-4 py-2 rounded-lg inp text-xs hover:border-[var(--bad)] transition" style="color:var(--bad)" data-i18n="authClear">Remove protection</button>
+          </div>
+        </div>
+
         <div class="flex justify-end mt-5">
           <button onclick="saveSettings()" class="px-6 py-2.5 rounded-xl btn-primary font-medium shadow-lg shadow-black/20 transition" data-i18n="save">Save</button>
         </div>
@@ -708,7 +734,16 @@ const I18N = {
     downloading: 'Downloading', seeding: 'Seeding',
     activePeers: 'Active peers', knownPeers: 'Known peers', trackersOf: 'Trackers', upload: 'Upload', download: 'Download',
     noticeComplete: 'Download complete', noticeMetadata: 'Metadata fetched',
-    selectAll: 'Select all', selected: 'selected', noLimit: 'no limit'
+    selectAll: 'Select all', selected: 'selected', noLimit: 'no limit',
+    checkAll: 'Check all', pollStarted: 'Checking enabled feeds…',
+    feeds: 'feeds', erroredLast: 'errored',
+    noticeRSS: 'RSS feed added',
+    authTitle: 'Access protection', authState: 'Protection', authOn: 'enabled', authOff: 'off',
+    authToken: 'Access token (blank = keep current)', authSet: 'Set token',
+    authHint: 'When a token is set, the web UI and every API request require it. Media streams and WebSocket connections carry it automatically.',
+    authClear: 'Remove protection', authLogin: 'Access token required', authLoginHint: 'Enter the access token configured in Settings.',
+    authPlaceholder: 'Access token', authWrong: 'Invalid token', authUnlock: 'Unlock',
+    authSaved: 'Access protected', authCleared: 'Protection removed'
   },
   tr: {
     tagline: 'Yüksük Otu — sıfırdan yazılmış BitTorrent istemcisi', noDocker: 'Docker yok',
@@ -749,7 +784,16 @@ const I18N = {
     addFeed: 'Besleme ekle', feedName: 'Besleme adı', feedUrl: 'Besleme URL\'si (RSS/Atom)', feedKeywords: 'Anahtar kelimeler (boşluklu, herhangi biri eşleşsin)', feedBlacklist: 'Karaliste (boşluklu)', feedCategory: 'Hedef klasör (isteğe bağlı)', feedInterval: 'Aralık (dakika, 0=15)', feedEnabled: 'Etkin', checkNow: 'Şimdi kontrol et', noFeeds: 'Henüz besleme yok.', noMatches: 'Henüz eşleşen öğe yok.',
     nightMode: 'Gece modu (sessiz saatler)', nightStart: 'Başlangıç', nightEnd: 'Bitiş (gece yarısını aşabilir)', nightUp: 'Yükleme sınırı (B/s, 0=koru)', nightDown: 'İndirme sınırı (B/s, 0=koru)', nightPause: 'Gece aktarımları tamamen duraklat',
     ratioGoal: 'Oran hedefi', ratioTarget: 'Bu orana gelince paylaşım durur (0=kapalı)', ratioStop: 'Hedefe ulaşınca paylaşımı duraklat', ratioRemove: 'Hedefe ulaşınca torrenti kaldır',
-    lastOk: 'son başarılı', lastPoll: 'son kontrol', nextPoll: 'sonraki', neverPolled: 'Henüz kontrol edilmedi,'
+    lastOk: 'son başarılı', lastPoll: 'son kontrol', nextPoll: 'sonraki', neverPolled: 'Henüz kontrol edilmedi,',
+    checkAll: 'Tümünü kontrol et', pollStarted: 'Etkin beslemeler kontrol ediliyor…',
+    feeds: 'besleme', erroredLast: 'hata',
+    noticeRSS: 'RSS beslemeden eklendi',
+    authTitle: 'Erişim koruması', authState: 'Koruma', authOn: 'açık', authOff: 'kapalı',
+    authToken: 'Erişim belirteci (boş = mevcut kalsın)', authSet: 'Belirteci ayarla',
+    authHint: 'Belirteç ayarlanınca web arayüzü ve tüm API istekleri onu ister. Medya akışı ve WebSocket bağlantıları otomatik taşır.',
+    authClear: 'Korumayı kaldır', authLogin: 'Erişim belirteci gerekli', authLoginHint: 'Ayarlar\'da yapılandırılan erişim belirtecini girin.',
+    authPlaceholder: 'Erişim belirteci', authWrong: 'Geçersiz belirteç', authUnlock: 'Kilidi aç',
+    authSaved: 'Erişim korundu', authCleared: 'Koruma kaldırıldı'
   },
   de: {
     tagline: 'Ein von Grund auf geschriebener BitTorrent-Client', noDocker: 'Kein Docker',
@@ -777,7 +821,15 @@ const I18N = {
     addFeed: 'Feed hinzufügen', feedName: 'Feed-Name', feedUrl: 'Feed-URL (RSS/Atom)', feedKeywords: 'Schlüsselwörter (Leerzeichen, beliebiges Match)', feedBlacklist: 'Blacklist (Leerzeichen)', feedCategory: 'Zielordner (optional)', feedInterval: 'Intervall (Minuten, 0=15)', feedEnabled: 'Aktiviert', checkNow: 'Jetzt prüfen', noFeeds: 'Noch keine Feeds.', noMatches: 'Noch keine passenden Einträge.',
     nightMode: 'Nachtmodus (ruhige Zeiten)', nightStart: 'Von', nightEnd: 'Bis (kann Mitternacht überschreiten)', nightUp: 'Upload-Limit (B/s, 0=behalten)', nightDown: 'Download-Limit (B/s, 0=behalten)', nightPause: 'Übertragungen nachts vollständig pausieren',
     ratioGoal: 'Ratio-Ziel', ratioTarget: 'Seeding stoppt bei Ratio (0=aus)', ratioStop: 'Seeding bei Erreichen pausieren', ratioRemove: 'Torrent bei Erreichen entfernen',
-    lastOk: 'zuletzt ok', lastPoll: 'letzte Prüfung', nextPoll: 'nächste in', neverPolled: 'Noch nie geprüft,'
+    lastOk: 'zuletzt ok', lastPoll: 'letzte Prüfung', nextPoll: 'nächste in', neverPolled: 'Noch nie geprüft,',
+    checkAll: 'Alle prüfen', pollStarted: 'Aktive Feeds werden geprüft…', feeds: 'Feeds', erroredLast: 'gescheitert',
+    noticeRSS: 'RSS-Feed hinzugefügt',
+    authTitle: 'Zugriffsschutz', authState: 'Schutz', authOn: 'aktiv', authOff: 'aus',
+    authToken: 'Zugriffs-Token (leer = beibehalten)', authSet: 'Token setzen',
+    authHint: 'Mit gesetztem Token benötigen Web-UI und jede API-Anfrage ihn. Media-Streams und WebSocket tragen ihn automatisch.',
+    authClear: 'Schutz entfernen', authLogin: 'Zugriffs-Token erforderlich', authLoginHint: 'Geben Sie das in den Einstellungen konfigurierte Zugriffs-Token ein.',
+    authPlaceholder: 'Zugriffs-Token', authWrong: 'Ungültiges Token', authUnlock: 'Freischalten',
+    authSaved: 'Zugriff geschützt', authCleared: 'Schutz entfernt'
   },
   fr: {
     tagline: 'Un client BitTorrent écrit from scratch', noDocker: 'Pas de Docker',
@@ -805,7 +857,15 @@ const I18N = {
     addFeed: 'Ajouter un flux', feedName: 'Nom du flux', feedUrl: 'URL du flux (RSS/Atom)', feedKeywords: 'Mots-clés (séparés par espaces, n\'importe lequel)', feedBlacklist: 'Liste noire (séparés par espaces)', feedCategory: 'Dossier cible (optionnel)', feedInterval: 'Intervalle (minutes, 0=15)', feedEnabled: 'Activé', checkNow: 'Vérifier maintenant', noFeeds: 'Aucun flux pour l\'instant.', noMatches: 'Aucun élément ne correspond encore.',
     nightMode: 'Mode nuit (heures calmes)', nightStart: 'De', nightEnd: 'À (peut passer minuit)', nightUp: 'Limite upload (o/s, 0=conserver)', nightDown: 'Limite download (o/s, 0=conserver)', nightPause: 'Suspendre complètement les transferts la nuit',
     ratioGoal: 'Objectif de ratio', ratioTarget: 'Le seed s\'arrête au ratio (0=désactivé)', ratioStop: 'Mettre en pause le seed au ratio atteint', ratioRemove: 'Supprimer le torrent au ratio atteint',
-    lastOk: 'dernier ok', lastPoll: 'dernier contrôle', nextPoll: 'dans', neverPolled: 'Jamais vérifié,'
+    lastOk: 'dernier ok', lastPoll: 'dernier contrôle', nextPoll: 'dans', neverPolled: 'Jamais vérifié,',
+    checkAll: 'Tout vérifier', pollStarted: 'Contrôle des flux actifs…', feeds: 'flux', erroredLast: 'en erreur',
+    noticeRSS: 'Ajouté depuis un flux RSS',
+    authTitle: 'Protection d\'accès', authState: 'Protection', authOn: 'active', authOff: 'désactivée',
+    authToken: 'Jeton d\'accès (vide = conserver)', authSet: 'Définir le jeton',
+    authHint: 'Avec un jeton défini, l\'interface et chaque requête API l\'exigent. Les flux média et WebSocket le portent automatiquement.',
+    authClear: 'Retirer la protection', authLogin: 'Jeton d\'accès requis', authLoginHint: 'Saisissez le jeton d\'accès configuré dans Paramètres.',
+    authPlaceholder: 'Jeton d\'accès', authWrong: 'Jeton invalide', authUnlock: 'Déverrouiller',
+    authSaved: 'Accès protégé', authCleared: 'Protection retirée'
   },
   es: {
     tagline: 'Un cliente BitTorrent escrito desde cero', noDocker: 'Sin Docker',
@@ -833,7 +893,15 @@ const I18N = {
     addFeed: 'Añadir feed', feedName: 'Nombre del feed', feedUrl: 'URL del feed (RSS/Atom)', feedKeywords: 'Palabras clave (espacios, cualquiera)', feedBlacklist: 'Lista negra (espacios)', feedCategory: 'Carpeta destino (opcional)', feedInterval: 'Intervalo (minutos, 0=15)', feedEnabled: 'Activado', checkNow: 'Comprobar ahora', noFeeds: 'Aún no hay feeds.', noMatches: 'Aún no hay elementos que coincidan.',
     nightMode: 'Modo nocturno (horas de silencio)', nightStart: 'De', nightEnd: 'A (puede pasar medianoche)', nightUp: 'Límite de subida (B/s, 0=mantener)', nightDown: 'Límite de bajada (B/s, 0=mantener)', nightPause: 'Pausar completamente las transferencias de noche',
     ratioGoal: 'Objetivo de ratio', ratioTarget: 'El seeding se detiene al ratio (0=off)', ratioStop: 'Pausar el seeding al alcanzarlo', ratioRemove: 'Eliminar el torrent al alcanzarlo',
-    lastOk: 'último ok', lastPoll: 'última comprobación', nextPoll: 'dentro de', neverPolled: 'Sin comprobar aún,'
+    lastOk: 'último ok', lastPoll: 'última comprobación', nextPoll: 'dentro de', neverPolled: 'Sin comprobar aún,',
+    checkAll: 'Comprobar todo', pollStarted: 'Comprobando feeds activos…', feeds: 'feeds', erroredLast: 'error',
+    noticeRSS: 'Añadido desde feed RSS',
+    authTitle: 'Protección de acceso', authState: 'Protección', authOn: 'activada', authOff: 'desactivada',
+    authToken: 'Token de acceso (vacío = mantener)', authSet: 'Establecer token',
+    authHint: 'Con un token definido, la interfaz y cada petición API lo exigen. Los flujos de medios y WebSocket lo llevan automáticamente.',
+    authClear: 'Quitar protección', authLogin: 'Token de acceso requerido', authLoginHint: 'Introduzca el token de acceso configurado en Ajustes.',
+    authPlaceholder: 'Token de acceso', authWrong: 'Token inválido', authUnlock: 'Desbloquear',
+    authSaved: 'Acceso protegido', authCleared: 'Protección eliminada'
   },
   it: {
     tagline: 'Un client BitTorrent scritto da zero', noDocker: 'Niente Docker',
@@ -861,7 +929,15 @@ const I18N = {
     addFeed: 'Aggiungi feed', feedName: 'Nome feed', feedUrl: 'URL del feed (RSS/Atom)', feedKeywords: 'Parole chiave (spazi, qualsiasi)', feedBlacklist: 'Blacklist (spazi)', feedCategory: 'Cartella di destinazione (opzionale)', feedInterval: 'Intervallo (minuti, 0=15)', feedEnabled: 'Abilitato', checkNow: 'Controlla ora', noFeeds: 'Ancora nessun feed.', noMatches: 'Ancora nessun elemento corrispondente.',
     nightMode: 'Modalità notte (ore silenziose)', nightStart: 'Da', nightEnd: 'A (può superare mezzanotte)', nightUp: 'Limite upload (B/s, 0=mantieni)', nightDown: 'Limite download (B/s, 0=mantieni)', nightPause: 'Sospendi completamente i trasferimenti di notte',
     ratioGoal: 'Obiettivo ratio', ratioTarget: 'Il seeding si ferma al ratio (0=off)', ratioStop: 'Sospendi il seeding al raggiungimento', ratioRemove: 'Rimuovi il torrent al raggiungimento',
-    lastOk: 'ultimo ok', lastPoll: 'ultimo controllo', nextPoll: 'tra', neverPolled: 'Mai controllato,'
+    lastOk: 'ultimo ok', lastPoll: 'ultimo controllo', nextPoll: 'tra', neverPolled: 'Mai controllato,',
+    checkAll: 'Controlla tutto', pollStarted: 'Controllo feed attivi…', feeds: 'feed', erroredLast: 'errore',
+    noticeRSS: 'Aggiunto da feed RSS',
+    authTitle: 'Protezione accesso', authState: 'Protezione', authOn: 'attiva', authOff: 'disattiva',
+    authToken: 'Token di accesso (vuoto = mantieni)', authSet: 'Imposta token',
+    authHint: 'Con un token impostato, l\'interfaccia e ogni richiesta API lo richiedono. Gli stream e WebSocket lo trasportano automaticamente.',
+    authClear: 'Rimuovi protezione', authLogin: 'Token di accesso richiesto', authLoginHint: 'Inserisci il token configurato nelle Impostazioni.',
+    authPlaceholder: 'Token di accesso', authWrong: 'Token non valido', authUnlock: 'Sblocca',
+    authSaved: 'Accesso protetto', authCleared: 'Protezione rimossa'
   },
   pt: {
     tagline: 'Um cliente BitTorrent escrito do zero', noDocker: 'Sem Docker',
@@ -889,7 +965,15 @@ const I18N = {
     addFeed: 'Adicionar feed', feedName: 'Nome do feed', feedUrl: 'URL do feed (RSS/Atom)', feedKeywords: 'Palavras-chave (espaços, qualquer uma)', feedBlacklist: 'Lista negra (espaços)', feedCategory: 'Pasta de destino (opcional)', feedInterval: 'Intervalo (minutos, 0=15)', feedEnabled: 'Ativado', checkNow: 'Verificar agora', noFeeds: 'Ainda não há feeds.', noMatches: 'Ainda nenhum item correspondente.',
     nightMode: 'Modo noturno (horas silenciosas)', nightStart: 'De', nightEnd: 'Até (pode passar da meia-noite)', nightUp: 'Limite de envio (B/s, 0=manter)', nightDown: 'Limite de download (B/s, 0=manter)', nightPause: 'Pausar totalmente as transferências à noite',
     ratioGoal: 'Meta de ratio', ratioTarget: 'O seeding para no ratio (0=off)', ratioStop: 'Pausar o seeding ao atingir', ratioRemove: 'Remover o torrent ao atingir',
-    lastOk: 'último ok', lastPoll: 'última verificação', nextPoll: 'daqui a', neverPolled: 'Nunca verificado,'
+    lastOk: 'último ok', lastPoll: 'última verificação', nextPoll: 'daqui a', neverPolled: 'Nunca verificado,',
+    checkAll: 'Verificar tudo', pollStarted: 'Verificando feeds ativos…', feeds: 'feeds', erroredLast: 'erro',
+    noticeRSS: 'Adicionado via feed RSS',
+    authTitle: 'Proteção de acesso', authState: 'Proteção', authOn: 'ativada', authOff: 'desativada',
+    authToken: 'Token de acesso (vazio = manter)', authSet: 'Definir token',
+    authHint: 'Com um token definido, a interface e cada requisição API o exigem. Os streams e o WebSocket o enviam automaticamente.',
+    authClear: 'Remover proteção', authLogin: 'Token de acesso necessário', authLoginHint: 'Insira o token configurado nas Configurações.',
+    authPlaceholder: 'Token de acesso', authWrong: 'Token inválido', authUnlock: 'Desbloquear',
+    authSaved: 'Acesso protegido', authCleared: 'Proteção removida'
   },
   ru: {
     tagline: 'BitTorrent-клиент, написанный с нуля', noDocker: 'Без Docker',
@@ -917,7 +1001,15 @@ const I18N = {
     addFeed: 'Добавить фид', feedName: 'Название фида', feedUrl: 'URL фида (RSS/Atom)', feedKeywords: 'Ключевые слова (через пробел, любое)', feedBlacklist: 'Чёрный список (через пробел)', feedCategory: 'Целевая папка (необязательно)', feedInterval: 'Интервал (минуты, 0=15)', feedEnabled: 'Включено', checkNow: 'Проверить', noFeeds: 'Фидов пока нет.', noMatches: 'Совпадений пока нет.',
     nightMode: 'Ночной режим (тихие часы)', nightStart: 'С', nightEnd: 'До (может перейти за полночь)', nightUp: 'Лимит загрузки (Б/с, 0=оставить)', nightDown: 'Лимит скачивания (Б/с, 0=оставить)', nightPause: 'Полностью приостановить передачу ночью',
     ratioGoal: 'Цель по ratio', ratioTarget: 'Остановить раздачу при ratio (0=выкл)', ratioStop: 'Приостановить раздачу при достижении', ratioRemove: 'Удалить торрент при достижении',
-    lastOk: 'последний ок', lastPoll: 'последняя проверка', nextPoll: 'через', neverPolled: 'Ещё не проверялся,'
+    lastOk: 'последний ок', lastPoll: 'последняя проверка', nextPoll: 'через', neverPolled: 'Ещё не проверялся,',
+    checkAll: 'Проверить все', pollStarted: 'Проверка активных фидов…', feeds: 'фидов', erroredLast: 'ошибка',
+    noticeRSS: 'Добавлено из RSS фида',
+    authTitle: 'Защита доступа', authState: 'Защита', authOn: 'вкл', authOff: 'выкл',
+    authToken: 'Токен доступа (пусто = оставить)', authSet: 'Задать токен',
+    authHint: 'При заданном токене веб-интерфейс и каждый запрос к API требуют его. Медиа-потоки и WebSocket передают его автоматически.',
+    authClear: 'Снять защиту', authLogin: 'Требуется токен доступа', authLoginHint: 'Введите токен доступа, заданный в Настройках.',
+    authPlaceholder: 'Токен доступа', authWrong: 'Неверный токен', authUnlock: 'Разблокировать',
+    authSaved: 'Доступ защищён', authCleared: 'Защита снята'
   },
   ja: {
     tagline: 'ゼロから書いたBitTorrentクライアント', noDocker: 'Docker不使用',
@@ -945,7 +1037,15 @@ const I18N = {
     addFeed: 'フィード追加', feedName: 'フィード名', feedUrl: 'フィードURL (RSS/Atom)', feedKeywords: 'キーワード (スペース区切り、いずれか一致)', feedBlacklist: 'ブラックリスト (スペース区切り)', feedCategory: '保存先フォルダ (任意)', feedInterval: '間隔 (分, 0=15)', feedEnabled: '有効', checkNow: '今すぐ確認', noFeeds: 'フィードがまだありません。', noMatches: '一致する項目はまだありません。',
     nightMode: '夜間モード (静かな時間)', nightStart: '開始', nightEnd: '終了 (真夜中をまたぐ可)', nightUp: 'アップロード制限 (B/秒, 0=維持)', nightDown: 'ダウンロード制限 (B/秒, 0=維持)', nightPause: '夜間は転送を完全に停止',
     ratioGoal: 'レシオ目標', ratioTarget: 'レシオ到達で停止 (0=オフ)', ratioStop: '到達時にシードを一時停止', ratioRemove: '到達時にトーレントを削除',
-    lastOk: '最終OK', lastPoll: '最終確認', nextPoll: '次の', neverPolled: 'まだ未確認、'
+    lastOk: '最終OK', lastPoll: '最終確認', nextPoll: '次の', neverPolled: 'まだ未確認、',
+    checkAll: 'すべて確認', pollStarted: '有効フィードを確認中…', feeds: 'フィード', erroredLast: 'エラー',
+    noticeRSS: 'RSSフィードから追加',
+    authTitle: 'アクセス保護', authState: '保護', authOn: '有効', authOff: '無効',
+    authToken: 'アクセストークン (空欄=維持)', authSet: 'トークンを設定',
+    authHint: 'トークンを設定すると、UIとすべてのAPIリクエストで必要になります。ストリームとWebSocketは自動で付与します。',
+    authClear: '保護を解除', authLogin: 'アクセストークンが必要です', authLoginHint: '設定で構成したアクセストークンを入力してください。',
+    authPlaceholder: 'アクセストークン', authWrong: '無効なトークン', authUnlock: 'ロック解除',
+    authSaved: 'アクセス保護済み', authCleared: '保護を解除しました'
   },
   zh: {
     tagline: '从头编写的BitTorrent客户端', noDocker: '无Docker',
@@ -973,7 +1073,15 @@ const I18N = {
     addFeed: '添加订阅', feedName: '订阅名称', feedUrl: '订阅URL（RSS/Atom）', feedKeywords: '关键词（空格分隔，任一匹配）', feedBlacklist: '黑名单（空格分隔）', feedCategory: '目标文件夹（可选）', feedInterval: '间隔（分钟，0=15）', feedEnabled: '启用', checkNow: '立即检查', noFeeds: '暂无订阅。', noMatches: '暂无匹配项目。',
     nightMode: '夜间模式（安静时段）', nightStart: '从', nightEnd: '至（可跨午夜）', nightUp: '上传限制（B/s，0=保持）', nightDown: '下载限制（B/s，0=保持）', nightPause: '夜间完全暂停传输',
     ratioGoal: '分享率目标', ratioTarget: '达到分享率后停止做种（0=关闭）', ratioStop: '达到时暂停做种', ratioRemove: '达到时删除种子',
-    lastOk: '上次成功', lastPoll: '上次检查', nextPoll: '下次', neverPolled: '尚未检查，'
+    lastOk: '上次成功', lastPoll: '上次检查', nextPoll: '下次', neverPolled: '尚未检查，',
+    checkAll: '全部检查', pollStarted: '正在检查启用的订阅…', feeds: '个订阅', erroredLast: '出错',
+    noticeRSS: '已从RSS订阅添加',
+    authTitle: '访问保护', authState: '保护', authOn: '已启用', authOff: '已关闭',
+    authToken: '访问令牌（留空=保持）', authSet: '设置令牌',
+    authHint: '设置令牌后，网页界面和每个API请求都需要它。媒体流和WebSocket会自动携带。',
+    authClear: '移除保护', authLogin: '需要访问令牌', authLoginHint: '请输入在设置中配置的访问令牌。',
+    authPlaceholder: '访问令牌', authWrong: '令牌无效', authUnlock: '解锁',
+    authSaved: '访问已保护', authCleared: '保护已移除'
   },
   ar: {
     tagline: 'عميل BitTorrent مكتوب من الصفر', noDocker: 'بدون Docker',
@@ -1001,7 +1109,15 @@ const I18N = {
     addFeed: 'إضافة تغذية', feedName: 'اسم التغذية', feedUrl: 'رابط التغذية (RSS/Atom)', feedKeywords: 'كلمات مفتاحية (مفصولة بمسافات، أي تطابق)', feedBlacklist: 'قائمة الحظر (مسافات)', feedCategory: 'المجلد الهدف (اختياري)', feedInterval: 'الفاصل (دقائق، 0=15)', feedEnabled: 'مفعّل', checkNow: 'تحقق الآن', noFeeds: 'لا توجد تغذيات بعد.', noMatches: 'لا عناصر مطابقة بعد.',
     nightMode: 'الوضع الليلي (ساعات هادئة)', nightStart: 'من', nightEnd: 'إلى (قد يتجاوز منتصف الليل)', nightUp: 'حد الرفع (ب/ث، 0=إبقاء)', nightDown: 'حد التنزيل (ب/ث، 0=إبقاء)', nightPause: 'إيقاف النقل كلياً ليلاً',
     ratioGoal: 'هدف النسبة', ratioTarget: 'يتوقف البذر عند النسبة (0=إيقاف)', ratioStop: 'إيقاف البذر مؤقتاً عند بلوغه', ratioRemove: 'حذف التورنت عند بلوغه',
-    lastOk: 'آخر نجاح', lastPoll: 'آخر فحص', nextPoll: 'التالي خلال', neverPolled: 'لم يُفحص بعد،'
+    lastOk: 'آخر نجاح', lastPoll: 'آخر فحص', nextPoll: 'التالي خلال', neverPolled: 'لم يُفحص بعد،',
+    checkAll: 'تحقق من الكل', pollStarted: 'جارٍ فحص الموجزات النشطة…', feeds: 'موجزات', erroredLast: 'خطأ',
+    noticeRSS: 'أُضيف من موجز RSS',
+    authTitle: 'حماية الوصول', authState: 'الحماية', authOn: 'مفعّلة', authOff: 'متوقفة',
+    authToken: 'رمز الوصول (فارغ = إبقاء)', authSet: 'عيّن الرمز',
+    authHint: 'عند تعيين رمز، تتطلبه واجهة المستخدم وكل طلب API. تدفقات الوسائط وWebSocket تحمله تلقائياً.',
+    authClear: 'إزالة الحماية', authLogin: 'مطلوب رمز الوصول', authLoginHint: 'أدخل رمز الوصول المُعد في الإعدادات.',
+    authPlaceholder: 'رمز الوصول', authWrong: 'رمز غير صالح', authUnlock: 'فك القفل',
+    authSaved: 'تمت حماية الوصول', authCleared: 'أُزيلت الحماية'
   },
   hi: {
     tagline: 'शुरू से लिखा गया BitTorrent क्लाइंट', noDocker: 'Docker रहित',
@@ -1029,7 +1145,15 @@ const I18N = {
     addFeed: 'फ़ीड जोड़ें', feedName: 'फ़ीड नाम', feedUrl: 'फ़ीड URL (RSS/Atom)', feedKeywords: 'कीवर्ड (स्पेस से अलग, कोई भी मेल)', feedBlacklist: 'ब्लैकलिस्ट (स्पेस से अलग)', feedCategory: 'लक्ष्य फ़ोल्डर (वैकल्पिक)', feedInterval: 'अंतराल (मिनट, 0=15)', feedEnabled: 'सक्रिय', checkNow: 'अभी जाँचें', noFeeds: 'अभी कोई फ़ीड नहीं।', noMatches: 'अभी कोई मेल आइटम नहीं।',
     nightMode: 'रात्रि मोड (शांत समय)', nightStart: 'से', nightEnd: 'तक (मध्यरात्रि पार कर सकता है)', nightUp: 'अपलोड सीमा (B/s, 0=रखें)', nightDown: 'डाउनलोड सीमा (B/s, 0=रखें)', nightPause: 'रात में ट्रांसफर पूरी तरह रोकें',
     ratioGoal: 'रेशियो लक्ष्य', ratioTarget: 'रेशियो पर सीडिंग रुके (0=बंद)', ratioStop: 'पहुँचने पर सीडिंग रोकें', ratioRemove: 'पहुँचने पर टॉरेंट हटाएँ',
-    lastOk: 'अंतिम ठीक', lastPoll: 'अंतिम जाँच', nextPoll: 'अगली', neverPolled: 'अभी जाँचा नहीं,'
+    lastOk: 'अंतिम ठीक', lastPoll: 'अंतिम जाँच', nextPoll: 'अगली', neverPolled: 'अभी जाँचा नहीं,',
+    checkAll: 'सभी जाँचें', pollStarted: 'सक्रिय फ़ीड जाँचे जा रहे हैं…', feeds: 'फ़ीड', erroredLast: 'त्रुटि',
+    noticeRSS: 'RSS फ़ीड से जोड़ा गया',
+    authTitle: 'एक्सेस सुरक्षा', authState: 'सुरक्षा', authOn: 'चालू', authOff: 'बंद',
+    authToken: 'एक्सेस टोकन (खाली = रखें)', authSet: 'टोकन सेट करें',
+    authHint: 'टोकन सेट होने पर UI और हर API अनुरोध उसे माँगते हैं। मीडिया स्ट्रीम और WebSocket उसे अपने आप भेजते हैं।',
+    authClear: 'सुरक्षा हटाएँ', authLogin: 'एक्सेस टोकन आवश्यक', authLoginHint: 'सेटिंग्स में कॉन्फ़िगर किया गया एक्सेस टोकन दर्ज करें।',
+    authPlaceholder: 'एक्सेस टोकन', authWrong: 'अमान्य टोकन', authUnlock: 'अनलॉक',
+    authSaved: 'एक्सेस सुरक्षित', authCleared: 'सुरक्षा हटाई गई'
   }
 };
 
@@ -1081,7 +1205,7 @@ function show(name) {
   const el = document.getElementById('view-' + name);
   if (el) el.classList.add('active');
   document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.getAttribute('data-view') === name));
-  if (name === 'dashboard') refreshStats();
+  if (name === 'dashboard') { refreshStats(); renderFeedSummary(); }
   if (name === 'trackers') refreshTrackers();
   if (name === 'settings') loadSettings();
   if (name === 'guide') renderGuide();
@@ -1216,10 +1340,114 @@ function trackerTable(trs, id) {
 }
 
 async function api(path, opts) {
+  opts = opts || {};
+  opts.headers = Object.assign({}, opts.headers);
+  const tok = localStorage.getItem('dg-token') || '';
+  if (tok) opts.headers['Authorization'] = 'Bearer ' + tok;
   const r = await fetch(API + path, opts);
   const data = await r.json().catch(() => ({}));
+  if (r.status === 401 && path !== '/auth') { ensureAuth().catch(() => {}); throw new Error(data.error || ('HTTP ' + r.status)); }
   if (!r.ok) throw new Error(data.error || ('HTTP ' + r.status));
   return data;
+}
+
+// ---------- access protection ----------
+let authChecked = false;
+async function ensureAuth() {
+  if (authChecked) { showLogin(); return; }
+  authChecked = true;
+  try {
+    const r = await fetch(API + '/auth', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: localStorage.getItem('dg-token') || '' })
+    });
+    const d = await r.json().catch(() => ({}));
+    if (r.ok && d.ok === 'true') return;
+    if (r.ok && d.ok === 'open') return;
+  } catch (e) {}
+  const un = await tryUnlock();
+  if (!un) showLogin();
+}
+async function tryUnlock() {
+  const tok = localStorage.getItem('dg-token') || '';
+  if (!tok) return false;
+  try {
+    const r = await fetch(API + '/auth', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: tok })
+    });
+    const d = await r.json().catch(() => ({}));
+    return r.ok && (d.ok === 'true' || d.ok === 'open');
+  } catch (e) { return false; }
+}
+async function showLogin() {
+  const b = document.getElementById('authBackdrop');
+  if (!b) return;
+  b.classList.remove('hidden');
+  b.classList.add('flex');
+  document.getElementById('auth-token').focus();
+}
+function hideLogin() {
+  const b = document.getElementById('authBackdrop');
+  if (!b) return;
+  b.classList.add('hidden');
+  b.classList.remove('flex');
+}
+async function submitLogin() {
+  const tok = document.getElementById('auth-token').value.trim();
+  const err = document.getElementById('auth-err');
+  err.classList.add('hidden');
+  if (!tok) return;
+  try {
+    const r = await fetch(API + '/auth', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: tok })
+    });
+    const d = await r.json().catch(() => ({}));
+    if (r.ok && (d.ok === 'true' || d.ok === 'open')) {
+      localStorage.setItem('dg-token', tok);
+      hideLogin();
+      location.reload();
+    } else {
+      err.classList.remove('hidden');
+    }
+  } catch (e) { err.classList.remove('hidden'); }
+}
+function authHeaders() {
+  const tok = localStorage.getItem('dg-token') || '';
+  return tok ? { Authorization: 'Bearer ' + tok } : {};
+}
+async function setAuth() {
+  const el = document.getElementById('set-auth-token');
+  const tok = el.value.trim();
+  if (!tok) { alert(t('authToken')); return; }
+  try {
+    await api('/settings/auth', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()), body: JSON.stringify({ token: tok }) });
+    localStorage.setItem('dg-token', tok);
+    el.value = '';
+    el.placeholder = '••••••••';
+    toast('ok', '', t('authSaved'));
+    refreshAuthState();
+  } catch (e) { alert(e.message); }
+}
+async function clearAuth() {
+  try {
+    await api('/settings/auth', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()), body: JSON.stringify({ clear: true }) });
+    localStorage.setItem('dg-token', '');
+    toast('ok', '', t('authCleared'));
+    refreshAuthState();
+  } catch (e) { alert(e.message); }
+}
+async function refreshAuthState() {
+  try {
+    const s = await api('/settings');
+    const auth = !!s.server_token_set;
+    const st = document.getElementById('set-auth-state');
+    if (!st) return;
+    st.textContent = auth ? t('authOn') : t('authOff');
+    st.style.color = auth ? 'var(--good)' : 'var(--txt3)';
+    document.getElementById('set-auth-clear').classList.toggle('hidden', !auth);
+  } catch (e) {}
 }
 
 // ---------- torrents list ----------
@@ -1436,8 +1664,8 @@ async function setTorrentLimit(id) {
 function toast(kind, id, name) {
   const box = document.getElementById('toasts');
   if (!box) return;
-  const label = kind === 'complete' ? t('noticeComplete') : (kind === 'metadata' ? t('noticeMetadata') : (kind.charAt(0).toUpperCase() + kind.slice(1)));
-  const ico = kind === 'complete' ? '✅' : '🧲';
+  const label = kind === 'complete' ? t('noticeComplete') : (kind === 'metadata' ? t('noticeMetadata') : (kind === 'rss' ? t('noticeRSS') : (kind === 'poll' ? t('pollStarted') : (kind.charAt(0).toUpperCase() + kind.slice(1)))));
+  const ico = kind === 'complete' ? '✅' : (kind === 'rss' ? '📡' : (kind === 'poll' ? '⏳' : (kind === 'ok' ? '✅' : '🧲')));
   const el = document.createElement('div');
   el.className = 'toast card rounded-xl p-3 flex items-start gap-3';
   el.setAttribute('role', 'status');
@@ -1471,7 +1699,7 @@ function notifyUser(kind, id, name) {
   const prefs = JSON.parse(localStorage.getItem('dg-notify') || '{"os":true,"sound":true}');
   if (prefs.sound && !document.hidden) ding();
   if (prefs.os && 'Notification' in window && Notification.permission === 'granted' && document.hidden) {
-    const label = kind === 'complete' ? t('noticeComplete') : (kind === 'metadata' ? t('noticeMetadata') : kind);
+    const label = kind === 'complete' ? t('noticeComplete') : (kind === 'metadata' ? t('noticeMetadata') : (kind === 'rss' ? t('noticeRSS') : kind));
     try { new Notification('Digitalis · ' + label, { body: name || id || '', icon: '/favicon.svg' }); } catch (e) {}
   }
 }
@@ -1588,7 +1816,8 @@ function renderFiles(files) {
 function openStream(id, idx) {
   document.getElementById('playerBackdrop').classList.remove('hidden');
   const v = document.getElementById('playerVideo');
-  v.src = `/api/torrents/${id}/stream/${idx}`;
+  const tok = localStorage.getItem('dg-token') || '';
+  v.src = `/api/torrents/${id}/stream/${idx}` + (tok ? '?token=' + encodeURIComponent(tok) : '');
   v.load();
   v.play().catch(() => {});
   return false;
@@ -1796,7 +2025,36 @@ async function deleteRSS(id) {
   try { await api('/rss/' + id, { method: 'DELETE' }); renderRSS(); } catch (e) { alert(e.message); }
 }
 async function pollRSS(id) {
-  try { await api('/rss/' + id + '/poll', { method: 'POST' }); renderRSS(); } catch (e) { alert(e.message); }
+  try { await api('/rss/' + id + '/poll', { method: 'POST' }); renderRSS(); renderFeedSummary(); } catch (e) { alert(e.message); }
+}
+async function pollAllRSS() {
+  try {
+    await api('/rss/poll', { method: 'POST' });
+    toast('poll', '', '');
+    renderRSS();
+    renderFeedSummary();
+  } catch (e) { alert(e.message); }
+}
+async function renderFeedSummary() {
+  const el = document.getElementById('dashFeeds');
+  if (!el) return;
+  try {
+    const feeds = await api('/rss');
+    if (!feeds.length) { el.innerHTML = `<span class="tx3" data-i18n="noFeeds">No feeds yet.</span>`; return; }
+    const ok = feeds.filter(f => !f.last_error).length;
+    const issues = feeds.filter(f => f.last_error);
+    const chips = [];
+    chips.push(`<span class="chip rounded-full px-2 py-0.5 text-[11px]">${feeds.length} ${t('feeds')}</span>`);
+    chips.push(`<span class="chip rounded-full px-2 py-0.5 text-[11px]" style="color:var(--good)">${ok} ✓</span>`);
+    if (issues.length) chips.push(`<span class="chip rounded-full px-2 py-0.5 text-[11px]" style="color:var(--bad)">${issues.length} ✖</span>`);
+    const rows = feeds.slice(0, 5).map(f => {
+      const dot = f.last_error ? 'style="color:var(--bad)"' : (f.last_ok ? 'style="color:var(--good)"' : 'style="color:var(--txt3)"');
+      const last = f.last_error ? t('erroredLast') : (f.last_ok ? `${fmtAgo(f.last_ok)}` : t('never'));
+      return `<div class="flex items-center gap-2 py-0.5"><span ${dot}>●</span><span class="min-w-0 flex-1 truncate">${esc(f.name)}</span><span class="tx3 shrink-0 font-mono text-[10px]">${esc(last)}</span></div>`;
+    }).join('');
+    const more = feeds.length > 5 ? `<div class="tx3 text-[10px]">+${feeds.length - 5} more</div>` : '';
+    el.innerHTML = `<div class="flex flex-wrap gap-2 mb-2">${chips.join('')}</div>${rows}${more}`;
+  } catch (e) { el.innerHTML = `<span style="color:var(--bad)">${esc(t('connError'))} ${esc(e.message)}</span>`; }
 }
 
 // ---------- dashboard ----------
@@ -1899,7 +2157,8 @@ function livePush(up, dn) {
 
 let wsRetry = 0;
 function connectWS() {
-  try { ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws'); } catch (e) { scheduleWSRetry(); return; }
+  const tok = localStorage.getItem('dg-token') || '';
+  try { ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws?token=' + encodeURIComponent(tok)); } catch (e) { scheduleWSRetry(); return; }
   ws.onopen = () => { wsRetry = 0; };
   ws.onmessage = (ev) => {
     try {
@@ -1907,7 +2166,7 @@ function connectWS() {
       if (m.type === 'notice') {
         toast(m.kind || 'info', m.id, m.name);
         notifyUser(m.kind || 'info', m.id, m.name);
-        if (m.kind === 'complete' || m.kind === 'metadata') refreshTorrentsFromAPI();
+        if (m.kind === 'complete' || m.kind === 'metadata' || m.kind === 'rss') refreshTorrentsFromAPI();
         return;
       }
       if (m.type !== 'tick') return;
@@ -1967,6 +2226,7 @@ async function loadSettings() {
     document.getElementById('set-port').textContent = s.peer_port;
     document.getElementById('set-basedir').textContent = s.base_dir || '';
     document.getElementById('set-version').textContent = s.version;
+    await refreshAuthState();
   } catch (e) { /* ignore */ }
 }
 
@@ -2008,6 +2268,8 @@ applyNotifUI();
 connectWS();
 setInterval(refreshTorrentsFromAPI, 4000);
 setInterval(refreshStats, 4000);
+setInterval(renderFeedSummary, 10000);
+ensureAuth();
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});
@@ -2037,7 +2299,7 @@ show('dashboard');
 (function() {
   const ih = new URLSearchParams(location.search).get('ih');
   if (!ih || !/^[0-9a-f]{40}$/i.test(ih)) return;
-  fetch(`/api/torrents/${ih.slice(0, 16)}`).then(r => r.json()).then(d => {
+  api('/torrents/' + ih.slice(0, 16)).then(d => {
     if (d && d.id) { show('torrents'); openDetail(d.id); return; }
     const el = document.getElementById('src');
     if (el) { el.value = `magnet:?xt=urn:btih:${ih}`; show('torrents'); el.focus(); }
@@ -2063,6 +2325,17 @@ show('dashboard');
     <div class="flex gap-2">
       <button onclick="qrCopyMagnet()" class="flex-1 px-3 py-2 rounded-xl btn-primary text-sm font-medium" data-i18n="copyMagnet">Copy magnet</button>
       <button onclick="qrSharePage()" class="flex-1 px-3 py-2 rounded-xl btn-primary text-sm font-medium" data-i18n="sharePage">Share page</button>
+    </div>
+  </div>
+</div>
+<div id="authBackdrop" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4" style="background:rgba(0,0,0,.7)">
+  <div class="card rounded-2xl p-5 w-full max-w-sm">
+    <h3 class="font-semibold text-sm mb-1" style="color:var(--txt)" data-i18n="authLogin">Access token required</h3>
+    <p class="text-xs tx2 mb-3" data-i18n="authLoginHint">Enter the access token configured in Settings.</p>
+    <input id="auth-token" type="password" autocomplete="current-password" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono mb-2" data-i18n-placeholder="authPlaceholder">
+    <div id="auth-err" class="hidden text-xs mb-2" style="color:var(--bad)" data-i18n="authWrong">Invalid token</div>
+    <div class="flex justify-end gap-2">
+      <button onclick="submitLogin()" class="px-5 py-2 rounded-xl btn-primary text-sm font-medium shadow" data-i18n="authUnlock">Unlock</button>
     </div>
   </div>
 </div>

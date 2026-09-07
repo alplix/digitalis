@@ -29,6 +29,10 @@ type Settings struct {
 	RatioTarget float64 `json:"ratio_target"`
 	RatioStop   bool    `json:"ratio_stop"`
 	RatioRemove bool    `json:"ratio_remove"`
+
+	// ServerToken, when non-empty, requires every web/API request to present
+	// it (Bearer header, X-Auth-Token, or ?token=). Never exposed to clients.
+	ServerToken string `json:"server_token"`
 }
 
 // DefaultSettings returns sane defaults.
@@ -86,6 +90,27 @@ func (e *Engine) View() Settings {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	return e.settings
+}
+
+// ServerToken exposes whether access protection is enabled.
+func (e *Engine) ServerToken() string {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	return e.settings.ServerToken
+}
+
+// SetServerToken enables access protection and persists it.
+func (e *Engine) SetServerToken(tok string) error {
+	e.mu.Lock()
+	e.settings.ServerToken = tok
+	s := e.settings
+	e.mu.Unlock()
+	return e.storeSettings(s)
+}
+
+// ClearServerToken removes access protection and persists it.
+func (e *Engine) ClearServerToken() error {
+	return e.SetServerToken("")
 }
 
 // UpdateSettings applies and persists new settings. Empty fields keep their

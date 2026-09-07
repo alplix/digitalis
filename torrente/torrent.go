@@ -173,6 +173,7 @@ const (
 	NoticeComplete string = "complete" // torrent finished downloading
 	NoticeMetadata string = "metadata" // magnet resolved its metadata
 	NoticeRatio    string = "ratio"    // torrent reached its ratio target (stopped/removed)
+	NoticeRSS      string = "rss"      // an RSS feed item was added as a torrent
 )
 
 // Engine manages all torrents and peer connections.

@@ -22,6 +22,10 @@ func (e *Engine) notify(kind, id, name string) {
 	}
 }
 
+// Notify delivers a user-facing event to OnNotice subscribers (the web layer
+// uses it to surface web/OS notifications for external activity such as RSS).
+func (e *Engine) Notify(kind, id, name string) { e.notify(kind, id, name) }
+
 // connectDiscovered schedules outgoing dials for peers learned over PEX or DHT.
 func (e *Engine) connectDiscovered(t *Torrent, addrs []string) {
 	e.mu.Lock()
