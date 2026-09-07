@@ -684,7 +684,7 @@ const I18N = {
     install: 'Install', installApp: 'Install Digitalis as an app for fast access', watch: 'Watch',
     share: 'Share', copyMagnet: 'Copy magnet', sharePage: 'Copy page link',
     notifTitle: 'Notifications & sound', notifOS: 'Desktop notifications (when tab is hidden)', notifSound: 'Completion sound',
-    addFeed: 'Add feed', feedName: 'Feed name', feedUrl: 'Feed URL (RSS/Atom)', feedKeywords: 'Keywords (space separated, any match)', feedBlacklist: 'Blacklist (space separated)', feedCategory: 'Target folder (optional)', feedInterval: 'Interval (minutes, 0=15)', feedEnabled: 'Enabled', checkNow: 'Check now', noFeeds: 'No feeds yet.', noMatches: 'No items matched yet.', lastOk: 'last ok', lastPoll: 'last poll', nextPoll: 'next in', neverPolled: 'Never polled yet,',
+    addFeed: 'Add feed', feedName: 'Feed name', feedUrl: 'Feed URL (RSS/Atom)', feedKeywords: 'Keywords (space separated, any match)', feedBlacklist: 'Blacklist (space separated)', feedCategory: 'Target folder (optional)', feedInterval: 'Interval (minutes, 0=15)', feedEnabled: 'Enabled', checkNow: 'Check now', noFeeds: 'No feeds yet.', noMatches: 'No items matched yet.', lastOk: 'last ok', lastPoll: 'last poll', nextPoll: 'next in', neverPolled: 'Never polled yet.',
     ratio: 'Ratio', seededTo: 'Uploaded to', peers: 'peers', working: 'working', down: 'down',
     announce: 'Announces', ok: 'ok', fail: 'fail', seeders: 'Seeders', leechers: 'Leechers',
     lastSuccess: 'Last success', never: 'never', details: 'Details',
@@ -745,7 +745,11 @@ const I18N = {
     downloading: 'İndiriliyor', seeding: 'Paylaşılıyor',
     activePeers: 'Aktif peer', knownPeers: 'Bilinen peer', trackersOf: 'Trackerlar', upload: 'Yükleme', download: 'İndirme',
     noticeComplete: 'İndirme tamamlandı', noticeMetadata: 'Meta veri alındı',
-    selectAll: 'Tümünü seç', selected: 'seçili', noLimit: 'limit yok'
+    selectAll: 'Tümünü seç', selected: 'seçili', noLimit: 'limit yok',
+    addFeed: 'Besleme ekle', feedName: 'Besleme adı', feedUrl: 'Besleme URL\'si (RSS/Atom)', feedKeywords: 'Anahtar kelimeler (boşluklu, herhangi biri eşleşsin)', feedBlacklist: 'Karaliste (boşluklu)', feedCategory: 'Hedef klasör (isteğe bağlı)', feedInterval: 'Aralık (dakika, 0=15)', feedEnabled: 'Etkin', checkNow: 'Şimdi kontrol et', noFeeds: 'Henüz besleme yok.', noMatches: 'Henüz eşleşen öğe yok.',
+    nightMode: 'Gece modu (sessiz saatler)', nightStart: 'Başlangıç', nightEnd: 'Bitiş (gece yarısını aşabilir)', nightUp: 'Yükleme sınırı (B/s, 0=koru)', nightDown: 'İndirme sınırı (B/s, 0=koru)', nightPause: 'Gece aktarımları tamamen duraklat',
+    ratioGoal: 'Oran hedefi', ratioTarget: 'Bu orana gelince paylaşım durur (0=kapalı)', ratioStop: 'Hedefe ulaşınca paylaşımı duraklat', ratioRemove: 'Hedefe ulaşınca torrenti kaldır',
+    lastOk: 'son başarılı', lastPoll: 'son kontrol', nextPoll: 'sonraki', neverPolled: 'Henüz kontrol edilmedi,'
   },
   de: {
     tagline: 'Ein von Grund auf geschriebener BitTorrent-Client', noDocker: 'Kein Docker',
@@ -769,7 +773,11 @@ const I18N = {
     dailyUpload: 'Tägliches Upload-Limit (Bytes, 0=aus)', dailyHint: 'Wird erreicht, pausiert Upload bis zum Tag; setzt um Mitternacht zurück.',
     peerInfo: 'Client', peerPort: 'Peer-Port', baseDirRoot: 'Basisverzeichnis', version: 'Version', save: 'Speichern', saved: 'Einstellungen gespeichert',
     trackerAdded: 'Tracker hinzugefügt', trackerRemoved: 'Tracker entfernt', addTracker: 'Tracker hinzufügen', remove: 'Entfernen',
-    torrentsUsing: 'Torrents', lastError: 'Letzter Fehler', seedersLechers: 'Seeds/Leeches'
+    torrentsUsing: 'Torrents', lastError: 'Letzter Fehler', seedersLechers: 'Seeds/Leeches',
+    addFeed: 'Feed hinzufügen', feedName: 'Feed-Name', feedUrl: 'Feed-URL (RSS/Atom)', feedKeywords: 'Schlüsselwörter (Leerzeichen, beliebiges Match)', feedBlacklist: 'Blacklist (Leerzeichen)', feedCategory: 'Zielordner (optional)', feedInterval: 'Intervall (Minuten, 0=15)', feedEnabled: 'Aktiviert', checkNow: 'Jetzt prüfen', noFeeds: 'Noch keine Feeds.', noMatches: 'Noch keine passenden Einträge.',
+    nightMode: 'Nachtmodus (ruhige Zeiten)', nightStart: 'Von', nightEnd: 'Bis (kann Mitternacht überschreiten)', nightUp: 'Upload-Limit (B/s, 0=behalten)', nightDown: 'Download-Limit (B/s, 0=behalten)', nightPause: 'Übertragungen nachts vollständig pausieren',
+    ratioGoal: 'Ratio-Ziel', ratioTarget: 'Seeding stoppt bei Ratio (0=aus)', ratioStop: 'Seeding bei Erreichen pausieren', ratioRemove: 'Torrent bei Erreichen entfernen',
+    lastOk: 'zuletzt ok', lastPoll: 'letzte Prüfung', nextPoll: 'nächste in', neverPolled: 'Noch nie geprüft,'
   },
   fr: {
     tagline: 'Un client BitTorrent écrit from scratch', noDocker: 'Pas de Docker',
@@ -793,7 +801,11 @@ const I18N = {
     dailyUpload: 'Limite quotidienne d\'upload (octets, 0=désactivé)', dailyHint: 'Atteinte → upload en pause jusqu\'au lendemain; se réinitialise à minuit.',
     peerInfo: 'Client', peerPort: 'Port pair', baseDirRoot: 'Répertoire de base', version: 'Version', save: 'Enregistrer', saved: 'Paramètres enregistrés',
     trackerAdded: 'tracker ajouté', trackerRemoved: 'tracker supprimé', addTracker: 'Ajouter un tracker', remove: 'Supprimer',
-    torrentsUsing: 'torrents', lastError: 'Dernière erreur', seedersLechers: 'Seeds/Leeches'
+    torrentsUsing: 'torrents', lastError: 'Dernière erreur', seedersLechers: 'Seeds/Leeches',
+    addFeed: 'Ajouter un flux', feedName: 'Nom du flux', feedUrl: 'URL du flux (RSS/Atom)', feedKeywords: 'Mots-clés (séparés par espaces, n\'importe lequel)', feedBlacklist: 'Liste noire (séparés par espaces)', feedCategory: 'Dossier cible (optionnel)', feedInterval: 'Intervalle (minutes, 0=15)', feedEnabled: 'Activé', checkNow: 'Vérifier maintenant', noFeeds: 'Aucun flux pour l\'instant.', noMatches: 'Aucun élément ne correspond encore.',
+    nightMode: 'Mode nuit (heures calmes)', nightStart: 'De', nightEnd: 'À (peut passer minuit)', nightUp: 'Limite upload (o/s, 0=conserver)', nightDown: 'Limite download (o/s, 0=conserver)', nightPause: 'Suspendre complètement les transferts la nuit',
+    ratioGoal: 'Objectif de ratio', ratioTarget: 'Le seed s\'arrête au ratio (0=désactivé)', ratioStop: 'Mettre en pause le seed au ratio atteint', ratioRemove: 'Supprimer le torrent au ratio atteint',
+    lastOk: 'dernier ok', lastPoll: 'dernier contrôle', nextPoll: 'dans', neverPolled: 'Jamais vérifié,'
   },
   es: {
     tagline: 'Un cliente BitTorrent escrito desde cero', noDocker: 'Sin Docker',
@@ -817,7 +829,11 @@ const I18N = {
     dailyUpload: 'Límite diario de subida (bytes, 0=off)', dailyHint: 'Al alcanzarse, la subida se pausa hasta el día siguiente; se reinicia a medianoche.',
     peerInfo: 'Cliente', peerPort: 'Puerto de peers', baseDirRoot: 'Directorio base', version: 'Versión', save: 'Guardar', saved: 'Ajustes guardados',
     trackerAdded: 'tracker añadido', trackerRemoved: 'tracker eliminado', addTracker: 'Añadir tracker', remove: 'Eliminar',
-    torrentsUsing: 'torrents', lastError: 'Último error', seedersLechers: 'Seeds/Leeches'
+    torrentsUsing: 'torrents', lastError: 'Último error', seedersLechers: 'Seeds/Leeches',
+    addFeed: 'Añadir feed', feedName: 'Nombre del feed', feedUrl: 'URL del feed (RSS/Atom)', feedKeywords: 'Palabras clave (espacios, cualquiera)', feedBlacklist: 'Lista negra (espacios)', feedCategory: 'Carpeta destino (opcional)', feedInterval: 'Intervalo (minutos, 0=15)', feedEnabled: 'Activado', checkNow: 'Comprobar ahora', noFeeds: 'Aún no hay feeds.', noMatches: 'Aún no hay elementos que coincidan.',
+    nightMode: 'Modo nocturno (horas de silencio)', nightStart: 'De', nightEnd: 'A (puede pasar medianoche)', nightUp: 'Límite de subida (B/s, 0=mantener)', nightDown: 'Límite de bajada (B/s, 0=mantener)', nightPause: 'Pausar completamente las transferencias de noche',
+    ratioGoal: 'Objetivo de ratio', ratioTarget: 'El seeding se detiene al ratio (0=off)', ratioStop: 'Pausar el seeding al alcanzarlo', ratioRemove: 'Eliminar el torrent al alcanzarlo',
+    lastOk: 'último ok', lastPoll: 'última comprobación', nextPoll: 'dentro de', neverPolled: 'Sin comprobar aún,'
   },
   it: {
     tagline: 'Un client BitTorrent scritto da zero', noDocker: 'Niente Docker',
@@ -841,7 +857,11 @@ const I18N = {
     dailyUpload: 'Limite giornaliero upload (byte, 0=off)', dailyHint: 'Raggiunto → upload in pausa fino al giorno dopo; si azzera a mezzanotte.',
     peerInfo: 'Client', peerPort: 'Porta peer', baseDirRoot: 'Directory base', version: 'Versione', save: 'Salva', saved: 'Impostazioni salvate',
     trackerAdded: 'tracker aggiunto', trackerRemoved: 'tracker rimosso', addTracker: 'Aggiungi tracker', remove: 'Rimuovi',
-    torrentsUsing: 'torrent', lastError: 'Ultimo errore', seedersLechers: 'Seeds/Leeches'
+    torrentsUsing: 'torrent', lastError: 'Ultimo errore', seedersLechers: 'Seeds/Leeches',
+    addFeed: 'Aggiungi feed', feedName: 'Nome feed', feedUrl: 'URL del feed (RSS/Atom)', feedKeywords: 'Parole chiave (spazi, qualsiasi)', feedBlacklist: 'Blacklist (spazi)', feedCategory: 'Cartella di destinazione (opzionale)', feedInterval: 'Intervallo (minuti, 0=15)', feedEnabled: 'Abilitato', checkNow: 'Controlla ora', noFeeds: 'Ancora nessun feed.', noMatches: 'Ancora nessun elemento corrispondente.',
+    nightMode: 'Modalità notte (ore silenziose)', nightStart: 'Da', nightEnd: 'A (può superare mezzanotte)', nightUp: 'Limite upload (B/s, 0=mantieni)', nightDown: 'Limite download (B/s, 0=mantieni)', nightPause: 'Sospendi completamente i trasferimenti di notte',
+    ratioGoal: 'Obiettivo ratio', ratioTarget: 'Il seeding si ferma al ratio (0=off)', ratioStop: 'Sospendi il seeding al raggiungimento', ratioRemove: 'Rimuovi il torrent al raggiungimento',
+    lastOk: 'ultimo ok', lastPoll: 'ultimo controllo', nextPoll: 'tra', neverPolled: 'Mai controllato,'
   },
   pt: {
     tagline: 'Um cliente BitTorrent escrito do zero', noDocker: 'Sem Docker',
@@ -865,7 +885,11 @@ const I18N = {
     dailyUpload: 'Limite diário de envio (bytes, 0=off)', dailyHint: 'Atingido → envio pausado até o dia seguinte; reinicia à meia-noite.',
     peerInfo: 'Cliente', peerPort: 'Porta dos peers', baseDirRoot: 'Diretório base', version: 'Versão', save: 'Salvar', saved: 'Configurações salvas',
     trackerAdded: 'tracker adicionado', trackerRemoved: 'tracker removido', addTracker: 'Adicionar tracker', remove: 'Remover',
-    torrentsUsing: 'torrents', lastError: 'Último erro', seedersLechers: 'Seeds/Leeches'
+    torrentsUsing: 'torrents', lastError: 'Último erro', seedersLechers: 'Seeds/Leeches',
+    addFeed: 'Adicionar feed', feedName: 'Nome do feed', feedUrl: 'URL do feed (RSS/Atom)', feedKeywords: 'Palavras-chave (espaços, qualquer uma)', feedBlacklist: 'Lista negra (espaços)', feedCategory: 'Pasta de destino (opcional)', feedInterval: 'Intervalo (minutos, 0=15)', feedEnabled: 'Ativado', checkNow: 'Verificar agora', noFeeds: 'Ainda não há feeds.', noMatches: 'Ainda nenhum item correspondente.',
+    nightMode: 'Modo noturno (horas silenciosas)', nightStart: 'De', nightEnd: 'Até (pode passar da meia-noite)', nightUp: 'Limite de envio (B/s, 0=manter)', nightDown: 'Limite de download (B/s, 0=manter)', nightPause: 'Pausar totalmente as transferências à noite',
+    ratioGoal: 'Meta de ratio', ratioTarget: 'O seeding para no ratio (0=off)', ratioStop: 'Pausar o seeding ao atingir', ratioRemove: 'Remover o torrent ao atingir',
+    lastOk: 'último ok', lastPoll: 'última verificação', nextPoll: 'daqui a', neverPolled: 'Nunca verificado,'
   },
   ru: {
     tagline: 'BitTorrent-клиент, написанный с нуля', noDocker: 'Без Docker',
@@ -889,7 +913,11 @@ const I18N = {
     dailyUpload: 'Дневной лимит загрузки (байт, 0=выкл)', dailyHint: 'Достигнут → загрузка на паузе до конца дня; сбрасывается в полночь.',
     peerInfo: 'Клиент', peerPort: 'Порт пира', baseDirRoot: 'Базовый каталог', version: 'Версия', save: 'Сохранить', saved: 'Настройки сохранены',
     trackerAdded: 'трекер добавлен', trackerRemoved: 'трекер удалён', addTracker: 'Добавить трекер', remove: 'Удалить',
-    torrentsUsing: 'торрентов', lastError: 'Последняя ошибка', seedersLechers: 'Сиды/Личи'
+    torrentsUsing: 'торрентов', lastError: 'Последняя ошибка', seedersLechers: 'Сиды/Личи',
+    addFeed: 'Добавить фид', feedName: 'Название фида', feedUrl: 'URL фида (RSS/Atom)', feedKeywords: 'Ключевые слова (через пробел, любое)', feedBlacklist: 'Чёрный список (через пробел)', feedCategory: 'Целевая папка (необязательно)', feedInterval: 'Интервал (минуты, 0=15)', feedEnabled: 'Включено', checkNow: 'Проверить', noFeeds: 'Фидов пока нет.', noMatches: 'Совпадений пока нет.',
+    nightMode: 'Ночной режим (тихие часы)', nightStart: 'С', nightEnd: 'До (может перейти за полночь)', nightUp: 'Лимит загрузки (Б/с, 0=оставить)', nightDown: 'Лимит скачивания (Б/с, 0=оставить)', nightPause: 'Полностью приостановить передачу ночью',
+    ratioGoal: 'Цель по ratio', ratioTarget: 'Остановить раздачу при ratio (0=выкл)', ratioStop: 'Приостановить раздачу при достижении', ratioRemove: 'Удалить торрент при достижении',
+    lastOk: 'последний ок', lastPoll: 'последняя проверка', nextPoll: 'через', neverPolled: 'Ещё не проверялся,'
   },
   ja: {
     tagline: 'ゼロから書いたBitTorrentクライアント', noDocker: 'Docker不使用',
@@ -913,7 +941,11 @@ const I18N = {
     dailyUpload: '1日のアップロード制限 (バイト, 0=オフ)', dailyHint: '到達するとその日はアップロード停止。真夜中にリセット。',
     peerInfo: 'クライアント', peerPort: 'ピアポート', baseDirRoot: 'ベースディレクトリ', version: 'バージョン', save: '保存', saved: '設定を保存しました',
     trackerAdded: 'トラッカーを追加しました', trackerRemoved: 'トラッカーを削除しました', addTracker: 'トラッカーを追加', remove: '削除',
-    torrentsUsing: 'トーレント', lastError: '最後のエラー', seedersLechers: 'シード/リーチ'
+    torrentsUsing: 'トーレント', lastError: '最後のエラー', seedersLechers: 'シード/リーチ',
+    addFeed: 'フィード追加', feedName: 'フィード名', feedUrl: 'フィードURL (RSS/Atom)', feedKeywords: 'キーワード (スペース区切り、いずれか一致)', feedBlacklist: 'ブラックリスト (スペース区切り)', feedCategory: '保存先フォルダ (任意)', feedInterval: '間隔 (分, 0=15)', feedEnabled: '有効', checkNow: '今すぐ確認', noFeeds: 'フィードがまだありません。', noMatches: '一致する項目はまだありません。',
+    nightMode: '夜間モード (静かな時間)', nightStart: '開始', nightEnd: '終了 (真夜中をまたぐ可)', nightUp: 'アップロード制限 (B/秒, 0=維持)', nightDown: 'ダウンロード制限 (B/秒, 0=維持)', nightPause: '夜間は転送を完全に停止',
+    ratioGoal: 'レシオ目標', ratioTarget: 'レシオ到達で停止 (0=オフ)', ratioStop: '到達時にシードを一時停止', ratioRemove: '到達時にトーレントを削除',
+    lastOk: '最終OK', lastPoll: '最終確認', nextPoll: '次の', neverPolled: 'まだ未確認、'
   },
   zh: {
     tagline: '从头编写的BitTorrent客户端', noDocker: '无Docker',
@@ -937,7 +969,11 @@ const I18N = {
     dailyUpload: '每日上传限制（字节，0=关闭）', dailyHint: '达到后当天暂停上传；午夜重置。',
     peerInfo: '客户端', peerPort: '对等端口', baseDirRoot: '基础目录', version: '版本', save: '保存', saved: '设置已保存',
     trackerAdded: 'tracker 已添加', trackerRemoved: 'tracker 已删除', addTracker: '添加 tracker', remove: '删除',
-    torrentsUsing: '种子', lastError: '最后错误', seedersLechers: '做种/下载'
+    torrentsUsing: '种子', lastError: '最后错误', seedersLechers: '做种/下载',
+    addFeed: '添加订阅', feedName: '订阅名称', feedUrl: '订阅URL（RSS/Atom）', feedKeywords: '关键词（空格分隔，任一匹配）', feedBlacklist: '黑名单（空格分隔）', feedCategory: '目标文件夹（可选）', feedInterval: '间隔（分钟，0=15）', feedEnabled: '启用', checkNow: '立即检查', noFeeds: '暂无订阅。', noMatches: '暂无匹配项目。',
+    nightMode: '夜间模式（安静时段）', nightStart: '从', nightEnd: '至（可跨午夜）', nightUp: '上传限制（B/s，0=保持）', nightDown: '下载限制（B/s，0=保持）', nightPause: '夜间完全暂停传输',
+    ratioGoal: '分享率目标', ratioTarget: '达到分享率后停止做种（0=关闭）', ratioStop: '达到时暂停做种', ratioRemove: '达到时删除种子',
+    lastOk: '上次成功', lastPoll: '上次检查', nextPoll: '下次', neverPolled: '尚未检查，'
   },
   ar: {
     tagline: 'عميل BitTorrent مكتوب من الصفر', noDocker: 'بدون Docker',
@@ -961,7 +997,11 @@ const I18N = {
     dailyUpload: 'حد الرفع اليومي (بايت، 0=إيقاف)', dailyHint: 'عند بلوغه يتوقف الرفع حتى اليوم التالي؛ يُعاد عند منتصف الليل.',
     peerInfo: 'العميل', peerPort: 'منفذ الأقران', baseDirRoot: 'المجلد الأساسي', version: 'الإصدار', save: 'حفظ', saved: 'تم حفظ الإعدادات',
     trackerAdded: 'تمت إضافة التراكر', trackerRemoved: 'تمت إزالة التراكر', addTracker: 'إضافة تراكر', remove: 'إزالة',
-    torrentsUsing: 'تورنت', lastError: 'آخر خطأ', seedersLechers: 'سيد/ليتش'
+    torrentsUsing: 'تورنت', lastError: 'آخر خطأ', seedersLechers: 'سيد/ليتش',
+    addFeed: 'إضافة تغذية', feedName: 'اسم التغذية', feedUrl: 'رابط التغذية (RSS/Atom)', feedKeywords: 'كلمات مفتاحية (مفصولة بمسافات، أي تطابق)', feedBlacklist: 'قائمة الحظر (مسافات)', feedCategory: 'المجلد الهدف (اختياري)', feedInterval: 'الفاصل (دقائق، 0=15)', feedEnabled: 'مفعّل', checkNow: 'تحقق الآن', noFeeds: 'لا توجد تغذيات بعد.', noMatches: 'لا عناصر مطابقة بعد.',
+    nightMode: 'الوضع الليلي (ساعات هادئة)', nightStart: 'من', nightEnd: 'إلى (قد يتجاوز منتصف الليل)', nightUp: 'حد الرفع (ب/ث، 0=إبقاء)', nightDown: 'حد التنزيل (ب/ث، 0=إبقاء)', nightPause: 'إيقاف النقل كلياً ليلاً',
+    ratioGoal: 'هدف النسبة', ratioTarget: 'يتوقف البذر عند النسبة (0=إيقاف)', ratioStop: 'إيقاف البذر مؤقتاً عند بلوغه', ratioRemove: 'حذف التورنت عند بلوغه',
+    lastOk: 'آخر نجاح', lastPoll: 'آخر فحص', nextPoll: 'التالي خلال', neverPolled: 'لم يُفحص بعد،'
   },
   hi: {
     tagline: 'शुरू से लिखा गया BitTorrent क्लाइंट', noDocker: 'Docker रहित',
@@ -985,7 +1025,11 @@ const I18N = {
     dailyUpload: 'दैनिक अपलोड सीमा (बाइट, 0=बंद)', dailyHint: 'पहुँचने पर उस दिन अपलोड रुकता है; मध्यरात्रि रीसेट।',
     peerInfo: 'क्लाइंट', peerPort: 'पीयर पोर्ट', baseDirRoot: 'मूल निर्देशिका', version: 'संस्करण', save: 'सहेजें', saved: 'सेटिंग्स सहेजी गईं',
     trackerAdded: 'ट्रैकर जोड़ा गया', trackerRemoved: 'ट्रैकर हटाया गया', addTracker: 'ट्रैकर जोड़ें', remove: 'हटाएँ',
-    torrentsUsing: 'टॉरेंट', lastError: 'अंतिम त्रुटि', seedersLechers: 'सीडर/लीचर'
+    torrentsUsing: 'टॉरेंट', lastError: 'अंतिम त्रुटि', seedersLechers: 'सीडर/लीचर',
+    addFeed: 'फ़ीड जोड़ें', feedName: 'फ़ीड नाम', feedUrl: 'फ़ीड URL (RSS/Atom)', feedKeywords: 'कीवर्ड (स्पेस से अलग, कोई भी मेल)', feedBlacklist: 'ब्लैकलिस्ट (स्पेस से अलग)', feedCategory: 'लक्ष्य फ़ोल्डर (वैकल्पिक)', feedInterval: 'अंतराल (मिनट, 0=15)', feedEnabled: 'सक्रिय', checkNow: 'अभी जाँचें', noFeeds: 'अभी कोई फ़ीड नहीं।', noMatches: 'अभी कोई मेल आइटम नहीं।',
+    nightMode: 'रात्रि मोड (शांत समय)', nightStart: 'से', nightEnd: 'तक (मध्यरात्रि पार कर सकता है)', nightUp: 'अपलोड सीमा (B/s, 0=रखें)', nightDown: 'डाउनलोड सीमा (B/s, 0=रखें)', nightPause: 'रात में ट्रांसफर पूरी तरह रोकें',
+    ratioGoal: 'रेशियो लक्ष्य', ratioTarget: 'रेशियो पर सीडिंग रुके (0=बंद)', ratioStop: 'पहुँचने पर सीडिंग रोकें', ratioRemove: 'पहुँचने पर टॉरेंट हटाएँ',
+    lastOk: 'अंतिम ठीक', lastPoll: 'अंतिम जाँच', nextPoll: 'अगली', neverPolled: 'अभी जाँचा नहीं,'
   }
 };
 
