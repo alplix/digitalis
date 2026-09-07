@@ -40,6 +40,8 @@ type rssFeed struct {
 	Seen      []string  `json:"seen"`    // item GUIDs already processed (capped)
 	Recent    []rssItem `json:"recent"`  // last matched items (capped)
 	LastPoll  time.Time `json:"last_poll"`
+	LastError string    `json:"last_error"`
+	LastOk    time.Time `json:"last_ok"`
 }
 
 const (
@@ -175,21 +177,32 @@ func (s *Server) rssPollLoop() {
 	}()
 }
 
+// rssFail records the latest poll error on the live feed and returns it.
+func (s *Server) rssFail(f *rssFeed, err error) error {
+	s.rssMu.Lock()
+	if l := s.findFeed(f.ID); l != nil {
+		l.LastError = err.Error()
+	}
+	s.rssMu.Unlock()
+	s.saveRSSFeeds()
+	return err
+}
+
 // pollFeed fetches a feed and adds torrents for new matching items.
 func (s *Server) pollFeed(f *rssFeed) error {
 	client := &http.Client{Timeout: 45 * time.Second}
 	resp, err := client.Get(f.URL)
 	if err != nil {
-		return fmt.Errorf("fetch: %w", err)
+		return s.rssFail(f, fmt.Errorf("fetch: %w", err))
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("fetch returned %s", resp.Status)
+		return s.rssFail(f, fmt.Errorf("fetch returned %s", resp.Status))
 	}
 
 	var doc rssXMLDoc
 	if err := xml.NewDecoder(resp.Body).Decode(&doc); err != nil {
-		return fmt.Errorf("parse: %w", err)
+		return s.rssFail(f, fmt.Errorf("parse: %w", err))
 	}
 	var items []feedItem
 	for _, it := range doc.Channel.Items {
@@ -262,6 +275,8 @@ func (s *Server) pollFeed(f *rssFeed) error {
 		if len(l.Recent) > rssMaxRecent {
 			l.Recent = l.Recent[:rssMaxRecent]
 		}
+		l.LastError = ""
+		l.LastOk = now
 	}
 	s.rssMu.Unlock()
 	s.saveRSSFeeds()
@@ -278,6 +293,12 @@ func (s *Server) rssAdd(f *rssFeed, src string, size int64) {
 	t, err := s.engineAdd(src, saveDir)
 	if err != nil {
 		s.engine.Logf("rss add failed (%s...): %v", src[:min(len(src), 80)], err)
+		s.rssMu.Lock()
+		if l := s.findFeed(f.ID); l != nil {
+			l.LastError = "add: " + err.Error()
+		}
+		s.rssMu.Unlock()
+		s.saveRSSFeeds()
 		return
 	}
 	cat := f.Category
@@ -452,6 +473,8 @@ type rssFeedView struct {
 	Enabled   bool      `json:"enabled"`
 	Recent    []rssItem `json:"recent"`
 	LastPoll  time.Time `json:"last_poll"`
+	LastError string    `json:"last_error"`
+	LastOk    time.Time `json:"last_ok"`
 }
 
 func rssView(f *rssFeed) rssFeedView {
@@ -459,6 +482,7 @@ func rssView(f *rssFeed) rssFeedView {
 		ID: f.ID, Name: f.Name, URL: f.URL, Keywords: f.Keywords,
 		Blacklist: f.Blacklist, Category: f.Category, Interval: f.Interval,
 		SizeMax: f.SizeMax, Enabled: f.Enabled, Recent: f.Recent, LastPoll: f.LastPoll,
+		LastError: f.LastError, LastOk: f.LastOk,
 	}
 }
 

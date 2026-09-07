@@ -684,7 +684,7 @@ const I18N = {
     install: 'Install', installApp: 'Install Digitalis as an app for fast access', watch: 'Watch',
     share: 'Share', copyMagnet: 'Copy magnet', sharePage: 'Copy page link',
     notifTitle: 'Notifications & sound', notifOS: 'Desktop notifications (when tab is hidden)', notifSound: 'Completion sound',
-    addFeed: 'Add feed', feedName: 'Feed name', feedUrl: 'Feed URL (RSS/Atom)', feedKeywords: 'Keywords (space separated, any match)', feedBlacklist: 'Blacklist (space separated)', feedCategory: 'Target folder (optional)', feedInterval: 'Interval (minutes, 0=15)', feedEnabled: 'Enabled', checkNow: 'Check now', noFeeds: 'No feeds yet.', noMatches: 'No items matched yet.',
+    addFeed: 'Add feed', feedName: 'Feed name', feedUrl: 'Feed URL (RSS/Atom)', feedKeywords: 'Keywords (space separated, any match)', feedBlacklist: 'Blacklist (space separated)', feedCategory: 'Target folder (optional)', feedInterval: 'Interval (minutes, 0=15)', feedEnabled: 'Enabled', checkNow: 'Check now', noFeeds: 'No feeds yet.', noMatches: 'No items matched yet.', lastOk: 'last ok', lastPoll: 'last poll', nextPoll: 'next in', neverPolled: 'Never polled yet,',
     ratio: 'Ratio', seededTo: 'Uploaded to', peers: 'peers', working: 'working', down: 'down',
     announce: 'Announces', ok: 'ok', fail: 'fail', seeders: 'Seeders', leechers: 'Leechers',
     lastSuccess: 'Last success', never: 'never', details: 'Details',
@@ -1053,6 +1053,8 @@ function fmtBytes(b) {
 }
 function fmtSpeed(bps) { if (!bps) return '—'; return fmtBytes(bps) + '/s'; }
 function fmtRatio(r) { if (!r || r < 0.001) return '—'; return r >= 10 ? r.toFixed(1) : r.toFixed(3); }
+function fmtAgo(iso) { return fmtTime(iso); }
+
 function fmtTime(iso) {
   if (!iso) return t('never');
   const then = new Date(iso), now = Date.now();
@@ -1711,6 +1713,14 @@ async function renderRSS() {
           </span>
         </div>
         <div class="text-[11px] font-mono break-all tx3 mb-2">${esc(f.url)}</div>
+        <div class="flex flex-wrap items-center gap-2 text-[11px] mb-1">
+          ${f.last_error
+            ? `<span class="px-2 py-0.5 rounded-full chip font-semibold" style="color:var(--bad)">✖ ${esc(f.last_error)}</span>`
+            : (f.last_ok
+              ? `<span class="px-2 py-0.5 rounded-full chip" style="color:var(--ok)">✓ ${t('lastOk')} ${fmtAgo(f.last_ok)}</span>`
+              : `<span class="px-2 py-0.5 rounded-full chip tx3" data-i18n="neverPolled">Not polled yet</span>`)}
+          ${f.last_poll ? `<span class="tx3">${t('lastPoll')} ${fmtAgo(f.last_poll)} · ${t('nextPoll')} ~${Math.max(1,(f.interval||15))}m</span>` : ''}
+        </div>
         ${(f.keywords || []).length ? `<div class="text-[11px] tx2 mb-1">🔍 ${esc((f.keywords||[]).join(', '))}</div>` : ''}
         ${(f.recent || []).length ? `<div class="text-[11px] tx2">` + f.recent.map(it =>
           `<div class="flex gap-2 py-1 border-t border-[var(--border)]">` +
