@@ -108,6 +108,8 @@ type torrentView struct {
 	Comment        string        `json:"comment,omitempty"`
 	CreatedBy      string        `json:"created_by,omitempty"`
 	DownloadLimit  int64         `json:"download_limit"`
+	SeedDays       int64         `json:"seed_days"`
+	Sequential     bool          `json:"sequential"`
 }
 
 type trackerView struct {
@@ -169,6 +171,8 @@ func (s *Server) snapshot(t *torrente.Torrent) torrentView {
 		Comment:        t.MetaInfoComment(),
 		CreatedBy:      t.MetaInfoCreatedBy(),
 		DownloadLimit:  s.engine.TorrentDownloadLimit(t.ID),
+		SeedDays:       s.engine.TorrentSeedDays(t.ID),
+		Sequential:     s.engine.TorrentSequential(t.ID),
 	}
 	return v
 }
@@ -204,6 +208,9 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /api/torrents/{id}/resume", s.resume)
 	mux.HandleFunc("POST /api/torrents/{id}/delete", s.delete)
 	mux.HandleFunc("POST /api/torrents/{id}/move", s.moveTorrent)
+	mux.HandleFunc("POST /api/torrents/{id}/announce", s.reannounce)
+	mux.HandleFunc("POST /api/trackers/announce", s.reannounceAll)
+	mux.HandleFunc("GET /api/storage", s.storageInfo)
 	mux.HandleFunc("POST /api/bulk", s.bulkOp)
 	mux.HandleFunc("GET /api/files", s.listFiles)
 
@@ -414,6 +421,7 @@ type settingsView struct {
 	RatioTarget      float64 `json:"ratio_target"`
 	RatioStop        bool    `json:"ratio_stop"`
 	RatioRemove      bool    `json:"ratio_remove"`
+	SeedDays         int64   `json:"seed_days"`
 	ServerTokenSet   bool    `json:"server_token_set"`
 	PeerPort         int     `json:"peer_port"`
 	Version          string  `json:"version"`
@@ -435,6 +443,7 @@ func (s *Server) settingsView() settingsView {
 		RatioTarget:      v.RatioTarget,
 		RatioStop:        v.RatioStop,
 		RatioRemove:      v.RatioRemove,
+		SeedDays:         v.SeedDays,
 		ServerTokenSet:   v.ServerToken != "",
 		PeerPort:         s.engine.Port(),
 		Version:          "digitalis 0.9",
@@ -915,8 +924,10 @@ func (s *Server) deleteCategory(w http.ResponseWriter, r *http.Request) {
 
 // patchRequest carries the per-torrent settings accepted by PATCH.
 type patchRequest struct {
-	DownloadLimit *int64  `json:"download_limit"`
+	DownloadLimit *int64   `json:"download_limit"`
 	RatioTarget   *float64 `json:"ratio_target"`
+	SeedDays      *int64   `json:"seed_days"`
+	Sequential    *bool    `json:"sequential"`
 }
 
 func (s *Server) patchTorrent(w http.ResponseWriter, r *http.Request) {
@@ -938,6 +949,18 @@ func (s *Server) patchTorrent(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.RatioTarget != nil {
 		if err := s.engine.SetTorrentRatioTarget(id, *req.RatioTarget); err != nil {
+			writeJSON(w, http.StatusConflict, map[string]string{"error": err.Error()})
+			return
+		}
+	}
+	if req.SeedDays != nil {
+		if err := s.engine.SetTorrentSeedDays(id, *req.SeedDays); err != nil {
+			writeJSON(w, http.StatusConflict, map[string]string{"error": err.Error()})
+			return
+		}
+	}
+	if req.Sequential != nil {
+		if err := s.engine.SetTorrentSequential(id, *req.Sequential); err != nil {
 			writeJSON(w, http.StatusConflict, map[string]string{"error": err.Error()})
 			return
 		}

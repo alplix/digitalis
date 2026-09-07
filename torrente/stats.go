@@ -2,6 +2,7 @@ package torrente
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -132,6 +133,7 @@ func (e *Engine) InitStats(configDir string, fallbackBaseDir string) Settings {
 	e.SetDownloadLimit(s.DownloadLimit)
 
 	go e.statsLoop()
+	go e.sequentialLoop()
 	return s
 }
 
@@ -258,7 +260,7 @@ func (e *Engine) applySchedule(cur Settings) {
 		e.Logf("night full pause released")
 	}
 
-	if cur.RatioTarget <= 0 {
+	if cur.RatioTarget <= 0 && cur.SeedDays <= 0 && !hasSeedGoals(e) {
 		return
 	}
 	e.mu.Lock()
@@ -273,35 +275,73 @@ func (e *Engine) applySchedule(cur Settings) {
 		if target <= 0 {
 			target = cur.RatioTarget
 		}
+		seed := t.SeedDaysTarget
+		if seed <= 0 {
+			seed = cur.SeedDays
+		}
 		seeding := t.State == StateSeeding
 		up, down := t.Uploaded, t.Downloaded
+		seedSince := t.SeedSince
 		name := t.Name
 		t.mu.Unlock()
-		if !seeding || target <= 0 {
+		if !seeding {
 			continue
 		}
-		ratio := float64(0)
-		if down > 0 {
-			ratio = float64(up) / float64(down)
-		} else if up > 0 {
-			ratio = float64(up)
+		reached := false
+		reason := ""
+		if target > 0 {
+			ratio := float64(0)
+			if down > 0 {
+				ratio = float64(up) / float64(down)
+			} else if up > 0 {
+				ratio = float64(up)
+			}
+			if ratio >= target {
+				reached = true
+				reason = fmt.Sprintf("ratio %.2f >= %.2f", ratio, target)
+			}
 		}
-		if ratio < target {
+		if !reached && seed > 0 && !seedSince.IsZero() {
+			days := time.Since(seedSince).Hours() / 24
+			if days >= float64(seed) {
+				reached = true
+				reason = fmt.Sprintf("seeded %.1f days >= %d", days, seed)
+			}
+		}
+		if !reached {
 			continue
 		}
-		if cur.RatioRemove {
-			e.Logf("ratio %.2f >= %.2f reached, removing %q", ratio, target, name)
+		t.mu.Lock()
+		doRemove := cur.RatioRemove
+		t.mu.Unlock()
+		if doRemove {
+			e.Logf("%s reached, removing %q", reason, name)
 			if err := e.RemoveTorrent(t.ID); err != nil {
-				e.Logf("ratio remove %q failed: %v", name, err)
+				e.Logf("goal remove %q failed: %v", name, err)
 				continue
 			}
 			e.notify(NoticeRatio, t.ID, name)
 		} else if cur.RatioStop {
-			e.Logf("ratio %.2f >= %.2f reached, stopping %q", ratio, target, name)
+			e.Logf("%s reached, stopping %q", reason, name)
 			t.setState(StatePaused)
 			e.notify(NoticeRatio, t.ID, name)
 		}
 	}
+}
+
+// hasSeedGoals reports whether any torrent has a per-torrent ratio/seed goal.
+func hasSeedGoals(e *Engine) bool {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	for _, t := range e.torrents {
+		t.mu.Lock()
+		has := t.RatioTarget > 0 || t.SeedDaysTarget > 0
+		t.mu.Unlock()
+		if has {
+			return true
+		}
+	}
+	return false
 }
 
 // nightIsActive reports whether now is inside the [start,end) night window.

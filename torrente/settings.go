@@ -30,6 +30,11 @@ type Settings struct {
 	RatioStop   bool    `json:"ratio_stop"`
 	RatioRemove bool    `json:"ratio_remove"`
 
+	// SeedDays: once a torrent has been seeding for this many days it is
+	// stopped or removed (same stop/remove policy as the ratio target).
+	// 0 disables. Per-torrent overrides win.
+	SeedDays int64 `json:"seed_days"`
+
 	// ServerToken, when non-empty, requires every web/API request to present
 	// it (Bearer header, X-Auth-Token, or ?token=). Never exposed to clients.
 	ServerToken string `json:"server_token"`
@@ -133,6 +138,7 @@ func (e *Engine) UpdateSettings(patch Settings) (Settings, error) {
 	cur.RatioTarget = patch.RatioTarget
 	cur.RatioStop = patch.RatioStop
 	cur.RatioRemove = patch.RatioRemove
+	cur.SeedDays = patch.SeedDays
 	e.settings = cur
 	e.mu.Unlock()
 

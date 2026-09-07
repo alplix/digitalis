@@ -78,6 +78,9 @@ type Torrent struct {
 	AnnounceCount   map[string]int64   `json:"announce_count"`
 	DownloadLimit   int64             `json:"download_limit"`
 	RatioTarget     float64           `json:"ratio_target"` // per-torrent ratio goal; 0 = use global
+	SeedDaysTarget  int64             `json:"seed_days_target"` // per-torrent max seeding days; 0 = use global
+	Sequential      bool              `json:"sequential"`   // download pieces in order for early playback
+	SeedSince       time.Time         `json:"seed_since"`   // when seeding was last (re)started
 
 	storage *storage.Storage
 	engine  *Engine
@@ -164,7 +167,11 @@ func (t *Torrent) allPiecesPresent() bool {
 
 func (t *Torrent) setState(s State) {
 	t.mu.Lock()
+	prev := t.State
 	t.State = s
+	if s == StateSeeding && prev != StateSeeding {
+		t.SeedSince = time.Now()
+	}
 	t.mu.Unlock()
 }
 

@@ -178,3 +178,85 @@ func (e *Engine) TorrentRatioTarget(id string) float64 {
 	defer t.mu.Unlock()
 	return t.RatioTarget
 }
+
+// SetTorrentSeedDays sets a per-torrent max seeding days (0 = use global).
+func (e *Engine) SetTorrentSeedDays(id string, days int64) error {
+	t, ok := e.GetTorrent(id)
+	if !ok {
+		return fmt.Errorf("torrent not found")
+	}
+	if days < 0 {
+		days = 0
+	}
+	t.mu.Lock()
+	t.SeedDaysTarget = days
+	t.mu.Unlock()
+	return nil
+}
+
+// TorrentSeedDays returns the per-torrent seeding days goal (0 = use global).
+func (e *Engine) TorrentSeedDays(id string) int64 {
+	t, ok := e.GetTorrent(id)
+	if !ok {
+		return 0
+	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.SeedDaysTarget
+}
+
+// SetTorrentSequential toggles in-order (stream-friendly) piece picking.
+// While enabled the engine keeps a small priority window that advances as
+// pieces complete so the beginning of the torrent is always available first.
+func (e *Engine) SetTorrentSequential(id string, on bool) error {
+	t, ok := e.GetTorrent(id)
+	if !ok {
+		return fmt.Errorf("torrent not found")
+	}
+	t.mu.Lock()
+	t.Sequential = on
+	p := t.picker
+	t.mu.Unlock()
+	if !on && p != nil {
+		p.SetPriority(-1, -1)
+	}
+	e.Logf("sequential mode for %s is %v", id, on)
+	return nil
+}
+
+// TorrentSequential returns whether the torrent is in sequential mode.
+func (e *Engine) TorrentSequential(id string) bool {
+	t, ok := e.GetTorrent(id)
+	if !ok {
+		return false
+	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.Sequential
+}
+
+// ReAnnounce forces an immediate tracker announce for one torrent.
+func (e *Engine) ReAnnounce(id string) error {
+	t, ok := e.GetTorrent(id)
+	if !ok {
+		return fmt.Errorf("torrent not found")
+	}
+	go e.Announce(t, "started")
+	e.Logf("manual announce for %s", id)
+	return nil
+}
+
+// ReAnnounceAll re-announces every torrent, returning how many succeeded.
+func (e *Engine) ReAnnounceAll() int {
+	e.mu.Lock()
+	list := make([]*Torrent, 0, len(e.torrents))
+	for _, t := range e.torrents {
+		list = append(list, t)
+	}
+	e.mu.Unlock()
+	for _, t := range list {
+		go e.Announce(t, "started")
+	}
+	e.Logf("manual announce for %d torrents", len(list))
+	return len(list)
+}
