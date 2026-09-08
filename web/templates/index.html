@@ -230,6 +230,14 @@
         <svg class="nav-ico w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
         <span class="hidden md:inline" data-i18n="torrents">Torrents</span>
       </div>
+      <div class="nav-item rounded-lg px-2 md:px-3 py-2 flex items-center gap-2.5" data-view="files" onclick="show('files')">
+        <svg class="nav-ico w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4h16v16H4zM4 9h16M9 4v16"/></svg>
+        <span class="hidden md:inline" data-i18n="files">Files</span>
+      </div>
+      <div class="nav-item rounded-lg px-2 md:px-3 py-2 flex items-center gap-2.5" data-view="wget" onclick="show('wget')">
+        <svg class="nav-ico w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8a8 8 0 11-16 0 8 8 0 0116 0z"/></svg>
+        <span class="hidden md:inline" data-i18n="wget">Wget</span>
+      </div>
       <div class="nav-item rounded-lg px-2 md:px-3 py-2 flex items-center gap-2.5" data-view="guide" onclick="show('guide')">
         <svg class="nav-ico w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 19.5V5.5a2 2 0 012-2h4.7a2 2 0 011.8 1.1L13.7 6H20a1 1 0 011 1v10.2a1 1 0 01-1 1h-6.4a2 2 0 00-1.7.9l-1.2 1.9a1 1 0 01-1.7 0l-1.2-1.9a2 2 0 00-1.7-.9H5a1 1 0 01-1-1z"/></svg>
         <span class="hidden md:inline" data-i18n="guide">Guide</span>
@@ -238,9 +246,13 @@
         <svg class="nav-ico w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M13 5l7 7-7 7-7-7 7-7z"/></svg>
         <span class="hidden md:inline" data-i18n="trackers">Trackers</span>
       </div>
-      <div class="nav-item rounded-lg px-2 md:px-3 py-2 flex items-center gap-2.5" data-view="categories" onclick="show('categories')">
+<div class="nav-item rounded-lg px-2 md:px-3 py-2 flex items-center gap-2.5" data-view="categories" onclick="show('categories')">
         <svg class="nav-ico w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7l9-4 9 4M3 7v10l9 4 9-4V7"/></svg>
-        <span class="hidden md:inline" data-i18n="categories">Categories</span>
+        <span data-i18n="categories">Categories</span>
+      </div>
+      <div class="nav-item rounded-lg px-2 md:px-3 py-2 flex items-center gap-2.5" data-view="storage" onclick="show('storage')">
+        <svg class="nav-ico w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4h16v16H4zM4 9h16M9 4v16"/></svg>
+        <span data-i18n="storage">Storage</span>
       </div>
       <div class="nav-item rounded-lg px-2 md:px-3 py-2 flex items-center gap-2.5" data-view="rss" onclick="show('rss'); renderRSS()">
         <svg class="nav-ico w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3a1 1 0 00-1 1 17 17 0 0017 17 1 1 0 001-1v-3a1 1 0 00-1-1 10 10 0 01-9-9 1 1 0 00-1-1H5zM5.5 21a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg>
@@ -403,12 +415,18 @@
         <div class="card rounded-2xl p-4 mb-5">
           <textarea id="sourceInput" rows="2" data-i18n-placeholder="sourcePlaceholder"
             class="w-full rounded-xl p-3 inp text-sm focus:outline-none resize-none"></textarea>
-          <div class="flex flex-col md:flex-row gap-3 mt-3">
+<div class="flex flex-col md:flex-row gap-3 mt-3">
             <div class="flex-1">
               <input id="dirInput" list="catList" data-i18n-placeholder="targetFolder"
                 class="w-full rounded-xl px-3 py-2.5 inp text-sm focus:outline-none" spellcheck="false">
               <datalist id="catList"></datalist>
             </div>
+            <div class="md:w-56">
+              <select id="diskInput" onchange="targetDisk=this.value" class="w-full rounded-xl px-3 py-2.5 inp text-sm focus:outline-none">
+                <option value="" data-i18n="defaultDisk">Default disk</option>
+              </select>
+            </div>
+          </div>
             <div class="flex flex-wrap gap-3 items-center">
               <button onclick="addFromInput()" class="px-5 py-2.5 rounded-xl btn-primary font-medium shadow-lg shadow-black/20 transition" data-i18n="add">Add</button>
               <label class="px-5 py-2.5 rounded-xl inp cursor-pointer hover:border-[var(--border2)] transition text-sm flex items-center gap-2">
@@ -487,11 +505,87 @@
         </div>
       </section>
 
+      <!-- ============ FILES ============ -->
+      <section id="view-files" class="view">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <h1 class="text-xl md:text-2xl font-bold" data-i18n="files">Files</h1>
+        </div>
+        <div class="card rounded-2xl p-4">
+          <div class="flex flex-wrap items-center gap-2 mb-3">
+            <select id="filesDisk" onchange="fileGoRoot()" class="inp rounded-lg px-3 py-2 text-sm focus:outline-none cursor-pointer"></select>
+            <span class="flex-1"></span>
+            <button onclick="fileUp()" class="px-3 py-1.5 rounded-lg inp text-xs hover:border-[var(--border2)] transition" data-i18n="upDir">↥ Up</button>
+            <button onclick="fileRefresh()" class="px-3 py-1.5 rounded-lg inp text-xs hover:border-[var(--border2)] transition" data-i18n="refresh">↻</button>
+            <button onclick="fileMkdir()" class="px-3 py-1.5 rounded-lg inp text-xs hover:border-[var(--border2)] transition">＋ <span data-i18n="newFolder">New folder</span></button>
+            <label for="fileUpInput" class="px-4 py-2 rounded-xl btn-primary text-sm font-medium shadow transition cursor-pointer">⤒ <span data-i18n="upload">Upload</span>
+              <input id="fileUpInput" type="file" class="hidden" onchange="fileUpload(this)">
+            </label>
+          </div>
+          <div class="text-xs font-mono tx2 mb-2 px-1" id="filePath">/</div>
+          <div id="fileList" class="space-y-0.5 text-sm">
+            <div class="py-6 text-center tx2" data-i18n="loading">Loading...</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ WGET ============ -->
+      <section id="view-wget" class="view">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <h1 class="text-xl md:text-2xl font-bold" data-i18n="wget">Wget</h1>
+        </div>
+        <div class="card rounded-2xl p-4 mb-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="md:col-span-2">
+              <label class="block text-xs tx2 mb-1" data-i18n="wgetUrl">URL</label>
+              <input id="wgetUrl" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono" spellcheck="false" placeholder="https://example.com/file.zip">
+            </div>
+            <label class="flex items-center gap-2 text-xs tx2"><input type="checkbox" id="wgetRecursive" class="accent-[var(--accent)]"> <span data-i18n="recursive">Recursive</span></label>
+            <label class="text-xs tx2 flex items-center gap-2"><span class="shrink-0" data-i18n="depth">Depth (0=∞)</span><input id="wgetDepth" type="number" min="0" value="0" class="inp rounded-lg px-2 py-1.5 text-sm font-mono w-24"></label>
+            <label class="flex items-center gap-2 text-xs tx2"><input type="checkbox" id="wgetDeleteAfter" class="accent-[var(--accent)]"> <span data-i18n="deleteAfter">Delete after (no disk write)</span></label>
+            <label class="flex items-center gap-2 text-xs tx2"><input type="checkbox" id="wgetNoDNS" class="accent-[var(--accent)]"> <span data-i18n="noDNS">No DNS cache</span></label>
+            <label class="flex items-center gap-2 text-xs tx2"><input type="checkbox" id="wgetLoop" class="accent-[var(--accent)]"> <span data-i18n="loop">Loop</span></label>
+            <label class="text-xs tx2 flex items-center gap-2"><span class="shrink-0" data-i18n="interval">Interval (s)</span><input id="wgetInterval" type="number" min="0" value="60" class="inp rounded-lg px-2 py-1.5 text-sm font-mono w-24"></label>
+            <label class="text-xs tx2 flex items-center gap-2"><span class="shrink-0" data-i18n="disk">Disk</span>
+              <select id="wgetDisk" class="inp rounded-lg px-2 py-1.5 text-sm cursor-pointer flex-1"></select>
+            </label>
+            <label class="text-xs tx2 flex items-center gap-2"><span class="shrink-0" data-i18n="category">Folder</span><input id="wgetCategory" class="inp rounded-lg px-2 py-1.5 text-sm font-mono flex-1" list="catList"></label>
+          </div>
+          <div class="mt-3">
+            <button onclick="wgetStart()" class="px-5 py-2 rounded-xl btn-primary text-sm font-medium shadow transition">⏬ <span data-i18n="start">Start</span></button>
+            <span id="wgetStatus" class="ml-3 text-xs tx2"></span>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+          <div class="card rounded-2xl p-3"><p class="text-[11px] uppercase tracking-widest tx2 mb-1" data-i18n="wgetTotalBytes">Total downloaded</p><p class="text-lg font-semibold font-mono" id="wgetTotalBytes">0</p></div>
+          <div class="card rounded-2xl p-3"><p class="text-[11px] uppercase tracking-widest tx2 mb-1" data-i18n="wgetSpeed">Bandwidth</p><p class="text-lg font-semibold font-mono" id="wgetTotalSpeed">—</p></div>
+          <div class="card rounded-2xl p-3"><p class="text-[11px] uppercase tracking-widest tx2 mb-1" data-i18n="wgetFiles">Files</p><p class="text-lg font-semibold font-mono" id="wgetTotalFiles">0</p></div>
+          <div class="card rounded-2xl p-3"><p class="text-[11px] uppercase tracking-widest tx2 mb-1" data-i18n="wgetUptime">Uptime</p><p class="text-lg font-semibold font-mono" id="wgetUptime">—</p></div>
+        </div>
+        <div id="wgetList" class="space-y-2">
+          <div class="card rounded-2xl p-6 text-center tx2 text-sm" data-i18n="noTasks">No tasks yet.</div>
+        </div>
+      </section>
+
       <!-- ============ CATEGORIES ============ -->
       <section id="view-categories" class="view">
         <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
           <h1 class="text-xl md:text-2xl font-bold" data-i18n="categories">Categories</h1>
           <button onclick="newCategory()" class="px-4 py-2 rounded-xl btn-primary text-sm font-medium shadow transition" data-i18n="newFolder">New folder</button>
+        </div>
+        <div class="card rounded-2xl p-4 mb-4 hidden" id="catForm">
+          <div class="flex flex-wrap items-end gap-3">
+            <div class="flex-1 min-w-[160px]">
+              <label class="block text-xs tx2 mb-1" data-i18n="catParent">Parent folder</label>
+              <select id="catParent" class="inp rounded-lg w-full px-2 py-2 text-sm cursor-pointer"></select>
+            </div>
+            <div class="flex-1 min-w-[160px]">
+              <label class="block text-xs tx2 mb-1" data-i18n="catName">New folder name</label>
+              <input id="catName" class="inp rounded-lg w-full px-3 py-2 text-sm focus:outline-none" placeholder="books">
+            </div>
+            <button onclick="catCreate()" class="px-5 py-2 rounded-xl btn-primary text-sm font-medium shadow transition" data-i18n="create">Create</button>
+            <button onclick="document.getElementById('catForm').classList.add('hidden')" class="px-3 py-2 rounded-lg inp text-sm">✕</button>
+          </div>
+          <div class="text-xs tx3 mt-2" id="catHint"></div>
         </div>
         <div class="card rounded-2xl p-4">
           <div id="catListBox" class="space-y-1 text-sm">
@@ -499,6 +593,23 @@
           </div>
         </div>
         <div class="text-xs tx3 mt-2" data-i18n="createFolders">Nested folders, e.g. unix/linux/debian</div>
+      </section>
+
+      <!-- ============ STORAGE ============ -->
+      <section id="view-storage" class="view">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <h1 class="text-xl md:text-2xl font-bold" data-i18n="storage">Storage</h1>
+          <div class="flex gap-2">
+            <button onclick="refreshDisks()" class="px-3 py-1.5 rounded-lg inp text-xs hover:border-[var(--border2)] transition" data-i18n="refresh">↻</button>
+            <button onclick="addDisk()" class="px-4 py-2 rounded-xl btn-primary text-sm font-medium shadow transition">＋ <span data-i18n="addDisk">Add disk</span></button>
+          </div>
+        </div>
+        <div class="text-xs tx2 mb-4">
+          <span data-i18n="diskHint">Extra storage roots. Each root is its own volume; torrents below are listed biggest first.</span>
+        </div>
+        <div id="diskList" class="space-y-4">
+          <div class="card rounded-2xl p-6 text-center tx2 text-sm" data-i18n="loading">Loading...</div>
+        </div>
       </section>
 
       <!-- ============ RSS ============ -->
@@ -729,6 +840,7 @@ const I18N = {
     targetFolder: 'Destination folder (optional)', createFolders: 'Nested folders, e.g. unix/linux/debian',
     create: 'Create', move: 'Move', root: 'Root', empty: 'empty', deleteFolder: 'Delete folder',
     catCreated: 'Category created', catEmpty: 'Category must be empty to delete', targetSet: 'Target set', moved: 'moved',
+    addDisk: 'Add disk', noDisks: 'No disks configured yet.', diskHint: 'Extra storage roots. Each root is its own volume; torrents below are listed biggest first.', defaultDisk: 'Default disk', removeDisk: 'Remove disk', diskUsage: 'Usage', diskPathHint: 'absolute path to a mounted volume (e.g. /mnt/disk2)', torrents2: 'torrents',
     trackerGlobalHint: 'Aggregated announce status across all torrents.', unknown: 'Unknown',
     directories: 'Directories', saveDir: 'Save directory', dirHint: 'New torrents save here. Existing torrents keep their current folder.',
     dashRateLimits: 'Rate limits', upLimit: 'Upload limit (bytes/s, 0=∞)', downLimit: 'Download limit (bytes/s, 0=∞)',
@@ -755,7 +867,14 @@ const I18N = {
     authHint: 'When a token is set, the web UI and every API request require it. Media streams and WebSocket connections carry it automatically.',
     authClear: 'Remove protection', authLogin: 'Access token required', authLoginHint: 'Enter the access token configured in Settings.',
     authPlaceholder: 'Access token', authWrong: 'Invalid token', authUnlock: 'Unlock',
-    authSaved: 'Access protected', authCleared: 'Protection removed'
+    authSaved: 'Access protected', authCleared: 'Protection removed',
+    wget: 'Wget', upload: 'Upload', upDir: 'Up',
+    wgetUrl: 'URL', recursive: 'Recursive', depth: 'Depth (0=∞)', deleteAfter: 'Delete after (no disk write)',
+    noDNS: 'No DNS cache', loop: 'Loop', interval: 'Interval (s)', category: 'Folder', start: 'Start', stop: 'Stop',
+    noTasks: 'No tasks yet.', wgetTotalBytes: 'Total downloaded', wgetSpeed: 'Bandwidth',
+    wgetFiles: 'Files', wgetUptime: 'Uptime', loops: 'Loops', duration: 'Uptime',
+    rename: 'Rename', download: 'Download', delete: 'Delete', moreInTorrents: 'more on Torrents',
+    catParent: 'Parent folder', catName: 'New folder name', started: 'Started'
   },
   tr: {
     tagline: 'Yüksük Otu — sıfırdan yazılmış BitTorrent istemcisi', noDocker: 'Docker yok',
@@ -779,6 +898,7 @@ const I18N = {
     targetFolder: 'Hedef klasör (isteğe bağlı)', createFolders: 'İç içe klasörler, ör. unix/linux/debian',
     create: 'Oluştur', move: 'Taşı', root: 'Ana dizin', empty: 'boş', deleteFolder: 'Klasörü sil',
     catCreated: 'Kategori oluşturuldu', catEmpty: 'Silinecek kategori boş olmalı', targetSet: 'Hedef seçildi', moved: 'taşındı',
+    addDisk: 'Disk ekle', noDisks: 'Henüz disk tanımlanmamış.', diskHint: 'Ek depolama kökleri. Her kök ayrı bir birimdir; alt torrentler büyükten küçüğe sıralanır.', defaultDisk: 'Varsayılan disk', removeDisk: 'Diski kaldır', diskUsage: 'Kullanım', diskPathHint: 'Bağımsız yolu (ör. /mnt/disk2)', torrents2: 'torrent',
     trackerGlobalHint: 'Tüm torrentlerde birleştirilmiş anounce durumu.', unknown: 'Bilinmiyor',
     directories: 'Dizinler', saveDir: 'Kayıt dizini', dirHint: 'Yeni torrentler buraya kaydedilir. Mevcut torrentler kendi klasöründe kalır.',
     dashRateLimits: 'Hız limitleri', upLimit: 'Yükleme limiti (bayt/sn, 0=∞)', downLimit: 'İndirme limiti (bayt/sn, 0=∞)',
@@ -807,7 +927,14 @@ const I18N = {
     authHint: 'Belirteç ayarlanınca web arayüzü ve tüm API istekleri onu ister. Medya akışı ve WebSocket bağlantıları otomatik taşır.',
     authClear: 'Korumayı kaldır', authLogin: 'Erişim belirteci gerekli', authLoginHint: 'Ayarlar\'da yapılandırılan erişim belirtecini girin.',
     authPlaceholder: 'Erişim belirteci', authWrong: 'Geçersiz belirteç', authUnlock: 'Kilidi aç',
-    authSaved: 'Erişim korundu', authCleared: 'Koruma kaldırıldı'
+    authSaved: 'Erişim korundu', authCleared: 'Koruma kaldırıldı',
+    wget: 'Wget', upload: 'Yükle', upDir: 'Üst',
+    wgetUrl: 'URL', recursive: 'Özyinelemeli', depth: 'Derinlik (0=∞)', deleteAfter: 'İndir sonra sil (diske yazmaz)',
+    noDNS: 'DNS önbelleksiz', loop: 'Döngü', interval: 'Aralık (sn)', category: 'Klasör', start: 'Başlat', stop: 'Durdur',
+    noTasks: 'Henüz görev yok.', wgetTotalBytes: 'Toplam İndirilen', wgetSpeed: 'Bant genişliği',
+    wgetFiles: 'Dosyalar', wgetUptime: 'Çalışma süresi', loops: 'Döngü', duration: 'Çalışma süresi',
+    rename: 'Yeniden adlandır', download: 'İndir', delete: 'Sil', moreInTorrents: 'tane daha Torrentlerde',
+    catParent: 'Üst klasör', catName: 'Yeni klasör adı', started: 'Başlatıldı'
   },
   de: {
     tagline: 'Ein von Grund auf geschriebener BitTorrent-Client', noDocker: 'Kein Docker',
@@ -1240,9 +1367,14 @@ function show(name) {
   if (el) el.classList.add('active');
   document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.getAttribute('data-view') === name));
   if (name === 'dashboard') { refreshStats(); renderFeedSummary(); refreshStorage(); }
+  if (name === 'torrents') { if (disksData.length) fillDiskSelect('diskInput'); else refreshDisks(); }
   if (name === 'trackers') refreshTrackers();
+  if (name === 'categories') refreshCats();
+  if (name === 'storage') refreshDisks();
   if (name === 'settings') loadSettings();
   if (name === 'guide') renderGuide();
+  if (name === 'files') openFiles();
+  if (name === 'wget') { refreshWget(); }
 }
 
 // ---------- formatting ----------
@@ -1579,10 +1711,30 @@ function setTarget(path) {
 }
 
 async function newCategory() {
-  const p = prompt(t('newFolder') + ' — unix/linux/debian');
-  if (!p) return;
+  const f = document.getElementById('catForm');
+  if (!f) return;
+  f.classList.toggle('hidden', !f.classList.contains('hidden'));
+  if (f.classList.contains('hidden')) return;
+  const sel = document.getElementById('catParent');
+  if (sel) {
+    sel.innerHTML = `<option value="">${esc(t('root'))}</option>` +
+      cats.map(c => `<option value="${esc(c.path)}">${'\u00A0'.repeat(c.depth*2)}${esc(c.path)}</option>`).join('');
+  }
+  const n = document.getElementById('catName');
+  if (n) n.value = '';
+  const hint = document.getElementById('catHint');
+  if (hint) hint.textContent = '';
+  if (n) n.focus();
+}
+
+async function catCreate() {
+  const parent = document.getElementById('catParent').value.trim();
+  const name = document.getElementById('catName').value.trim();
+  if (!name) return;
+  const p = parent ? parent.replace(/\/+$/,'') + '/' + name : name;
   try {
     await api('/categories', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({path: p}) });
+    document.getElementById('catForm').classList.add('hidden');
     await refreshCats();
     const st = document.getElementById('addStatus');
     if (st) st.innerHTML = `<span style="color:var(--good)">${esc(t('catCreated'))}: ${esc(p)}</span>`;
@@ -1599,6 +1751,19 @@ async function delCategory(path) {
 }
 
 // ---------- add ----------
+let targetDisk = '';
+function diskLabel(path) {
+  return path.split('/').filter(Boolean).pop() || path;
+}
+function fillDiskSelect(selId, cur) {
+  const sel = document.getElementById(selId);
+  if (!sel) return;
+  const curVal = cur ?? sel.value;
+  sel.innerHTML = `<option value="">${esc(t('defaultDisk'))}</option>` +
+    (disksData || []).map(d => `<option value="${esc(d.path)}" ${d.path === curVal ? 'selected' : ''}>${esc(diskLabel(d.path))}</option>`).join('');
+  sel.value = curVal || '';
+  if (selId === 'diskInput') targetDisk = sel.value;
+}
 async function addFromInput() {
   const ta = document.getElementById('sourceInput');
   if (!ta) return;
@@ -1609,7 +1774,7 @@ async function addFromInput() {
   let ok = 0, fail = 0, lastFail = '';
   for (const line of lines) {
     try {
-      await api('/torrents', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({source: line, dir}) });
+      await api('/torrents', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({source: line, dir, disk: targetDisk}) });
       ok++;
     } catch (e) { fail++; lastFail = `${esc(line.slice(0,60))}: ${esc(e.message)}`; }
   }
@@ -1629,7 +1794,7 @@ async function addFromFile(input) {
   const status = document.getElementById('addStatus');
   const dir = document.getElementById('dirInput').value.trim();
   try {
-    await api('/torrents', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({source: b64, dir}) });
+    await api('/torrents', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({source: b64, dir, disk: targetDisk}) });
     if (status) status.innerHTML = `<span style="color:var(--good)">${esc(t('added'))}</span>`;
   } catch (e) {
     if (status) status.innerHTML = `<span style="color:var(--bad)">${esc(t('connError'))} ${esc(e.message)}</span>`;
@@ -1649,6 +1814,96 @@ async function moveTorrent(id) {
     if (st) st.innerHTML = `<span style="color:var(--good)">${esc(t('moved'))}: 📁 ${esc(dir || t('root'))}</span>`;
     await refreshCats();
     refreshTorrentsFromAPI();
+  } catch (e) { alert(e.message); }
+}
+
+// ---------- storage ----------
+let disksData = [];
+async function refreshDisks() {
+  try {
+    disksData = await api('/disks');
+    if (document.getElementById('diskInput')) fillDiskSelect('diskInput');
+    renderDisks();
+    fileDiskOpts(fileDisk);
+    fillWgetDiskSelect();
+  } catch (e) {
+    const box = document.getElementById('diskList');
+    if (box) box.innerHTML = `<div class="card rounded-2xl p-6 text-center tx2 text-sm" style="color:var(--bad)">${esc(t('connError'))} ${esc(e.message)}</div>`;
+  }
+}
+
+function renderDisks() {
+  const box = document.getElementById('diskList');
+  if (!box) return;
+  if (!disksData.length) {
+    box.innerHTML = `<div class="card rounded-2xl p-8 text-center tx2 text-sm">${esc(t('noDisks'))}</div>`;
+    return;
+  }
+  box.innerHTML = disksData.map(d => {
+    const usedPct = d.total > 0 ? Math.min(100, ((d.total - d.free) / d.total) * 100) : 0;
+    const warn = d.total > 0 && (d.total - d.free) / d.total > 0.9;
+    const removable = !(disksData[0] && disksData[0].path === d.path);
+    return `
+    <div class="card rounded-2xl p-4">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div class="flex items-center gap-2 min-w-0">
+          <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" style="color:var(--accent2)"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4h16v16H4zM4 9h16M9 4v16"/></svg>
+          <span class="font-semibold font-mono text-sm truncate">${esc(d.label)}</span>
+          <span class="px-2 py-0.5 rounded-full chip text-[10px] tx3 font-mono truncate">${esc(d.path)}</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-[11px] chip px-2 py-0.5 rounded-full font-mono tx2">${fmtBytes(d.total - d.free)} / ${fmtBytes(d.total)} · ${fmtBytes(d.free)} ${esc(t('free'))}</span>
+          ${removable ? `<button onclick="removeDisk('${esc(d.path)}')" class="text-xs px-1.5" style="color:var(--bad)" title="${esc(t('removeDisk'))}">✕</button>` : ''}
+        </div>
+      </div>
+      <div class="h-2.5 rounded-full overflow-hidden mb-4" style="background:var(--bg0)">
+        <div class="h-full rounded-full transition-all duration-700" style="width:${usedPct}%;background:${warn ? 'var(--bad)' : 'var(--ok-grad)'}"></div>
+      </div>
+      <div class="flex flex-wrap gap-x-4 gap-y-1 mb-4 text-xs">
+        <span class="tx2" data-i18n="diskUsage">Usage</span> <b class="font-mono">${fmtBytes(d.usage)}</b>
+        <span class="tx2" data-i18n="torrents2">Torrents</span> <b class="font-mono">${d.torrents.length}</b>
+      </div>
+      ${(d.categories || []).filter(c=>c.size>0).length ? `
+      <div class="flex flex-wrap gap-2 mb-3">
+        ${(d.categories||[]).filter(c=>c.size>0).map(c => `<span class="px-2 py-0.5 rounded-full chip text-[11px] tx2">📁 ${esc(c.name)} · ${fmtBytes(c.size)}</span>`).join('')}
+      </div>` : ''}
+      <div class="space-y-1 max-h-72 overflow-auto pr-1">
+        ${d.torrents.length ? d.torrents.slice(0,5).map(tr => `
+          <div class="flex items-center gap-2 text-xs py-1 border-t border-[var(--border)]" style="border-color:color-mix(in srgb, var(--border) 40%, transparent)">
+            <span class="w-16 shrink-0 font-mono tx3 text-right">${fmtBytes(tr.size)}</span>
+            <span class="truncate flex-1">${stateBadge(tr.state)} <span style="color:var(--txt)">${esc(tr.name)}</span></span>
+            ${tr.category ? `<span class="chip px-1.5 py-0.5 rounded-full text-[10px] tx2 shrink-0">📁 ${esc(tr.category)}</span>` : ''}
+          </div>`).join('') +
+          (d.torrents.length > 5 ? `<div class="text-xs tx3 py-1 text-center">+${d.torrents.length - 5} ${esc(t('moreInTorrents'))}</div>` : '')
+        : `<div class="text-xs tx3 py-1">${esc(t('empty'))}</div>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function smv(id, disk, sel) {
+  const dir = sel.value;
+  try {
+    await api(`/torrents/${id}/move`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({category: dir, disk}) });
+    await refreshDisks();
+    refreshTorrentsFromAPI();
+  } catch (e) { alert(e.message); }
+}
+
+async function addDisk() {
+  const p = prompt(t('addDisk') + ' — ' + t('diskPathHint'));
+  if (!p || !p.trim()) return;
+  try {
+    await api('/disks', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({path: p.trim()}) });
+    await refreshDisks();
+  } catch (e) { alert(e.message); }
+}
+
+async function removeDisk(path) {
+  if (!confirm(`${t('removeDisk')}: ${path}?`)) return;
+  try {
+    await api('/disks', { method:'DELETE', headers:{'Content-Type':'application/json'}, body: JSON.stringify({path}) });
+    await refreshDisks();
   } catch (e) { alert(e.message); }
 }
 
@@ -2385,6 +2640,190 @@ async function saveSettings() {
   }
 }
 
+// ---------- file manager ----------
+let fileDisk = '';
+let filePath = '';
+let fileEntries = [];
+
+function fileDiskOpts(cur) {
+  const el = document.getElementById('filesDisk');
+  const d = { path: '', label: t('defaultDisk') };
+  const list = [d].concat((disksData || []).slice(1).map(x => ({ path: x.path, label: diskLabel(x.path) })));
+  el.innerHTML = list.map(x => `<option value="${esc(x.path)}" ${x.path === cur ? 'selected' : ''}>${esc(x.label)}</option>`).join('');
+}
+async function openFiles() {
+  if (!disksData.length) { try { await refreshDisks(); } catch(e){} }
+  fileDiskOpts(fileDisk);
+  await fileList();
+}
+async function fileGoRoot() {
+  const el = document.getElementById('filesDisk');
+  fileDisk = el.value;
+  filePath = '';
+  await fileList();
+}
+async function fileUp() {
+  if (!filePath) return;
+  const parts = filePath.split('/').filter(Boolean);
+  parts.pop();
+  filePath = parts.join('/');
+  await fileList();
+}
+function fileJoin(a, b) {
+  if (!a) return b || '';
+  if (!b) return a;
+  return a + '/' + b;
+}
+async function fileList() {
+  const box = document.getElementById('fileList');
+  if (!box) return;
+  box.innerHTML = `<div class="py-6 text-center tx2">${esc(t('loading'))}</div>`;
+  try {
+    const qs = new URLSearchParams();
+    if (fileDisk) qs.set('disk', fileDisk);
+    if (filePath) qs.set('path', filePath);
+    fileEntries = await api('/api/files?' + qs.toString());
+    document.getElementById('filePath').textContent = '/' + filePath;
+    if (!fileEntries.length) {
+      box.innerHTML = `<div class="py-6 text-center tx2">${esc(t('empty'))}</div>`;
+      return;
+    }
+    box.innerHTML = fileEntries.map(f => `
+      <div class="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-[var(--bg0)] cursor-pointer" ${f.is_dir ? `onclick="fileInto('${esc(f.path)}')"` : ''}>
+        <span class="shrink-0">${f.is_dir ? '📁' : '📄'}</span>
+        <span class="truncate flex-1 min-w-0" style="color:var(--txt)">${esc(f.name)}</span>
+        <span class="shrink-0 font-mono tx3 text-xs">${f.is_dir ? '' : fmtBytes(f.size)}</span>
+        <span class="shrink-0 flex items-center gap-1">
+          ${!f.is_dir ? `<button onclick="event.stopPropagation();fileDown('${esc(f.path)}')" class="px-1.5 text-xs" style="color:var(--accent2)" title="${esc(t('download'))}">↓</button>` : ''}
+          <button onclick="event.stopPropagation();fileRename('${esc(f.path)}')" class="px-1.5 text-xs tx2" title="${esc(t('rename'))}">✎</button>
+          <button onclick="event.stopPropagation();fileDel('${esc(f.path)}')" class="px-1.5 text-xs" style="color:var(--bad)" title="${esc(t('delete'))}">✕</button>
+        </span>
+      </div>`).join('');
+  } catch (e) {
+    box.innerHTML = `<div class="py-6 text-center" style="color:var(--bad)">${esc(e.message)}</div>`;
+  }
+}
+function fileInto(p) { filePath = p; fileList(); }
+function fileRefresh() { fileList(); }
+function fileDown(p) {
+  const qs = new URLSearchParams();
+  if (fileDisk) qs.set('disk', fileDisk);
+  qs.set('path', p);
+  window.open('/api/files/download?' + qs.toString(), '_blank');
+}
+async function fileMkdir() {
+  const n = prompt(t('newFolder'));
+  if (!n || !n.trim()) return;
+  try {
+    await api('/api/files/mkdir', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ disk: fileDisk, path: fileJoin(filePath, n.trim()).replace(/\/+/g,'/') }) });
+    await fileList();
+  } catch (e) { alert(e.message); }
+}
+async function fileUpload(input) {
+  const f = input.files && input.files[0];
+  if (!f) return;
+  const fd = new FormData();
+  fd.append('file', f);
+  const qs = new URLSearchParams();
+  if (fileDisk) qs.set('disk', fileDisk);
+  if (filePath) qs.set('path', filePath);
+  try {
+    await fetch(API + '/api/files/upload?' + qs.toString(), { method:'POST', body: fd });
+    await fileList();
+  } catch (e) { alert(e.message); }
+  input.value = '';
+}
+async function fileRename(p) {
+  const parts = p.split('/');
+  const base = parts.slice(0, -1).join('/');
+  const old = parts[parts.length - 1];
+  const nn = prompt(t('rename'), old);
+  if (!nn || !nn.trim() || nn.trim() === old) return;
+  try {
+    await api('/api/files/move', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ disk: fileDisk, src: p, dst: fileJoin(base, nn.trim()).replace(/\/+/g,'/') }) });
+    await fileList();
+  } catch (e) { alert(e.message); }
+}
+async function fileDel(p) {
+  if (!confirm(t('delete') + ': ' + p + '?')) return;
+  try {
+    await api('/api/files/delete', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ disk: fileDisk, path: p }) });
+    await fileList();
+  } catch (e) { alert(e.message); }
+}
+
+// ---------- wget ----------
+let wgetTimer = null;
+async function refreshWget() {
+  const box = document.getElementById('wgetList');
+  if (!box) return;
+  try {
+    const d = await api('/api/wget');
+    document.getElementById('wgetTotalBytes').textContent = fmtBytes(d.total.bytes);
+    document.getElementById('wgetTotalSpeed').textContent = fmtSpeed(d.total.speed);
+    document.getElementById('wgetTotalFiles').textContent = d.total.files;
+    const up = d.total.started_at ? Math.max(0, Math.floor((Date.now() - new Date(d.total.started_at).getTime())/1000)) : 0;
+    document.getElementById('wgetUptime').textContent = up >= 3600 ? (up/3600).toFixed(1)+'h' : (up >= 60 ? Math.floor(up/60)+'m' : up+'s');
+    if (!d.tasks || !d.tasks.length) {
+      box.innerHTML = `<div class="card rounded-2xl p-6 text-center tx2 text-sm">${esc(t('noTasks'))}</div>`;
+      return;
+    }
+    box.innerHTML = d.tasks.map(tk => `
+      <div class="card rounded-2xl p-3">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="chip px-2 py-0.5 rounded-full text-[10px] font-medium ${tk.state === 'running' ? 'bg-sky-500/20 text-sky-700 dark:text-sky-200' : tk.state === 'error' ? 'bg-rose-500/20 text-rose-700' : 'chip'}">${esc(tk.state)}</span>
+          <span class="font-mono text-xs truncate flex-1 min-w-0" style="color:var(--txt)" title="${esc(tk.url)}">${esc(tk.url)}</span>
+          <span class="shrink-0 text-xs font-mono tx2">${fmtBytes(tk.bytes)}</span>
+          <span class="shrink-0 text-xs font-mono tx3">${fmtSpeed(tk.speed)}</span>
+          <button onclick="wgetStop('${esc(tk.id)}')" class="px-1.5 text-xs" style="color:var(--bad)" title="${esc(t('stop'))}">■</button>
+        </div>
+        <div class="flex flex-wrap gap-x-4 gap-y-0.5 mt-1.5 text-[11px] tx3 font-mono">
+          <span data-i18n="files">Files</span>: ${tk.files} · <span data-i18n="loops">Loops</span>: ${tk.loops} · <span data-i18n="duration">Uptime</span>: ${tk.uptime_sec}s
+          ${tk.recursive ? ' · <span data-i18n="recursive">Recursive</span>' : ''}
+          ${tk.delete_after ? ' · <span data-i18n="deleteAfter">Delete after</span>' : ''}
+          ${tk.current_url ? ' · <span class="truncate max-w-48 inline-block align-middle">' + esc(tk.current_url) + '</span>' : ''}
+          ${tk.error ? ' · <span style="color:var(--bad)">' + esc(tk.error) + '</span>' : ''}
+        </div>
+      </div>`).join('');
+  } catch (e) { /* ignore */ }
+}
+async function wgetStart() {
+  const url = document.getElementById('wgetUrl').value.trim();
+  if (!url) return;
+  const st = document.getElementById('wgetStatus');
+  try {
+    const disk = document.getElementById('wgetDisk').value;
+    await api('/api/wget', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({
+      url,
+      recursive: document.getElementById('wgetRecursive').checked,
+      depth: parseInt(document.getElementById('wgetDepth').value || '0', 10),
+      delete_after: document.getElementById('wgetDeleteAfter').checked,
+      no_dns_cache: document.getElementById('wgetNoDNS').checked,
+      loop: document.getElementById('wgetLoop').checked,
+      interval: parseInt(document.getElementById('wgetInterval').value || '0', 10),
+      disk,
+      category: document.getElementById('wgetCategory').value.trim()
+    })});
+    st.innerHTML = `<span style="color:var(--good)">✓ ${esc(t('started'))}</span>`;
+    document.getElementById('wgetUrl').value = '';
+    refreshWget();
+  } catch (e) {
+    st.innerHTML = `<span style="color:var(--bad)">${esc(e.message)}</span>`;
+  }
+}
+async function wgetStop(id) {
+  try { await api('/api/wget/' + id, { method:'DELETE' }); refreshWget(); } catch (e) { alert(e.message); }
+}
+function fillWgetDiskSelect() {
+  const el = document.getElementById('wgetDisk');
+  if (!el) return;
+  el.innerHTML = `<option value="">${esc(t('defaultDisk'))}</option>` +
+    (disksData || []).map(d => `<option value="${esc(d.path)}">${esc(diskLabel(d.path))}</option>`).join('');
+}
+
 // ---------- init ----------
 applyTheme();
 applyLang();
@@ -2394,6 +2833,7 @@ setInterval(refreshTorrentsFromAPI, 4000);
 setInterval(refreshStats, 4000);
 setInterval(renderFeedSummary, 10000);
 setInterval(refreshStorage, 30000);
+setInterval(() => { if (document.getElementById('view-wget').classList.contains('active')) refreshWget(); }, 3000);
 ensureAuth();
 
 if ('serviceWorker' in navigator) {

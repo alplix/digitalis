@@ -21,6 +21,7 @@ type torrentRecord struct {
 	ID             string   `json:"id"`
 	Source         string   `json:"source"`
 	Category       string   `json:"category"`
+	Disk           string   `json:"disk,omitempty"`
 	CustomTrackers []string `json:"custom_trackers,omitempty"`
 }
 
@@ -140,7 +141,10 @@ func (s *Server) persistTrackerChanges(id string) {
 
 // addTorrentRecord adds a torrent from a persisted record (without re-saving).
 func (s *Server) addTorrentRecord(rec torrentRecord) error {
-	_, saveDir, err := s.resolveDir(rec.Category)
+	_, saveDir, err := s.resolveDiskDir(rec.Disk, rec.Category)
+	if err != nil {
+		_, saveDir, err = s.resolveDir(rec.Category)
+	}
 	if err != nil {
 		saveDir = s.saveDir
 	}

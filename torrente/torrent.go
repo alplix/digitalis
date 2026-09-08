@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"path/filepath"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -650,6 +651,56 @@ func (e *Engine) RemoveTorrent(id string) error {
 	t.mu.Unlock()
 	e.Logf("removed torrent %s", id)
 	return nil
+}
+
+// RemoveTorrentWithFiles stops and removes a torrent, then deletes its
+// downloaded data from disk. The on-disk footprint (a torrent-named folder for
+// multi-file torrents, a single file for single-file torrents) is removed only
+// if it lies safely under a registered storage root.
+func (e *Engine) RemoveTorrentWithFiles(id string) error {
+	e.mu.Lock()
+	t, ok := e.torrents[id]
+	if !ok {
+		e.mu.Unlock()
+		return fmt.Errorf("torrent not found")
+	}
+	t.mu.Lock()
+	saveDir, name := t.SaveDir, t.Name
+	t.mu.Unlock()
+	e.mu.Unlock()
+
+	if err := e.RemoveTorrent(id); err != nil {
+		return err
+	}
+	if saveDir == "" || name == "" {
+		return nil
+	}
+	root := filepath.Join(saveDir, name)
+	if !e.underAnyRoot(root) {
+		e.Logf("remove files %s: refusing %s (outside storage roots)", id, root)
+		return nil
+	}
+	if err := os.RemoveAll(root); err != nil {
+		e.Logf("remove files %s: %v", id, err)
+		return err
+	}
+	e.Logf("removed torrent %s with files", id)
+	return nil
+}
+
+// underAnyRoot reports whether path lives inside the base save dir or any
+// registered storage root (but is not the root itself). Used before deleting
+// on-disk files so a tampered save dir can never escape the storage roots.
+func (e *Engine) underAnyRoot(path string) bool {
+	for _, d := range e.Disks() {
+		if d == "" {
+			continue
+		}
+		if diskContains(d, path) {
+			return true
+		}
+	}
+	return false
 }
 
 // SetCategory updates the torrent's category label without moving files.

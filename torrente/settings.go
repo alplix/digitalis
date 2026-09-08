@@ -2,15 +2,27 @@ package torrente
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
+
+// diskContains reports whether path lies under root.
+func diskContains(root, path string) bool {
+	rel, err := filepath.Rel(filepath.Clean(root), filepath.Clean(path))
+	if err != nil {
+		return false
+	}
+	return rel != ".." && !filepath.IsAbs(rel) && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) && rel != "."
+}
 
 // Settings holds user-configurable client options. Persisted to disk so they
 // survive restarts. All byte values use bytes/sec (0 = unlimited/off).
 type Settings struct {
-	BaseDir          string `json:"base_dir"`
-	UploadLimit      int64  `json:"upload_limit"`
+	BaseDir          string   `json:"base_dir"`
+	Disks            []string `json:"disks,omitempty"` // extra storage roots (BaseDir excluded)
+	UploadLimit      int64    `json:"upload_limit"`
 	DownloadLimit    int64  `json:"download_limit"`
 	DailyUploadLimit int64  `json:"daily_upload_limit"`
 
@@ -126,7 +138,7 @@ func (e *Engine) UpdateSettings(patch Settings) (Settings, error) {
 	if patch.BaseDir != "" && patch.BaseDir != cur.BaseDir {
 		cur.BaseDir = patch.BaseDir
 	}
-	cur.UploadLimit = patch.UploadLimit
+	cur.Disks = patch.Disks
 	cur.DownloadLimit = patch.DownloadLimit
 	cur.DailyUploadLimit = patch.DailyUploadLimit
 	cur.NightMode = patch.NightMode
@@ -148,4 +160,86 @@ func (e *Engine) UpdateSettings(patch Settings) (Settings, error) {
 		return cur, err
 	}
 	return cur, nil
+}
+
+// Disks returns the configured storage roots. The base save dir is always
+// first; extra roots from Settings.Disks follow (deduplicated).
+func (e *Engine) Disks() []string {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	seen := map[string]bool{}
+	out := []string{}
+	for _, d := range append([]string{e.settings.BaseDir}, e.settings.Disks...) {
+		if d == "" {
+			continue
+		}
+		if seen[filepath.Clean(d)] {
+			continue
+		}
+		seen[filepath.Clean(d)] = true
+		out = append(out, d)
+	}
+	return out
+}
+
+// AddDisk registers a new storage root. The path must exist and be a
+// directory, and must not already be registered.
+func (e *Engine) AddDisk(path string) error {
+	path = filepath.Clean(path)
+	if path == "" {
+		return fmt.Errorf("empty disk path")
+	}
+	fi, err := os.Stat(path)
+	if err != nil {
+		return fmt.Errorf("disk path not accessible: %v", err)
+	}
+	if !fi.IsDir() {
+		return fmt.Errorf("disk path is not a directory")
+	}
+	e.mu.Lock()
+	for _, d := range append([]string{e.settings.BaseDir}, e.settings.Disks...) {
+		if d != "" && filepath.Clean(d) == path {
+			e.mu.Unlock()
+			return fmt.Errorf("disk already registered")
+		}
+	}
+	e.settings.Disks = append(e.settings.Disks, path)
+	cur := e.settings
+	e.mu.Unlock()
+	return e.storeSettings(cur)
+}
+
+// RemoveDisk unregisters a storage root. The base dir cannot be removed, and a
+// root that still holds torrents is refused.
+func (e *Engine) RemoveDisk(path string) error {
+	path = filepath.Clean(path)
+	e.mu.Lock()
+	if e.settings.BaseDir != "" && filepath.Clean(e.settings.BaseDir) == path {
+		e.mu.Unlock()
+		return fmt.Errorf("cannot remove the base disk")
+	}
+	found := -1
+	for i, d := range e.settings.Disks {
+		if filepath.Clean(d) == path {
+			found = i
+			break
+		}
+	}
+	if found < 0 {
+		e.mu.Unlock()
+		return fmt.Errorf("disk not registered")
+	}
+	for _, t := range e.torrents {
+		t.mu.Lock()
+		ok := t.SaveDir != "" && diskContains(path, t.SaveDir)
+		t.mu.Unlock()
+		if ok {
+			e.mu.Unlock()
+			return fmt.Errorf("disk still holds torrents")
+		}
+	}
+	e.settings.Disks = append(e.settings.Disks[:found], e.settings.Disks[found+1:]...)
+	cur := e.settings
+	e.mu.Unlock()
+	return e.storeSettings(cur)
 }

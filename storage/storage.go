@@ -2,10 +2,13 @@
 package storage
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sync"
+	"syscall"
 
 	"github.com/alplix/digitalis/metainfo"
 )
@@ -305,8 +308,10 @@ func (s *Storage) writeAt(data []byte, offset int64) error {
 }
 
 // Move relocates all managed files to a new root directory.
-// The destination is expected to be on the same filesystem; open file
-// descriptors stay valid across renames on POSIX systems.
+// The destination may be on another filesystem: when a rename fails with
+// EXDEV the files are copied over and the originals removed. Open file
+// descriptors stay valid across renames on POSIX systems; after a copy every
+// handle is re-opened at its new path.
 func (s *Storage) Move(newDir string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -323,8 +328,15 @@ func (s *Storage) Move(newDir string) error {
 			return err
 		}
 		if _, err := os.Stat(filepath.Join(s.dir, s.meta.Info.Name)); err == nil {
-			if err := os.Rename(filepath.Join(s.dir, s.meta.Info.Name), newPath); err != nil {
-				return err
+			oldPath := filepath.Join(s.dir, s.meta.Info.Name)
+			if err := os.Rename(oldPath, newPath); err != nil {
+				if !isCrossDevice(err) {
+					return err
+				}
+				if err := copyFileOver(oldPath, newPath); err != nil {
+					return err
+				}
+				_ = os.Remove(oldPath)
 			}
 		}
 	} else {
@@ -335,12 +347,94 @@ func (s *Storage) Move(newDir string) error {
 		}
 		if _, err := os.Stat(oldRoot); err == nil {
 			if err := os.Rename(oldRoot, newRoot); err != nil {
-				return err
+				if !isCrossDevice(err) {
+					return err
+				}
+				if err := copyTree(oldRoot, newRoot); err != nil {
+					return err
+				}
+				_ = os.RemoveAll(oldRoot)
 			}
 		}
 	}
 	s.dir = newDir
 	s.rebuildPaths(newDir)
+	if err := s.reopenFiles(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// copyFileOver copies src to dst, creating parent dirs and honoring a simple
+// already-exists-if-identical check (same size & mtime) to avoid clobbering a
+// file that was renamed meanwhile.
+func copyFileOver(src, dst string) error {
+	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+		return err
+	}
+	sf, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer sf.Close()
+	info, err := sf.Stat()
+	if err != nil {
+		return err
+	}
+	df, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, info.Mode().Perm())
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(df, sf)
+	cerr := df.Close()
+	if err != nil {
+		return err
+	}
+	return cerr
+}
+
+// copyTree recursively copies src into dst (creating it).
+func copyTree(src, dst string) error {
+	stat, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+	if !stat.IsDir() {
+		return copyFileOver(src, dst)
+	}
+	if err := os.MkdirAll(dst, 0755); err != nil {
+		return err
+	}
+	entries, err := os.ReadDir(src)
+	if err != nil {
+		return err
+	}
+	for _, e := range entries {
+		if err := copyTree(filepath.Join(src, e.Name()), filepath.Join(dst, e.Name())); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// isCrossDevice reports whether err is a filesystem-crossing rename error.
+func isCrossDevice(err error) bool {
+	return errors.Is(err, syscall.EXDEV)
+}
+
+// reopenFiles re-opens every managed file handle at its current path, so
+// reads/writes after a cross-device move keep working.
+func (s *Storage) reopenFiles() error {
+	for _, fh := range s.files {
+		if fh.f != nil {
+			fh.f.Close()
+		}
+		f, err := os.OpenFile(fh.path, os.O_RDWR, 0644)
+		if err != nil {
+			return err
+		}
+		fh.f = f
+	}
 	return nil
 }
 

@@ -17,6 +17,7 @@ import (
 
 	"github.com/alplix/digitalis/metainfo"
 	"github.com/alplix/digitalis/torrente"
+	"github.com/alplix/digitalis/wget"
 )
 
 //go:embed templates
@@ -35,6 +36,8 @@ type Server struct {
 	rssMu      sync.Mutex
 	feeds      []rssFeed
 	rssSpawned bool
+
+	wget *wget.Manager
 }
 
 // NewServer creates a web server around an engine. cfgDir is the persistent
@@ -45,6 +48,7 @@ func NewServer(engine *torrente.Engine, saveDir, cfgDir string) *Server {
 		saveDir: saveDir,
 		hub:     newWSHub(),
 		cfgDir:  cfgDir,
+		wget:    wget.NewManager(saveDir),
 	}
 	go s.broadcastLoop()
 
@@ -211,8 +215,19 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /api/torrents/{id}/announce", s.reannounce)
 	mux.HandleFunc("POST /api/trackers/announce", s.reannounceAll)
 	mux.HandleFunc("GET /api/storage", s.storageInfo)
+	mux.HandleFunc("GET /api/disks", s.listDisks)
+	mux.HandleFunc("POST /api/disks", s.addDisk)
+	mux.HandleFunc("DELETE /api/disks", s.removeDisk)
 	mux.HandleFunc("POST /api/bulk", s.bulkOp)
 	mux.HandleFunc("GET /api/files", s.listFiles)
+	mux.HandleFunc("GET /api/files/download", s.downloadFile)
+	mux.HandleFunc("POST /api/files/upload", s.uploadFile)
+	mux.HandleFunc("POST /api/files/mkdir", s.makeDir)
+	mux.HandleFunc("POST /api/files/move", s.moveFile)
+	mux.HandleFunc("POST /api/files/delete", s.deleteFile)
+	mux.HandleFunc("GET /api/wget", s.wgetList)
+	mux.HandleFunc("POST /api/wget", s.wgetNew)
+	mux.HandleFunc("DELETE /api/wget/{id}", s.wgetStop)
 
 	mux.HandleFunc("GET /ws", s.wsHandler)
 
@@ -408,7 +423,8 @@ func (s *Server) syncSmartCategory(id string) {
 
 // settingsView is the settings JSON used by the UI.
 type settingsView struct {
-	BaseDir          string  `json:"base_dir"`
+	BaseDir          string   `json:"base_dir"`
+	Disks            []string `json:"disks"`
 	UploadLimit      int64   `json:"upload_limit"`
 	DownloadLimit    int64   `json:"download_limit"`
 	DailyUploadLimit int64   `json:"daily_upload_limit"`
@@ -431,6 +447,7 @@ func (s *Server) settingsView() settingsView {
 	v := s.engine.View()
 	return settingsView{
 		BaseDir:          v.BaseDir,
+		Disks:            s.engine.Disks(),
 		UploadLimit:      v.UploadLimit,
 		DownloadLimit:    v.DownloadLimit,
 		DailyUploadLimit: v.DailyUploadLimit,
@@ -601,19 +618,40 @@ func (s *Server) listTorrents(w http.ResponseWriter, r *http.Request) {
 
 // addRequest accepts {"source": "..."} where source is a magnet URI, a .torrent
 // URL, or raw base64 of a torrent file. "dir" is an optional category folder
-// (relative path such as "unix/linux/debian") created under the base save dir.
+// (relative path such as "unix/linux/debian") created under the base save dir,
+// and "disk" optionally selects a storage root other than the base dir.
 type addRequest struct {
 	Source string `json:"source"`
 	Dir    string `json:"dir"`
+	Disk   string `json:"disk"`
 }
 
 // resolveDir resolves a user-supplied category path into an absolute directory
 // under the base save dir, creating nested folders as needed. It returns the
 // cleaned category path ("" for the base dir itself) and the absolute path.
 func (s *Server) resolveDir(dir string) (string, string, error) {
+	return resolveDirOn(s.saveDir, dir)
+}
+
+// resolveDiskDir resolves a category path against an explicit storage root.
+// diskPath is relative to path of a registered root.
+func (s *Server) resolveDiskDir(diskPath, dir string) (string, string, error) {
+	root := s.saveDir
+	if diskPath != "" {
+		for _, d := range s.engine.Disks() {
+			if filepath.Clean(d) == filepath.Clean(diskPath) {
+				root = filepath.Clean(d)
+				break
+			}
+		}
+	}
+	return resolveDirOn(root, dir)
+}
+
+func resolveDirOn(root, dir string) (string, string, error) {
 	d := strings.TrimSpace(dir)
 	if d == "" || d == "." || d == "/" {
-		return "", s.saveDir, nil
+		return "", root, nil
 	}
 	if strings.HasPrefix(d, "/") || filepath.IsAbs(d) {
 		return "", "", errors.New("category must be a relative path")
@@ -622,7 +660,7 @@ func (s *Server) resolveDir(dir string) (string, string, error) {
 	if clean == ".." || strings.HasPrefix(clean, "../") {
 		return "", "", errors.New("invalid category path")
 	}
-	full := filepath.Join(s.saveDir, filepath.FromSlash(clean))
+	full := filepath.Join(root, filepath.FromSlash(clean))
 	if err := os.MkdirAll(full, 0755); err != nil {
 		return "", "", err
 	}
@@ -640,7 +678,7 @@ func (s *Server) addTorrent(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "empty source"})
 		return
 	}
-	category, saveDir, err := s.resolveDir(req.Dir)
+	category, saveDir, err := s.resolveDiskDir(req.Disk, req.Dir)
 	if err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
@@ -655,7 +693,7 @@ func (s *Server) addTorrent(w http.ResponseWriter, r *http.Request) {
 		kind = "magnet"
 	}
 	persist := func(t *torrente.Torrent) {
-		s.persistRecord(torrentRecord{Kind: kind, ID: t.ID, Source: src, Category: category})
+		s.persistRecord(torrentRecord{Kind: kind, ID: t.ID, Source: src, Category: category, Disk: s.diskRootOf(t.SaveDir)})
 	}
 
 	if strings.HasPrefix(src, "magnet:") {
@@ -755,7 +793,7 @@ func (s *Server) resume(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) delete(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	if err := s.engine.RemoveTorrent(id); err != nil {
+	if err := s.engine.RemoveTorrentWithFiles(id); err != nil {
 		writeJSON(w, http.StatusNotFound, map[string]string{"error": err.Error()})
 		return
 	}
@@ -763,9 +801,11 @@ func (s *Server) delete(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"ok": "deleted"})
 }
 
-// moveRequest relocates a torrent into a category folder.
+// moveRequest relocates a torrent into a category folder, optionally on another
+// storage root.
 type moveRequest struct {
 	Category string `json:"category"`
+	Disk     string `json:"disk"`
 }
 
 func (s *Server) moveTorrent(w http.ResponseWriter, r *http.Request) {
@@ -775,7 +815,7 @@ func (s *Server) moveTorrent(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
 		return
 	}
-	category, newDir, err := s.resolveDir(req.Category)
+	category, newDir, err := s.resolveDiskDir(req.Disk, req.Category)
 	if err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
@@ -793,6 +833,7 @@ func (s *Server) moveTorrent(w http.ResponseWriter, r *http.Request) {
 	for i := range s.records {
 		if s.records[i].ID == id {
 			s.records[i].Category = category
+			s.records[i].Disk = s.diskRootOf(t.SaveDir)
 			recs := append([]torrentRecord(nil), s.records...)
 			s.recordsMu.Unlock()
 			if s.cfgDir != "" {
@@ -993,7 +1034,7 @@ func (s *Server) bulkOp(w http.ResponseWriter, r *http.Request) {
 		case "resume":
 			err = s.engine.Resume(id)
 		case "delete":
-			err = s.engine.RemoveTorrent(id)
+			err = s.engine.RemoveTorrentWithFiles(id)
 			if err == nil {
 				s.dropRecord(id)
 			}
@@ -1010,63 +1051,5 @@ func (s *Server) bulkOp(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]interface{}{"ok": ok, "failed": failed})
 }
 
-// fileEntry is one entry of the file browser.
-type fileEntry struct {
-	Name  string `json:"name"`
-	Path  string `json:"path"`
-	IsDir bool   `json:"is_dir"`
-	Size  int64  `json:"size"`
-}
-
-func (s *Server) listFiles(w http.ResponseWriter, r *http.Request) {
-	rel := strings.TrimSpace(r.URL.Query().Get("path"))
-	if rel != "" {
-		clean := filepath.ToSlash(filepath.Clean(filepath.FromSlash(rel)))
-		if clean == ".." || strings.HasPrefix(clean, "../") || filepath.IsAbs(clean) {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid path"})
-			return
-		}
-		rel = clean
-	}
-	dir := filepath.Join(s.saveDir, filepath.FromSlash(rel))
-	full, err := filepath.Abs(dir)
-	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
-		return
-	}
-	base, err := filepath.Abs(s.saveDir)
-	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
-		return
-	}
-	// Guard against traversal outside the base save dir.
-	if full != base && !strings.HasPrefix(full, base+string(os.PathSeparator)) {
-		writeJSON(w, http.StatusForbidden, map[string]string{"error": "outside save dir"})
-		return
-	}
-	entries, err := os.ReadDir(full)
-	if err != nil {
-		writeJSON(w, http.StatusNotFound, map[string]string{"error": err.Error()})
-		return
-	}
-	out := make([]fileEntry, 0, len(entries))
-	for _, e := range entries {
-		info, _ := e.Info()
-		var size int64
-		if info != nil {
-			size = info.Size()
-		}
-		p := e.Name()
-		if rel != "" {
-			p = rel + "/" + e.Name()
-		}
-		out = append(out, fileEntry{Name: e.Name(), Path: p, IsDir: e.IsDir(), Size: size})
-	}
-	sort.Slice(out, func(i, j int) bool {
-		if out[i].IsDir != out[j].IsDir {
-			return out[i].IsDir
-		}
-		return out[i].Name < out[j].Name
-	})
-	writeJSON(w, http.StatusOK, out)
-}
+// fileEntry is one entry of the file browser
+// (defined in files.go).
