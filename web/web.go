@@ -554,6 +554,7 @@ func (s *Server) addTorrentTracker(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusConflict, map[string]string{"error": err.Error()})
 		return
 	}
+	s.persistTrackerChanges(id)
 	writeJSON(w, http.StatusOK, map[string]string{"ok": "added"})
 }
 
@@ -573,6 +574,7 @@ func (s *Server) removeTorrentTracker(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusConflict, map[string]string{"error": err.Error()})
 		return
 	}
+	s.persistTrackerChanges(id)
 	writeJSON(w, http.StatusOK, map[string]string{"ok": "removed"})
 }
 

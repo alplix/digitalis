@@ -161,6 +161,17 @@ func (e *Engine) AddTracker(id, url string) error {
 	return nil
 }
 
+// CustomTrackerList returns a copy of the torrent's user-added announce URLs.
+func (e *Engine) CustomTrackerList(id string) []string {
+	t, ok := e.GetTorrent(id)
+	if !ok {
+		return nil
+	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return append([]string(nil), t.CustomTrackers...)
+}
+
 // RemoveTracker disables an announce URL for a torrent and re-announces.
 func (e *Engine) RemoveTracker(id, url string) error {
 	t, ok := e.GetTorrent(id)

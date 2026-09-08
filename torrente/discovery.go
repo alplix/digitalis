@@ -30,10 +30,14 @@ func (e *Engine) Notify(kind, id, name string) { e.notify(kind, id, name) }
 func (e *Engine) connectDiscovered(t *Torrent, addrs []string) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	if len(e.sessions) >= e.MaxConnections {
+	room := e.MaxConnections - len(e.sessions) - len(e.connecting)
+	if room <= 0 {
 		return
 	}
 	for _, a := range addrs {
+		if room <= 0 {
+			break
+		}
 		if e.selfAddrs[a] {
 			continue
 		}
@@ -52,6 +56,7 @@ func (e *Engine) connectDiscovered(t *Torrent, addrs []string) {
 			continue
 		}
 		e.connecting[key] = true
+		room--
 		go func(addr, k string) {
 			host, portStr, err := net.SplitHostPort(addr)
 			if err != nil {

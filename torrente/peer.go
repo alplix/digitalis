@@ -175,8 +175,9 @@ func (e *Engine) registerSession(s *peerSession) {
 
 	e.recordConn(s.addr)
 
+	connected := e.sessionCount(s.t.ID)
 	s.t.mu.Lock()
-	s.t.PeersConnected = e.sessionCount(s.t.ID)
+	s.t.PeersConnected = connected
 	s.t.mu.Unlock()
 }
 
@@ -192,8 +193,9 @@ func (e *Engine) unregisterSession(s *peerSession) {
 		s.t.picker.release(s.currentPiece)
 	}
 
+	connected := e.sessionCount(s.t.ID)
 	s.t.mu.Lock()
-	s.t.PeersConnected = e.sessionCount(s.t.ID)
+	s.t.PeersConnected = connected
 	s.t.mu.Unlock()
 }
 

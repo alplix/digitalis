@@ -17,10 +17,11 @@ import (
 // service restarts. Kind is "magnet" or "url"; Source is the magnet URI or the
 // .torrent URL used at add time.
 type torrentRecord struct {
-	Kind     string `json:"kind"`
-	ID       string `json:"id"`
-	Source   string `json:"source"`
-	Category string `json:"category"`
+	Kind           string   `json:"kind"`
+	ID             string   `json:"id"`
+	Source         string   `json:"source"`
+	Category       string   `json:"category"`
+	CustomTrackers []string `json:"custom_trackers,omitempty"`
 }
 
 // recordsPath returns the persistence file inside the config directory.
@@ -109,6 +110,34 @@ func (s *Server) restoreRecords(recs []torrentRecord) {
 	}()
 }
 
+// persistTrackerChanges refreshes a persisted record's custom tracker list,
+// keeping its source/category when only the tracker list changed.
+func (s *Server) persistTrackerChanges(id string) {
+	ct := s.engine.CustomTrackerList(id)
+	if ct == nil {
+		return
+	}
+	s.recordsMu.Lock()
+	defer s.recordsMu.Unlock()
+	updated := false
+	for i := range s.records {
+		if s.records[i].ID == id {
+			s.records[i].CustomTrackers = ct
+			updated = true
+			break
+		}
+	}
+	if !updated {
+		return
+	}
+	recs := append([]torrentRecord(nil), s.records...)
+	if s.cfgDir != "" {
+		if err := saveRecords(s.cfgDir, recs); err != nil {
+			s.engine.Logf("persist trackers: %v", err)
+		}
+	}
+}
+
 // addTorrentRecord adds a torrent from a persisted record (without re-saving).
 func (s *Server) addTorrentRecord(rec torrentRecord) error {
 	_, saveDir, err := s.resolveDir(rec.Category)
@@ -121,6 +150,11 @@ func (s *Server) addTorrentRecord(rec torrentRecord) error {
 		return err
 	}
 	t.SetCategory(rec.Category)
+	for _, u := range rec.CustomTrackers {
+		if err := s.engine.AddTracker(t.ID, u); err != nil {
+			s.engine.Logf("restore tracker %s on %s failed: %v", u, rec.ID, err)
+		}
+	}
 	return nil
 }
 

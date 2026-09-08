@@ -444,6 +444,7 @@ func (e *Engine) Announce(t *Torrent, event string) error {
 
 	for i, u := range urls {
 		resp, err := tracker.Announce(u, t.InfoHash, e.PeerID(), e.port, uploaded, downloaded, left, event, 50)
+		connected := e.sessionCount(t.ID)
 		t.mu.Lock()
 		ts := trackers[i]
 		if err != nil {
@@ -457,7 +458,7 @@ func (e *Engine) Announce(t *Torrent, event string) error {
 			t.Seeders = resp.Seeders
 			t.Leechers = resp.Leechers
 			t.PeersKnown += len(resp.Peers)
-			t.PeersConnected = e.sessionCount(t.ID)
+			t.PeersConnected = connected
 			t.countTrackersActive()
 			t.mu.Unlock()
 			e.connectPeers(t, resp.Peers)
@@ -489,7 +490,15 @@ func (e *Engine) sessionCount(id string) int {
 // connectPeers opens outgoing connections to announced peers.
 func (e *Engine) connectPeers(t *Torrent, peers []tracker.Peer) {
 	e.mu.Lock()
+	room := e.MaxConnections - len(e.sessions) - len(e.connecting)
+	if room <= 0 {
+		e.mu.Unlock()
+		return
+	}
 	for _, p := range peers {
+		if room <= 0 {
+			break
+		}
 		if p.Port == 0 || p.IP == "" {
 			continue
 		}
@@ -498,6 +507,7 @@ func (e *Engine) connectPeers(t *Torrent, peers []tracker.Peer) {
 			continue
 		}
 		e.connecting[key] = true
+		room--
 		e.mu.Unlock()
 		ip := p.IP
 		port := p.Port
