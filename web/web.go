@@ -17,7 +17,6 @@ import (
 
 	"github.com/alplix/digitalis/metainfo"
 	"github.com/alplix/digitalis/torrente"
-	"github.com/alplix/digitalis/wget"
 )
 
 //go:embed templates
@@ -36,8 +35,6 @@ type Server struct {
 	rssMu      sync.Mutex
 	feeds      []rssFeed
 	rssSpawned bool
-
-	wget *wget.Manager
 }
 
 // NewServer creates a web server around an engine. cfgDir is the persistent
@@ -48,7 +45,6 @@ func NewServer(engine *torrente.Engine, saveDir, cfgDir string) *Server {
 		saveDir: saveDir,
 		hub:     newWSHub(),
 		cfgDir:  cfgDir,
-		wget:    wget.NewManager(saveDir),
 	}
 	go s.broadcastLoop()
 
@@ -225,9 +221,6 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /api/files/mkdir", s.makeDir)
 	mux.HandleFunc("POST /api/files/move", s.moveFile)
 	mux.HandleFunc("POST /api/files/delete", s.deleteFile)
-	mux.HandleFunc("GET /api/wget", s.wgetList)
-	mux.HandleFunc("POST /api/wget", s.wgetNew)
-	mux.HandleFunc("DELETE /api/wget/{id}", s.wgetStop)
 
 	mux.HandleFunc("GET /ws", s.wsHandler)
 

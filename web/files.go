@@ -245,8 +245,9 @@ func (s *Server) moveFile(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"ok": "moved"})
 }
 
-// deleteFile removes a file or an empty directory. Non-empty directories are
-// refused (torrent data must be removed through the torrent API).
+// deleteFile removes a file or a directory tree (os.RemoveAll). Note: torrent
+// payloads are better removed through the torrent API so engine state and disk
+// stay consistent; the file manager delete is for stray files/folders.
 func (s *Server) deleteFile(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Disk string `json:"disk"`

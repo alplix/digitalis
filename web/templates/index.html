@@ -234,10 +234,6 @@
         <svg class="nav-ico w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4h16v16H4zM4 9h16M9 4v16"/></svg>
         <span class="hidden md:inline" data-i18n="files">Files</span>
       </div>
-      <div class="nav-item rounded-lg px-2 md:px-3 py-2 flex items-center gap-2.5" data-view="wget" onclick="show('wget')">
-        <svg class="nav-ico w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8a8 8 0 11-16 0 8 8 0 0116 0z"/></svg>
-        <span class="hidden md:inline" data-i18n="wget">Wget</span>
-      </div>
       <div class="nav-item rounded-lg px-2 md:px-3 py-2 flex items-center gap-2.5" data-view="guide" onclick="show('guide')">
         <svg class="nav-ico w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 19.5V5.5a2 2 0 012-2h4.7a2 2 0 011.8 1.1L13.7 6H20a1 1 0 011 1v10.2a1 1 0 01-1 1h-6.4a2 2 0 00-1.7.9l-1.2 1.9a1 1 0 01-1.7 0l-1.2-1.9a2 2 0 00-1.7-.9H5a1 1 0 01-1-1z"/></svg>
         <span class="hidden md:inline" data-i18n="guide">Guide</span>
@@ -524,44 +520,6 @@
           <div id="fileList" class="space-y-0.5 text-sm">
             <div class="py-6 text-center tx2" data-i18n="loading">Loading...</div>
           </div>
-        </div>
-      </section>
-
-      <!-- ============ WGET ============ -->
-      <section id="view-wget" class="view">
-        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <h1 class="text-xl md:text-2xl font-bold" data-i18n="wget">Wget</h1>
-        </div>
-        <div class="card rounded-2xl p-4 mb-4">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div class="md:col-span-2">
-              <label class="block text-xs tx2 mb-1" data-i18n="wgetUrl">URL</label>
-              <input id="wgetUrl" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono" spellcheck="false" placeholder="https://example.com/file.zip">
-            </div>
-            <label class="flex items-center gap-2 text-xs tx2"><input type="checkbox" id="wgetRecursive" class="accent-[var(--accent)]"> <span data-i18n="recursive">Recursive</span></label>
-            <label class="text-xs tx2 flex items-center gap-2"><span class="shrink-0" data-i18n="depth">Depth (0=∞)</span><input id="wgetDepth" type="number" min="0" value="0" class="inp rounded-lg px-2 py-1.5 text-sm font-mono w-24"></label>
-            <label class="flex items-center gap-2 text-xs tx2"><input type="checkbox" id="wgetDeleteAfter" class="accent-[var(--accent)]"> <span data-i18n="deleteAfter">Delete after (no disk write)</span></label>
-            <label class="flex items-center gap-2 text-xs tx2"><input type="checkbox" id="wgetNoDNS" class="accent-[var(--accent)]"> <span data-i18n="noDNS">No DNS cache</span></label>
-            <label class="flex items-center gap-2 text-xs tx2"><input type="checkbox" id="wgetLoop" class="accent-[var(--accent)]"> <span data-i18n="loop">Loop</span></label>
-            <label class="text-xs tx2 flex items-center gap-2"><span class="shrink-0" data-i18n="interval">Interval (s)</span><input id="wgetInterval" type="number" min="0" value="60" class="inp rounded-lg px-2 py-1.5 text-sm font-mono w-24"></label>
-            <label class="text-xs tx2 flex items-center gap-2"><span class="shrink-0" data-i18n="disk">Disk</span>
-              <select id="wgetDisk" class="inp rounded-lg px-2 py-1.5 text-sm cursor-pointer flex-1"></select>
-            </label>
-            <label class="text-xs tx2 flex items-center gap-2"><span class="shrink-0" data-i18n="category">Folder</span><input id="wgetCategory" class="inp rounded-lg px-2 py-1.5 text-sm font-mono flex-1" list="catList"></label>
-          </div>
-          <div class="mt-3">
-            <button onclick="wgetStart()" class="px-5 py-2 rounded-xl btn-primary text-sm font-medium shadow transition">⏬ <span data-i18n="start">Start</span></button>
-            <span id="wgetStatus" class="ml-3 text-xs tx2"></span>
-          </div>
-        </div>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-          <div class="card rounded-2xl p-3"><p class="text-[11px] uppercase tracking-widest tx2 mb-1" data-i18n="wgetTotalBytes">Total downloaded</p><p class="text-lg font-semibold font-mono" id="wgetTotalBytes">0</p></div>
-          <div class="card rounded-2xl p-3"><p class="text-[11px] uppercase tracking-widest tx2 mb-1" data-i18n="wgetSpeed">Bandwidth</p><p class="text-lg font-semibold font-mono" id="wgetTotalSpeed">—</p></div>
-          <div class="card rounded-2xl p-3"><p class="text-[11px] uppercase tracking-widest tx2 mb-1" data-i18n="wgetFiles">Files</p><p class="text-lg font-semibold font-mono" id="wgetTotalFiles">0</p></div>
-          <div class="card rounded-2xl p-3"><p class="text-[11px] uppercase tracking-widest tx2 mb-1" data-i18n="wgetUptime">Uptime</p><p class="text-lg font-semibold font-mono" id="wgetUptime">—</p></div>
-        </div>
-        <div id="wgetList" class="space-y-2">
-          <div class="card rounded-2xl p-6 text-center tx2 text-sm" data-i18n="noTasks">No tasks yet.</div>
         </div>
       </section>
 
@@ -867,13 +825,9 @@ const I18N = {
     authClear: 'Remove protection', authLogin: 'Access token required', authLoginHint: 'Enter the access token configured in Settings.',
     authPlaceholder: 'Access token', authWrong: 'Invalid token', authUnlock: 'Unlock',
     authSaved: 'Access protected', authCleared: 'Protection removed',
-    wget: 'Wget', upload: 'Upload', upDir: 'Up',
-    wgetUrl: 'URL', recursive: 'Recursive', depth: 'Depth (0=∞)', deleteAfter: 'Delete after (no disk write)',
-    noDNS: 'No DNS cache', loop: 'Loop', interval: 'Interval (s)', category: 'Folder', start: 'Start', stop: 'Stop',
-    noTasks: 'No tasks yet.', wgetTotalBytes: 'Total downloaded', wgetSpeed: 'Bandwidth',
-    wgetFiles: 'Files', wgetUptime: 'Uptime', loops: 'Loops', duration: 'Uptime',
+    upload: 'Upload', upDir: 'Up',
     rename: 'Rename', download: 'Download', delete: 'Delete', allTorrentsPage: 'All torrents',
-    catParent: 'Parent folder', catName: 'New folder name', started: 'Started'
+    catParent: 'Parent folder', catName: 'New folder name'
   },
   tr: {
     tagline: 'Yüksük Otu — sıfırdan yazılmış BitTorrent istemcisi', noDocker: 'Docker yok',
@@ -927,13 +881,9 @@ const I18N = {
     authClear: 'Korumayı kaldır', authLogin: 'Erişim belirteci gerekli', authLoginHint: 'Ayarlar\'da yapılandırılan erişim belirtecini girin.',
     authPlaceholder: 'Erişim belirteci', authWrong: 'Geçersiz belirteç', authUnlock: 'Kilidi aç',
     authSaved: 'Erişim korundu', authCleared: 'Koruma kaldırıldı',
-    wget: 'Wget', upload: 'Yükle', upDir: 'Üst',
-    wgetUrl: 'URL', recursive: 'Özyinelemeli', depth: 'Derinlik (0=∞)', deleteAfter: 'İndir sonra sil (diske yazmaz)',
-    noDNS: 'DNS önbelleksiz', loop: 'Döngü', interval: 'Aralık (sn)', category: 'Klasör', start: 'Başlat', stop: 'Durdur',
-    noTasks: 'Henüz görev yok.', wgetTotalBytes: 'Toplam İndirilen', wgetSpeed: 'Bant genişliği',
-    wgetFiles: 'Dosyalar', wgetUptime: 'Çalışma süresi', loops: 'Döngü', duration: 'Çalışma süresi',
+    upload: 'Yükle', upDir: 'Üst',
     rename: 'Yeniden adlandır', download: 'İndir', delete: 'Sil', allTorrentsPage: 'Tüm torrentler',
-    catParent: 'Üst klasör', catName: 'Yeni klasör adı', started: 'Başlatıldı'
+    catParent: 'Üst klasör', catName: 'Yeni klasör adı'
   },
   de: {
     tagline: 'Ein von Grund auf geschriebener BitTorrent-Client', noDocker: 'Kein Docker',
@@ -1373,7 +1323,6 @@ function show(name) {
   if (name === 'settings') loadSettings();
   if (name === 'guide') renderGuide();
   if (name === 'files') openFiles();
-  if (name === 'wget') { refreshWget(); }
 }
 
 // ---------- formatting ----------
@@ -1824,7 +1773,6 @@ async function refreshDisks() {
     if (document.getElementById('diskInput')) fillDiskSelect('diskInput');
     renderDisks();
     fileDiskOpts(fileDisk);
-    fillWgetDiskSelect();
   } catch (e) {
     const box = document.getElementById('diskList');
     if (box) box.innerHTML = `<div class="card rounded-2xl p-6 text-center tx2 text-sm" style="color:var(--bad)">${esc(t('connError'))} ${esc(e.message)}</div>`;
@@ -2736,75 +2684,6 @@ async function fileDel(p) {
   } catch (e) { alert(e.message); }
 }
 
-// ---------- wget ----------
-let wgetTimer = null;
-async function refreshWget() {
-  const box = document.getElementById('wgetList');
-  if (!box) return;
-  try {
-    const d = await api('/api/wget');
-    document.getElementById('wgetTotalBytes').textContent = fmtBytes(d.total.bytes);
-    document.getElementById('wgetTotalSpeed').textContent = fmtSpeed(d.total.speed);
-    document.getElementById('wgetTotalFiles').textContent = d.total.files;
-    const up = d.total.started_at ? Math.max(0, Math.floor((Date.now() - new Date(d.total.started_at).getTime())/1000)) : 0;
-    document.getElementById('wgetUptime').textContent = up >= 3600 ? (up/3600).toFixed(1)+'h' : (up >= 60 ? Math.floor(up/60)+'m' : up+'s');
-    if (!d.tasks || !d.tasks.length) {
-      box.innerHTML = `<div class="card rounded-2xl p-6 text-center tx2 text-sm">${esc(t('noTasks'))}</div>`;
-      return;
-    }
-    box.innerHTML = d.tasks.map(tk => `
-      <div class="card rounded-2xl p-3">
-        <div class="flex flex-wrap items-center gap-2">
-          <span class="chip px-2 py-0.5 rounded-full text-[10px] font-medium ${tk.state === 'running' ? 'bg-sky-500/20 text-sky-700 dark:text-sky-200' : tk.state === 'error' ? 'bg-rose-500/20 text-rose-700' : 'chip'}">${esc(tk.state)}</span>
-          <span class="font-mono text-xs truncate flex-1 min-w-0" style="color:var(--txt)" title="${esc(tk.url)}">${esc(tk.url)}</span>
-          <span class="shrink-0 text-xs font-mono tx2">${fmtBytes(tk.bytes)}</span>
-          <span class="shrink-0 text-xs font-mono tx3">${fmtSpeed(tk.speed)}</span>
-          <button onclick="wgetStop('${esc(tk.id)}')" class="px-1.5 text-xs" style="color:var(--bad)" title="${esc(t('stop'))}">■</button>
-        </div>
-        <div class="flex flex-wrap gap-x-4 gap-y-0.5 mt-1.5 text-[11px] tx3 font-mono">
-          <span data-i18n="files">Files</span>: ${tk.files} · <span data-i18n="loops">Loops</span>: ${tk.loops} · <span data-i18n="duration">Uptime</span>: ${tk.uptime_sec}s
-          ${tk.recursive ? ' · <span data-i18n="recursive">Recursive</span>' : ''}
-          ${tk.delete_after ? ' · <span data-i18n="deleteAfter">Delete after</span>' : ''}
-          ${tk.current_url ? ' · <span class="truncate max-w-48 inline-block align-middle">' + esc(tk.current_url) + '</span>' : ''}
-          ${tk.error ? ' · <span style="color:var(--bad)">' + esc(tk.error) + '</span>' : ''}
-        </div>
-      </div>`).join('');
-  } catch (e) { /* ignore */ }
-}
-async function wgetStart() {
-  const url = document.getElementById('wgetUrl').value.trim();
-  if (!url) return;
-  const st = document.getElementById('wgetStatus');
-  try {
-    const disk = document.getElementById('wgetDisk').value;
-    await api('/api/wget', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({
-      url,
-      recursive: document.getElementById('wgetRecursive').checked,
-      depth: parseInt(document.getElementById('wgetDepth').value || '0', 10),
-      delete_after: document.getElementById('wgetDeleteAfter').checked,
-      no_dns_cache: document.getElementById('wgetNoDNS').checked,
-      loop: document.getElementById('wgetLoop').checked,
-      interval: parseInt(document.getElementById('wgetInterval').value || '0', 10),
-      disk,
-      category: document.getElementById('wgetCategory').value.trim()
-    })});
-    st.innerHTML = `<span style="color:var(--good)">✓ ${esc(t('started'))}</span>`;
-    document.getElementById('wgetUrl').value = '';
-    refreshWget();
-  } catch (e) {
-    st.innerHTML = `<span style="color:var(--bad)">${esc(e.message)}</span>`;
-  }
-}
-async function wgetStop(id) {
-  try { await api('/api/wget/' + id, { method:'DELETE' }); refreshWget(); } catch (e) { alert(e.message); }
-}
-function fillWgetDiskSelect() {
-  const el = document.getElementById('wgetDisk');
-  if (!el) return;
-  el.innerHTML = `<option value="">${esc(t('defaultDisk'))}</option>` +
-    (disksData || []).map(d => `<option value="${esc(d.path)}">${esc(diskLabel(d.path))}</option>`).join('');
-}
-
 // ---------- init ----------
 applyTheme();
 applyLang();
@@ -2814,7 +2693,6 @@ setInterval(refreshTorrentsFromAPI, 4000);
 setInterval(refreshStats, 4000);
 setInterval(renderFeedSummary, 10000);
 setInterval(refreshStorage, 30000);
-setInterval(() => { if (document.getElementById('view-wget').classList.contains('active')) refreshWget(); }, 3000);
 ensureAuth();
 
 if ('serviceWorker' in navigator) {
