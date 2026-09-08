@@ -605,7 +605,7 @@
           </div>
         </div>
         <div class="text-xs tx2 mb-4">
-          <span data-i18n="diskHint">Extra storage roots. Each root is its own volume; torrents below are listed biggest first.</span>
+          <span data-i18n="diskHint">Extra storage roots. Each root is its own volume.</span>
         </div>
         <div id="diskList" class="space-y-4">
           <div class="card rounded-2xl p-6 text-center tx2 text-sm" data-i18n="loading">Loading...</div>
@@ -840,7 +840,7 @@ const I18N = {
     targetFolder: 'Destination folder (optional)', createFolders: 'Nested folders, e.g. unix/linux/debian',
     create: 'Create', move: 'Move', root: 'Root', empty: 'empty', deleteFolder: 'Delete folder',
     catCreated: 'Category created', catEmpty: 'Category must be empty to delete', targetSet: 'Target set', moved: 'moved',
-    addDisk: 'Add disk', noDisks: 'No disks configured yet.', diskHint: 'Extra storage roots. Each root is its own volume; torrents below are listed biggest first.', defaultDisk: 'Default disk', removeDisk: 'Remove disk', diskUsage: 'Usage', diskPathHint: 'absolute path to a mounted volume (e.g. /mnt/disk2)', torrents2: 'torrents',
+    addDisk: 'Add disk', noDisks: 'No disks configured yet.', diskHint: 'Extra storage roots. Each root is its own volume.', defaultDisk: 'Default disk', removeDisk: 'Remove disk', diskUsage: 'Usage', diskPathHint: 'absolute path to a mounted volume (e.g. /mnt/disk2)', torrents2: 'torrents',
     trackerGlobalHint: 'Aggregated announce status across all torrents.', unknown: 'Unknown',
     directories: 'Directories', saveDir: 'Save directory', dirHint: 'New torrents save here. Existing torrents keep their current folder.',
     dashRateLimits: 'Rate limits', upLimit: 'Upload limit (bytes/s, 0=∞)', downLimit: 'Download limit (bytes/s, 0=∞)',
@@ -873,7 +873,7 @@ const I18N = {
     noDNS: 'No DNS cache', loop: 'Loop', interval: 'Interval (s)', category: 'Folder', start: 'Start', stop: 'Stop',
     noTasks: 'No tasks yet.', wgetTotalBytes: 'Total downloaded', wgetSpeed: 'Bandwidth',
     wgetFiles: 'Files', wgetUptime: 'Uptime', loops: 'Loops', duration: 'Uptime',
-    rename: 'Rename', download: 'Download', delete: 'Delete', moreInTorrents: 'more on Torrents',
+    rename: 'Rename', download: 'Download', delete: 'Delete', allTorrentsPage: 'All torrents',
     catParent: 'Parent folder', catName: 'New folder name', started: 'Started'
   },
   tr: {
@@ -898,7 +898,7 @@ const I18N = {
     targetFolder: 'Hedef klasör (isteğe bağlı)', createFolders: 'İç içe klasörler, ör. unix/linux/debian',
     create: 'Oluştur', move: 'Taşı', root: 'Ana dizin', empty: 'boş', deleteFolder: 'Klasörü sil',
     catCreated: 'Kategori oluşturuldu', catEmpty: 'Silinecek kategori boş olmalı', targetSet: 'Hedef seçildi', moved: 'taşındı',
-    addDisk: 'Disk ekle', noDisks: 'Henüz disk tanımlanmamış.', diskHint: 'Ek depolama kökleri. Her kök ayrı bir birimdir; alt torrentler büyükten küçüğe sıralanır.', defaultDisk: 'Varsayılan disk', removeDisk: 'Diski kaldır', diskUsage: 'Kullanım', diskPathHint: 'Bağımsız yolu (ör. /mnt/disk2)', torrents2: 'torrent',
+    addDisk: 'Disk ekle', noDisks: 'Henüz disk tanımlanmamış.', diskHint: 'Ek depolama kökleri. Her kök ayrı bir birimdir.', defaultDisk: 'Varsayılan disk', removeDisk: 'Diski kaldır', diskUsage: 'Kullanım', diskPathHint: 'Bağımsız yolu (ör. /mnt/disk2)', torrents2: 'torrent',
     trackerGlobalHint: 'Tüm torrentlerde birleştirilmiş anounce durumu.', unknown: 'Bilinmiyor',
     directories: 'Dizinler', saveDir: 'Kayıt dizini', dirHint: 'Yeni torrentler buraya kaydedilir. Mevcut torrentler kendi klasöründe kalır.',
     dashRateLimits: 'Hız limitleri', upLimit: 'Yükleme limiti (bayt/sn, 0=∞)', downLimit: 'İndirme limiti (bayt/sn, 0=∞)',
@@ -933,7 +933,7 @@ const I18N = {
     noDNS: 'DNS önbelleksiz', loop: 'Döngü', interval: 'Aralık (sn)', category: 'Klasör', start: 'Başlat', stop: 'Durdur',
     noTasks: 'Henüz görev yok.', wgetTotalBytes: 'Toplam İndirilen', wgetSpeed: 'Bant genişliği',
     wgetFiles: 'Dosyalar', wgetUptime: 'Çalışma süresi', loops: 'Döngü', duration: 'Çalışma süresi',
-    rename: 'Yeniden adlandır', download: 'İndir', delete: 'Sil', moreInTorrents: 'tane daha Torrentlerde',
+    rename: 'Yeniden adlandır', download: 'İndir', delete: 'Sil', allTorrentsPage: 'Tüm torrentler',
     catParent: 'Üst klasör', catName: 'Yeni klasör adı', started: 'Başlatıldı'
   },
   de: {
@@ -1867,27 +1867,9 @@ function renderDisks() {
       <div class="flex flex-wrap gap-2 mb-3">
         ${(d.categories||[]).filter(c=>c.size>0).map(c => `<span class="px-2 py-0.5 rounded-full chip text-[11px] tx2">📁 ${esc(c.name)} · ${fmtBytes(c.size)}</span>`).join('')}
       </div>` : ''}
-      <div class="space-y-1 max-h-72 overflow-auto pr-1">
-        ${d.torrents.length ? d.torrents.slice(0,5).map(tr => `
-          <div class="flex items-center gap-2 text-xs py-1 border-t border-[var(--border)]" style="border-color:color-mix(in srgb, var(--border) 40%, transparent)">
-            <span class="w-16 shrink-0 font-mono tx3 text-right">${fmtBytes(tr.size)}</span>
-            <span class="truncate flex-1">${stateBadge(tr.state)} <span style="color:var(--txt)">${esc(tr.name)}</span></span>
-            ${tr.category ? `<span class="chip px-1.5 py-0.5 rounded-full text-[10px] tx2 shrink-0">📁 ${esc(tr.category)}</span>` : ''}
-          </div>`).join('') +
-          (d.torrents.length > 5 ? `<div class="text-xs tx3 py-1 text-center">+${d.torrents.length - 5} ${esc(t('moreInTorrents'))}</div>` : '')
-        : `<div class="text-xs tx3 py-1">${esc(t('empty'))}</div>`}
-      </div>
+      <button onclick="show('torrents')" class="text-xs font-medium transition" style="color:var(--accent)">→ ${esc(t('allTorrentsPage'))} (${d.torrents.length})</button>
     </div>`;
   }).join('');
-}
-
-async function smv(id, disk, sel) {
-  const dir = sel.value;
-  try {
-    await api(`/torrents/${id}/move`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({category: dir, disk}) });
-    await refreshDisks();
-    refreshTorrentsFromAPI();
-  } catch (e) { alert(e.message); }
 }
 
 async function addDisk() {

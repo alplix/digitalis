@@ -1,4 +1,4 @@
-const CACHE = 'digitalis-shell-v1';
+const CACHE = 'digitalis-shell-v2';
 const SHELL = ['/', '/logo.svg', '/favicon.svg', '/manifest.webmanifest'];
 
 self.addEventListener('install', e => {
