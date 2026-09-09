@@ -230,29 +230,29 @@
         <svg class="nav-ico w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
         <span class="hidden md:inline" data-i18n="torrents">Torrents</span>
       </div>
-      <div class="nav-item rounded-lg px-2 md:px-3 py-2 flex items-center gap-2.5" data-view="files" onclick="show('files')">
-        <svg class="nav-ico w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4h16v16H4zM4 9h16M9 4v16"/></svg>
-        <span class="hidden md:inline" data-i18n="files">Files</span>
-      </div>
-      <div class="nav-item rounded-lg px-2 md:px-3 py-2 flex items-center gap-2.5" data-view="guide" onclick="show('guide')">
-        <svg class="nav-ico w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 19.5V5.5a2 2 0 012-2h4.7a2 2 0 011.8 1.1L13.7 6H20a1 1 0 011 1v10.2a1 1 0 01-1 1h-6.4a2 2 0 00-1.7.9l-1.2 1.9a1 1 0 01-1.7 0l-1.2-1.9a2 2 0 00-1.7-.9H5a1 1 0 01-1-1z"/></svg>
-        <span class="hidden md:inline" data-i18n="guide">Guide</span>
+      <div class="nav-item rounded-lg px-2 md:px-3 py-2 flex items-center gap-2.5" data-view="categories" onclick="show('categories')">
+        <svg class="nav-ico w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7l9-4 9 4M3 7v10l9 4 9-4V7"/></svg>
+        <span class="hidden md:inline" data-i18n="categories">Categories</span>
       </div>
       <div class="nav-item rounded-lg px-2 md:px-3 py-2 flex items-center gap-2.5" data-view="trackers" onclick="show('trackers')">
         <svg class="nav-ico w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M13 5l7 7-7 7-7-7 7-7z"/></svg>
         <span class="hidden md:inline" data-i18n="trackers">Trackers</span>
       </div>
-<div class="nav-item rounded-lg px-2 md:px-3 py-2 flex items-center gap-2.5" data-view="categories" onclick="show('categories')">
-        <svg class="nav-ico w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7l9-4 9 4M3 7v10l9 4 9-4V7"/></svg>
-        <span data-i18n="categories">Categories</span>
-      </div>
-      <div class="nav-item rounded-lg px-2 md:px-3 py-2 flex items-center gap-2.5" data-view="storage" onclick="show('storage')">
-        <svg class="nav-ico w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4h16v16H4zM4 9h16M9 4v16"/></svg>
-        <span data-i18n="storage">Storage</span>
-      </div>
       <div class="nav-item rounded-lg px-2 md:px-3 py-2 flex items-center gap-2.5" data-view="rss" onclick="show('rss'); renderRSS()">
         <svg class="nav-ico w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3a1 1 0 00-1 1 17 17 0 0017 17 1 1 0 001-1v-3a1 1 0 00-1-1 10 10 0 01-9-9 1 1 0 00-1-1H5zM5.5 21a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg>
         <span class="hidden md:inline">RSS</span>
+      </div>
+      <div class="nav-item rounded-lg px-2 md:px-3 py-2 flex items-center gap-2.5" data-view="files" onclick="show('files')">
+        <svg class="nav-ico w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4h16v16H4zM4 9h16M9 4v16"/></svg>
+        <span class="hidden md:inline" data-i18n="files">Files</span>
+      </div>
+      <div class="nav-item rounded-lg px-2 md:px-3 py-2 flex items-center gap-2.5" data-view="storage" onclick="show('storage')">
+        <svg class="nav-ico w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4h16v16H4zM4 9h16M9 4v16"/></svg>
+        <span class="hidden md:inline" data-i18n="storage">Storage</span>
+      </div>
+      <div class="nav-item rounded-lg px-2 md:px-3 py-2 flex items-center gap-2.5" data-view="guide" onclick="show('guide')">
+        <svg class="nav-ico w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 19.5V5.5a2 2 0 012-2h4.7a2 2 0 011.8 1.1L13.7 6H20a1 1 0 011 1v10.2a1 1 0 01-1 1h-6.4a2 2 0 00-1.7.9l-1.2 1.9a1 1 0 01-1.7 0l-1.2-1.9a2 2 0 00-1.7-.9H5a1 1 0 01-1-1z"/></svg>
+        <span class="hidden md:inline" data-i18n="guide">Guide</span>
       </div>
       <div class="nav-item rounded-lg px-2 md:px-3 py-2 flex items-center gap-2.5" data-view="settings" onclick="show('settings')">
         <svg class="nav-ico w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15a3 3 0 100-6 3 3 0 000 6zM19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33h0a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51h0a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82v0a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
