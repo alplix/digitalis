@@ -255,6 +255,12 @@ func (m *Manager) Add(opts Options) (*Task, error) {
 	if opts.Crawl && opts.Direction == "up" {
 		return nil, fmt.Errorf("crawl works with downloads only")
 	}
+	// Directory URLs (trailing slash) mean "mirror this whole tree":
+	// automatically switch them into recursive crawl mode.
+	if opts.Direction == "down" && !opts.Crawl && (scheme == "http" || scheme == "https") &&
+		(strings.HasSuffix(opts.URL, "/") || strings.HasSuffix(opts.URL, "\\")) {
+		opts.Crawl = true
+	}
 
 	buf := make([]byte, 4)
 	rand.Read(buf)

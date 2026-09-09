@@ -541,7 +541,8 @@
               <button onclick="dlSetDir('up')" id="dldir-up" class="px-2 py-1 rounded-md border font-medium" style="border-color:var(--border);color:var(--txt3)">↑ <span data-i18n="dlDirUp">Upload</span></button>
             </div>
           </div>
-          <input id="dlUrl" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono" spellcheck="false" placeholder="https://example.com/file.zip  ·  ftp://mirror/file.iso">
+          <input id="dlUrl" oninput="dlUrlHintUpdate()" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono" spellcheck="false" placeholder="https://example.com/file.zip  ·  https://repo.example.org/  ·  ftp://mirror/file.iso">
+          <div id="dlUrlHint" class="text-[11px] mt-1 hidden" style="color:var(--accent2)">🔍 <span data-i18n="dlDirDetected">Directory detected — recursive mirror crawl enabled</span></div>
           <div class="text-xs tx2 mt-3 mb-1" data-i18n="dlMode">Destination</div>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-2" id="dlModeCards">
             <button onclick="dlSetMode('discard')" id="dlmc-discard" class="text-left rounded-xl p-3 border transition" style="border-color:var(--accent2)">
@@ -658,6 +659,18 @@
           </div>
           <div id="dlRepoCrumb" class="text-[11px] tx3 font-mono mb-2 break-all"></div>
           <div id="dlRepoList" class="space-y-0.5 text-sm max-h-96 overflow-auto"></div>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3">
+            <div>
+              <label class="block text-xs tx2 mb-1" data-i18n="dlDepth">Crawl depth (0=∞)</label>
+              <input id="dlDepth" type="number" min="0" value="0" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono">
+            </div>
+            <div>
+              <label class="block text-xs tx2 mb-1" data-i18n="dlFilter">File filter (regex)</label>
+              <input id="dlInc" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono" placeholder="\\.iso$">
+            </div>
+            <button onclick="dlStartCrawl('discard')" class="self-end px-4 py-2 rounded-xl btn-primary text-xs font-medium shadow" style="color:var(--btn-txt)">🔄 <span data-i18n="dlCrawlDiscard">Crawl all — discard</span></button>
+            <button onclick="dlStartCrawl('disk')" class="self-end px-4 py-2 rounded-xl btn-primary text-xs font-medium shadow" style="color:var(--btn-txt)">💾 <span data-i18n="dlCrawlSave">Crawl all — save to disk</span></button>
+          </div>
           <div id="dlRepoBar" class="hidden mt-3 flex flex-wrap items-center gap-2 text-xs">
             <span id="dlRepoCount" class="tx2 font-medium"></span>
             <button onclick="dlAddSelected('discard')" class="px-3 py-1.5 rounded-lg btn-primary text-xs font-medium" style="color:var(--btn-txt)">🚮 <span data-i18n="dlDiscard">Discard</span></button>
@@ -1076,7 +1089,12 @@ const I18N = {
     dlHistory: 'Run history', dlHistClear: 'Clear', dlRepos: 'Open-source repo browser',
     dlRepoPick: 'Repository', dlBrowse: 'Browse', dlSelected: 'selected',
     dlTotalAll: 'Total (all time)', dlRepoCat: 'Category', dlRepoAll: 'All', dlRepoSearch: 'Search file',
-    dlTerminal: 'Terminal log'
+    dlTerminal: 'Terminal log',
+    dlDirDetected: 'Directory detected — recursive mirror crawl enabled',
+    dlDepth: 'Crawl depth (0=∞)', dlFilter: 'File filter (regex)',
+    dlCrawlDiscard: 'Crawl all — discard', dlCrawlSave: 'Crawl all — save to disk',
+    dlCrawlStarted: 'Crawl started', dlRepoHint: 'Browse a repo directory first',
+    dlFound: 'Found', dlCrawled: 'Indexed'
   },
   tr: {
     tagline: 'Yüksük Otu — sıfırdan yazılmış BitTorrent istemcisi', noDocker: 'Docker yok',
@@ -1161,7 +1179,12 @@ const I18N = {
     dlHistory: 'Çalışma geçmişi', dlHistClear: 'Temizle', dlRepos: 'Açık kaynak repo tarayıcısı',
     dlRepoPick: 'Depo', dlBrowse: 'Gözat', dlSelected: 'seçildi',
     dlTotalAll: 'Toplam (tüm zamanlar)', dlRepoCat: 'Kategori', dlRepoAll: 'Tümü', dlRepoSearch: 'Dosya ara',
-    dlTerminal: 'Terminal kaydı'
+    dlTerminal: 'Terminal kaydı',
+    dlDirDetected: 'Dizin algılandı — özyinelemeli yansıtma taraması etkin',
+    dlDepth: 'Tarama derinliği (0=∞)', dlFilter: 'Dosya filtresi (regex)',
+    dlCrawlDiscard: 'Tümünü tara — yok et', dlCrawlSave: 'Tümünü tara — diske kaydet',
+    dlCrawlStarted: 'Tarama başladı', dlRepoHint: 'Önce bir depo dizini gez',
+    dlFound: 'Bulunan', dlCrawled: 'Taranan'
   },
   de: {
     tagline: 'Ein von Grund auf geschriebener BitTorrent-Client', noDocker: 'Kein Docker',
@@ -3515,6 +3538,15 @@ function dlSetDir(d) {
   if (box) box.classList.toggle('hidden', d !== 'up');
   // disk sink not applicable to uploads
   if (d === 'up' && dlMode === 'disk') dlSetMode('discard');
+  dlUrlHintUpdate();
+}
+function dlUrlHintUpdate() {
+  const inp = document.getElementById('dlUrl');
+  const h = document.getElementById('dlUrlHint');
+  if (!inp || !h) return;
+  const u = inp.value.trim();
+  const isDir = dlDir === 'down' && /^https?:\/\//i.test(u) && /\/$/.test(u);
+  h.classList.toggle('hidden', !isDir);
 }
 
 function dlSetMode(m) {
@@ -3602,7 +3634,7 @@ async function dlRefresh() {
         <div class="flex flex-wrap items-center gap-2 cursor-pointer" onclick="dlToggleLog('${esc(tk.id)}')">
           <span class="chip px-2 py-0.5 rounded-full text-[10px] font-semibold" style="color:${stateColor}">${esc(stateTxt)}</span>
           <span class="font-mono text-xs truncate flex-1 min-w-0" style="color:var(--txt)" title="${esc(tk.url)}">${esc(tk.url)}</span>
-          <span class="shrink-0 px-2 py-0.5 rounded-full chip text-[10px] tx2">${esc(dirTxt)} · ${esc(modeTxt)}</span>
+          <span class="shrink-0 px-2 py-0.5 rounded-full chip text-[10px] tx2">${esc(dirTxt)} · ${esc(modeTxt)}${tk.crawl ? ' · 🔍' : ''}</span>
           <span class="shrink-0 text-xs font-mono tx2">${fmtBytes(tk.bytes)}</span>
           <span class="shrink-0 text-xs font-mono tx3">${fmtSpeed(tk.speed)}</span>
           ${tk.state === 'running' || tk.state === 'scheduled' ? `<button onclick="event.stopPropagation();dlStopTask('${esc(tk.id)}')" class="px-1.5 text-xs" style="color:var(--bad)" title="${esc(t('dlStop'))}">■</button>` : ''}
@@ -3611,6 +3643,7 @@ async function dlRefresh() {
         </div>
         <div class="flex flex-wrap gap-x-4 gap-y-0.5 mt-1.5 text-[11px] tx3 font-mono">
           ${t('dlLoops')}: ${tk.loops_done}${tk.loops > 0 ? '/' + tk.loops : ''} · ${t('dlUptime')}: ${tk.uptime_sec}s
+          ${tk.crawl ? ` · 🔍 ${t('dlFound')}: ${tk.found} · ${t('dlCrawled')}: ${tk.crawled} · ${t('dlDone')}: ${tk.files}` : ''}
           ${tk.conn > 1 ? ` · 🔗 ×${tk.conn}` : ''}
           ${tk.mode === 'ram' ? ` · RAM: ${tk.ram_mb} MB` : ''}
           ${tk.mode === 'disk' && tk.save_dir ? ` · 📁 ${esc(tk.save_dir)}` : ''}
@@ -3746,6 +3779,22 @@ async function dlAddSelected(mode) {
   document.getElementById('dlRepoBar').classList.add('hidden');
   toast('info', '', `${ok} ${t('added')}${fail ? `, ${fail} ${t('errors')}` : ''}`);
   dlRefresh();
+}
+async function dlStartCrawl(mode) {
+  const u = (document.getElementById('dlRepoPath').value || '').trim();
+  if (!u) { alert(t('dlRepoHint')); return; }
+  const body = dlBuildBody({ url: u, mode, crawl: true });
+  body.depth = parseInt(document.getElementById('dlDepth').value) || 0;
+  body.include = (document.getElementById('dlInc').value || '').trim();
+  if (mode === 'disk') {
+    body.disk = (document.getElementById('dlDisk') || {}).value || '';
+    body.category = ((document.getElementById('dlFolder') || {}).value || '').trim();
+  }
+  try {
+    await api('/dl', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    toast('info', '', t('dlCrawlStarted'));
+    dlRefresh();
+  } catch (e) { alert(e.message); }
 }
 
 // ---------- init ----------
