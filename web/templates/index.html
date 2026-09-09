@@ -533,11 +533,17 @@
           <h1 class="text-xl md:text-2xl font-bold" data-i18n="dl">Downloader</h1>
         </div>
         <div class="card rounded-2xl p-4 mb-4">
-          <label class="block text-xs tx2 mb-1" data-i18n="dlURL">URL</label>
+          <div class="flex items-center justify-between gap-2 mb-1">
+            <label class="text-xs tx2" data-i18n="dlURL">URL</label>
+            <div class="flex gap-1 text-[11px]">
+              <button onclick="dlSetDir('down')" id="dldir-down" class="px-2 py-1 rounded-md border font-medium" style="border-color:var(--accent2);color:var(--accent2)">↓ <span data-i18n="dlDirDown">Download</span></button>
+              <button onclick="dlSetDir('up')" id="dldir-up" class="px-2 py-1 rounded-md border font-medium" style="border-color:var(--border);color:var(--txt3)">↑ <span data-i18n="dlDirUp">Upload</span></button>
+            </div>
+          </div>
           <input id="dlUrl" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono" spellcheck="false" placeholder="https://example.com/file.zip  ·  ftp://mirror/file.iso">
           <div class="text-xs tx2 mt-3 mb-1" data-i18n="dlMode">Destination</div>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-2" id="dlModeCards">
-            <button onclick="dlSetMode('discard')" id="dlmc-discard" class="text-left rounded-xl p-3 border transition" style="border-color:var(--border)">
+            <button onclick="dlSetMode('discard')" id="dlmc-discard" class="text-left rounded-xl p-3 border transition" style="border-color:var(--accent2)">
               <div class="text-sm font-semibold" style="color:var(--txt)">🚮 <span data-i18n="dlDiscard">Discard</span></div>
               <div class="text-[11px] tx3 mt-1" data-i18n="dlDiscardHint">Count only — no RAM, no disk</div>
             </button>
@@ -551,7 +557,7 @@
             </button>
           </div>
           <div id="dlOpts" class="mt-3"></div>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
             <div>
               <label class="block text-xs tx2 mb-1" data-i18n="loopCount">Loops (0=∞)</label>
               <input id="dlLoops" type="number" min="0" value="0" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono">
@@ -564,7 +570,40 @@
               <label class="block text-xs tx2 mb-1" data-i18n="speedCap">Speed cap (KB/s, 0=∞)</label>
               <input id="dlCap" type="number" min="0" value="0" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono">
             </div>
+            <div>
+              <label class="block text-xs tx2 mb-1" data-i18n="dlConn">Parallel connections</label>
+              <input id="dlConn" type="number" min="1" max="16" value="1" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono">
+            </div>
           </div>
+          <details class="mt-3">
+            <summary class="text-xs tx2 cursor-pointer select-none" data-i18n="dlAdvanced">Advanced: retries · verification · schedule · proxy</summary>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
+              <div>
+                <label class="block text-xs tx2 mb-1" data-i18n="dlRetries">Retries on error</label>
+                <input id="dlRetries" type="number" min="0" value="0" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono">
+              </div>
+              <div>
+                <label class="block text-xs tx2 mb-1" data-i18n="dlRetryWait">Retry wait (s)</label>
+                <input id="dlRetryWait" type="number" min="0" value="5" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono">
+              </div>
+              <div>
+                <label class="block text-xs tx2 mb-1" data-i18n="dlStartAt">Start at (HH:MM)</label>
+                <input id="dlStartAt" placeholder="ör. 02:30" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono">
+              </div>
+              <div>
+                <label class="block text-xs tx2 mb-1" data-i18n="dlProxy">Proxy (http/socks5)</label>
+                <input id="dlProxy" placeholder="socks5://host:1080" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono">
+              </div>
+              <div class="md:col-span-4">
+                <label class="block text-xs tx2 mb-1" data-i18n="dlVerify">Verify SHA-256 (optional)</label>
+                <input id="dlVerify" class="w-full rounded-xl px-3 py-2 inp text-[11px] focus:outline-none font-mono" placeholder="64 haneli özet — indirilen veriyi doğrular">
+              </div>
+              <div class="md:col-span-4 hidden" id="dlUpBox">
+                <label class="block text-xs tx2 mb-1" data-i18n="dlUpSize">Upload payload size (MB)</label>
+                <input id="dlUpMB" type="number" min="1" max="4096" value="100" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono">
+              </div>
+            </div>
+          </details>
           <div class="mt-3">
             <button onclick="dlStartTask()" class="px-5 py-2 rounded-xl btn-primary text-sm font-medium shadow transition">⏬ <span data-i18n="dlStart">Start</span></button>
             <span id="dlStatus" class="ml-3 text-xs tx2"></span>
@@ -572,7 +611,7 @@
         </div>
 
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-          <div class="card rounded-2xl p-3"><p class="text-[11px] uppercase tracking-widest tx2 mb-1" data-i18n="dlTotal">Total downloaded</p><p class="text-lg font-semibold font-mono" id="dlTotalBytes">0</p></div>
+          <div class="card rounded-2xl p-3"><p class="text-[11px] uppercase tracking-widest tx2 mb-1" data-i18n="dlTotal">Total transferred</p><p class="text-lg font-semibold font-mono" id="dlTotalBytes">0</p></div>
           <div class="card rounded-2xl p-3"><p class="text-[11px] uppercase tracking-widest tx2 mb-1" data-i18n="dlSpeed">Bandwidth</p><p class="text-lg font-semibold font-mono" id="dlTotalSpeed">0 B/s</p></div>
           <div class="card rounded-2xl p-3"><p class="text-[11px] uppercase tracking-widest tx2 mb-1" data-i18n="dlLoops">Loops</p><p class="text-lg font-semibold font-mono" id="dlTotalLoops">0</p></div>
           <div class="card rounded-2xl p-3"><p class="text-[11px] uppercase tracking-widest tx2 mb-1" data-i18n="dlUptime">Uptime</p><p class="text-lg font-semibold font-mono" id="dlTotalUptime">—</p></div>
@@ -582,8 +621,39 @@
           <h2 class="text-sm font-semibold" data-i18n="dlTasks">Tasks</h2>
           <button onclick="dlRefresh()" class="px-3 py-1.5 rounded-lg inp text-xs hover:border-[var(--border2)] transition" data-i18n="refresh">↻</button>
         </div>
-        <div id="dlTaskList" class="space-y-2">
+        <div id="dlTaskList" class="space-y-2 mb-4">
           <div class="card rounded-2xl p-6 text-center tx2 text-sm" data-i18n="dlNoTasks">No download tasks yet.</div>
+        </div>
+
+        <div class="card rounded-2xl p-4 mb-4">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <h2 class="text-sm font-semibold" data-i18n="dlHistory">Run history</h2>
+            <div class="flex gap-2">
+              <a href="#" onclick="this.href='/api/dl/history.csv' + dlTokenQ()" download class="px-3 py-1.5 rounded-lg inp text-xs font-medium hover:border-[var(--border2)] transition" style="color:var(--txt)">⬇ CSV</a>
+              <button onclick="dlClearHistory()" class="px-3 py-1.5 rounded-lg inp text-xs font-medium transition" style="color:var(--bad)" data-i18n="dlHistClear">Clear</button>
+            </div>
+          </div>
+          <div id="dlHistoryBox" class="text-xs"><div class="tx3" data-i18n="dlNoTasks">No download tasks yet.</div></div>
+        </div>
+
+        <div class="card rounded-2xl p-4">
+          <h2 class="text-sm font-semibold mb-2" data-i18n="dlRepos">Open-source repo browser</h2>
+          <div class="flex flex-wrap items-end gap-2 mb-3">
+            <div class="min-w-[200px]">
+              <label class="block text-xs tx2 mb-1" data-i18n="dlRepoPick">Repository</label>
+              <select id="dlRepoSel" class="inp rounded-lg px-3 py-2 text-sm focus:outline-none cursor-pointer"></select>
+            </div>
+            <button onclick="dlBrowse(document.getElementById('dlRepoSel').value)" class="px-4 py-2 rounded-xl btn-primary text-xs font-medium shadow" data-i18n="dlBrowse">Browse</button>
+            <input id="dlRepoPath" class="flex-1 min-w-[200px] rounded-lg px-3 py-2 inp text-xs font-mono" placeholder="URL" spellcheck="false">
+            <button onclick="dlBrowse(document.getElementById('dlRepoPath').value)" class="px-3 py-2 rounded-lg inp text-xs font-medium" data-i18n="refresh">↻</button>
+          </div>
+          <div id="dlRepoCrumb" class="text-[11px] tx3 font-mono mb-2 break-all"></div>
+          <div id="dlRepoList" class="space-y-0.5 text-sm max-h-96 overflow-auto"></div>
+          <div id="dlRepoBar" class="hidden mt-3 flex flex-wrap items-center gap-2 text-xs">
+            <span id="dlRepoCount" class="tx2 font-medium"></span>
+            <button onclick="dlAddSelected('discard')" class="px-3 py-1.5 rounded-lg btn-primary text-xs font-medium" style="color:var(--btn-txt)">🚮 <span data-i18n="dlDiscard">Discard</span></button>
+            <button onclick="dlAddSelected('disk')" class="px-3 py-1.5 rounded-lg btn-primary text-xs font-medium" style="color:var(--btn-txt)">💾 <span data-i18n="dlDisk">Save to disk</span></button>
+          </div>
         </div>
       </section>
 
@@ -988,8 +1058,14 @@ const I18N = {
     ramKeep: 'Keep last (MB)', dlDeleteEach: 'Delete file after each loop', dlDiscardNote: 'Bytes are counted and thrown away — the machine stays untouched.',
     loopCount: 'Loops (0=∞)', dlInterval: 'Pause between loops (s)', speedCap: 'Speed cap (KB/s, 0=∞)',
     dlStart: 'Start', dlTasks: 'Tasks', dlNoTasks: 'No download tasks yet.',
-    dlTotal: 'Total downloaded', dlSpeed: 'Bandwidth', dlLoops: 'Loops', dlUptime: 'Uptime',
-    dlRun: 'Running', dlDone: 'Done', dlErr: 'Error', dlStop2: 'Stopped', dlStop: 'Stop'
+    dlTotal: 'Total transferred', dlSpeed: 'Bandwidth', dlLoops: 'Loops', dlUptime: 'Uptime',
+    dlRun: 'Running', dlDone: 'Done', dlErr: 'Error', dlStop2: 'Stopped', dlStop: 'Stop',
+    dlDirDown: 'Download', dlDirUp: 'Upload', dlSched: 'Scheduled', dlConn: 'Parallel connections',
+    dlAdvanced: 'Advanced: retries · verification · schedule · proxy',
+    dlRetries: 'Retries on error', dlRetryWait: 'Retry wait (s)', dlStartAt: 'Start at (HH:MM)',
+    dlProxy: 'Proxy (http/socks5)', dlVerify: 'Verify SHA-256 (optional)', dlUpSize: 'Upload payload size (MB)',
+    dlHistory: 'Run history', dlHistClear: 'Clear', dlRepos: 'Open-source repo browser',
+    dlRepoPick: 'Repository', dlBrowse: 'Browse', dlSelected: 'selected'
   },
   tr: {
     tagline: 'Yüksük Otu — sıfırdan yazılmış BitTorrent istemcisi', noDocker: 'Docker yok',
@@ -1065,8 +1141,14 @@ const I18N = {
     ramKeep: 'Son (MB) tut', dlDeleteEach: 'Her turdan sonra dosyayı sil', dlDiscardNote: 'Baytlar sayılıp atılır — makine hiç etkilenmez.',
     loopCount: 'Döngü (0=∞)', dlInterval: 'Turlar arası bekleme (sn)', speedCap: 'Hız sınırı (KB/s, 0=∞)',
     dlStart: 'Başlat', dlTasks: 'Görevler', dlNoTasks: 'Henüz indirme görevi yok.',
-    dlTotal: 'Toplam indirilen', dlSpeed: 'Bant genişliği', dlLoops: 'Döngü', dlUptime: 'Süre',
-    dlRun: 'İniyor', dlDone: 'Bitti', dlErr: 'Hata', dlStop2: 'Durduruldu', dlStop: 'Durdur'
+    dlTotal: 'Toplam aktarılan', dlSpeed: 'Bant genişliği', dlLoops: 'Döngü', dlUptime: 'Süre',
+    dlRun: 'İniyor', dlDone: 'Bitti', dlErr: 'Hata', dlStop2: 'Durduruldu', dlStop: 'Durdur',
+    dlDirDown: 'İndir', dlDirUp: 'Yükle', dlSched: 'Planlandı', dlConn: 'Paralel bağlantı',
+    dlAdvanced: 'Gelişmiş: tekrar deneme · doğrulama · zamanlama · proxy',
+    dlRetries: 'Hata halinde yeniden deneme', dlRetryWait: 'Yeniden deneme beklemesi (sn)', dlStartAt: 'Başlangıç saati (SS:DD)',
+    dlProxy: 'Proxy (http/socks5)', dlVerify: 'SHA-256 doğrula (isteğe bağlı)', dlUpSize: 'Yüklenecek veri boyutu (MB)',
+    dlHistory: 'Çalışma geçmişi', dlHistClear: 'Temizle', dlRepos: 'Açık kaynak repo tarayıcısı',
+    dlRepoPick: 'Depo', dlBrowse: 'Gözat', dlSelected: 'seçildi'
   },
   de: {
     tagline: 'Ein von Grund auf geschriebener BitTorrent-Client', noDocker: 'Kein Docker',
@@ -1746,7 +1828,7 @@ function show(name) {
   if (name === 'settings') loadSettings();
   if (name === 'guide') renderGuide();
   if (name === 'files') openFiles();
-  if (name === 'dl') { dlSetMode(dlMode); dlRefresh(); }
+  if (name === 'dl') { dlSetMode(dlMode); dlLoadRepos(); dlLoadHistory(); dlRefresh(); }
 }
 
 // ---------- formatting ----------
@@ -3389,8 +3471,27 @@ async function fileShare(p) {
 
 // ---------- downloader ----------
 let dlMode = 'discard';
+let dlDir = 'down';
 const dlModes = ['discard', 'ram', 'disk'];
 let dlTasks = [];
+let dlRepoSel = {};
+let dlRepoChecked = new Set();
+
+function dlTokenQ() {
+  const tok = localStorage.getItem('dg-token') || '';
+  return tok ? '?token=' + encodeURIComponent(tok) : '';
+}
+
+function dlSetDir(d) {
+  dlDir = d;
+  const dn = document.getElementById('dldir-down'), up = document.getElementById('dldir-up');
+  if (dn) { dn.style.borderColor = d === 'down' ? 'var(--accent2)' : 'var(--border)'; dn.style.color = d === 'down' ? 'var(--accent2)' : 'var(--txt3)'; }
+  if (up) { up.style.borderColor = d === 'up' ? 'var(--accent2)' : 'var(--border)'; up.style.color = d === 'up' ? 'var(--accent2)' : 'var(--txt3)'; }
+  const box = document.getElementById('dlUpBox');
+  if (box) box.classList.toggle('hidden', d !== 'up');
+  // disk sink not applicable to uploads
+  if (d === 'up' && dlMode === 'disk') dlSetMode('discard');
+}
 
 function dlSetMode(m) {
   if (!dlModes.includes(m)) m = 'discard';
@@ -3416,24 +3517,36 @@ function dlSetMode(m) {
   applyLang();
 }
 
-async function dlStartTask() {
-  const url = document.getElementById('dlUrl').value.trim();
-  if (!url) return;
-  const st = document.getElementById('dlStatus');
-  const body = {
-    url, mode: dlMode,
+function dlBuildBody(extra) {
+  const body = Object.assign({
+    url: document.getElementById('dlUrl').value.trim(),
+    mode: dlMode, direction: dlDir,
     loops: parseInt(document.getElementById('dlLoops').value) || 0,
     interval: parseInt(document.getElementById('dlInterval').value) || 0,
-    speed_cap: (parseInt(document.getElementById('dlCap').value) || 0) * 1024
-  };
+    speed_cap: (parseInt(document.getElementById('dlCap').value) || 0) * 1024,
+    conn: parseInt(document.getElementById('dlConn').value) || 1,
+    retries: parseInt(document.getElementById('dlRetries').value) || 0,
+    retry_wait: parseInt(document.getElementById('dlRetryWait').value) || 0,
+    verify_sha256: (document.getElementById('dlVerify').value || '').trim(),
+    proxy: (document.getElementById('dlProxy').value || '').trim(),
+    start_at: (document.getElementById('dlStartAt').value || '').trim()
+  }, extra || {});
   if (dlMode === 'ram') body.ram_mb = parseInt((document.getElementById('dlRamMB') || {}).value) || 16;
-  if (dlMode === 'disk') {
+  if (dlMode === 'disk' && dlDir === 'down') {
     body.disk = (document.getElementById('dlDisk') || {}).value || '';
     body.category = ((document.getElementById('dlFolder') || {}).value || '').trim();
     body.delete_each = document.getElementById('dlDelEach') ? document.getElementById('dlDelEach').checked : false;
   }
+  if (dlDir === 'up') body.upload_mb = parseInt((document.getElementById('dlUpMB') || {}).value) || 100;
+  return body;
+}
+
+async function dlStartTask() {
+  const url = document.getElementById('dlUrl').value.trim();
+  if (!url) return;
+  const st = document.getElementById('dlStatus');
   try {
-    await api('/dl', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    await api('/dl', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(dlBuildBody()) });
     document.getElementById('dlUrl').value = '';
     dlRefresh();
   } catch (e) { st.innerHTML = `<span style="color:var(--bad)">${esc(e.message)}</span>`; }
@@ -3456,31 +3569,116 @@ async function dlRefresh() {
       return;
     }
     box.innerHTML = dlTasks.map(tk => {
-      const stateTxt = { running: t('dlRun'), done: t('dlDone'), error: t('dlErr'), stopped: t('dlStop2') }[tk.state] || tk.state;
-      const stateColor = tk.state === 'running' ? 'var(--accent2)' : (tk.state === 'error' ? 'var(--bad)' : 'var(--txt3)');
+      const stateTxt = { scheduled: t('dlSched'), running: t('dlRun'), done: t('dlDone'), error: t('dlErr'), stopped: t('dlStop2') }[tk.state] || tk.state;
+      const stateColor = tk.state === 'running' ? 'var(--accent2)' : (tk.state === 'error' ? 'var(--bad)' : (tk.state === 'scheduled' ? '#fbbf24' : 'var(--txt3)'));
+      const dirTxt = tk.direction === 'up' ? '↑ ' + t('dlDirUp') : '↓ ' + t('dlDirDown');
       const modeTxt = { discard: '🚮 ' + t('dlDiscard'), ram: '🧠 RAM', disk: '💾 ' + t('dlDisk') }[tk.mode] || tk.mode;
       return `<div class="card rounded-2xl p-3">
         <div class="flex flex-wrap items-center gap-2">
           <span class="chip px-2 py-0.5 rounded-full text-[10px] font-semibold" style="color:${stateColor}">${esc(stateTxt)}</span>
           <span class="font-mono text-xs truncate flex-1 min-w-0" style="color:var(--txt)" title="${esc(tk.url)}">${esc(tk.url)}</span>
-          <span class="shrink-0 px-2 py-0.5 rounded-full chip text-[10px] tx2">${esc(modeTxt)}</span>
+          <span class="shrink-0 px-2 py-0.5 rounded-full chip text-[10px] tx2">${esc(dirTxt)} · ${esc(modeTxt)}</span>
           <span class="shrink-0 text-xs font-mono tx2">${fmtBytes(tk.bytes)}</span>
           <span class="shrink-0 text-xs font-mono tx3">${fmtSpeed(tk.speed)}</span>
-          ${tk.state === 'running' ? `<button onclick="dlStopTask('${esc(tk.id)}')" class="px-1.5 text-xs" style="color:var(--bad)" title="${esc(t('dlStop'))}">■</button>` : ''}
+          ${tk.state === 'running' || tk.state === 'scheduled' ? `<button onclick="dlStopTask('${esc(tk.id)}')" class="px-1.5 text-xs" style="color:var(--bad)" title="${esc(t('dlStop'))}">■</button>` : ''}
           <button onclick="dlRemoveTask('${esc(tk.id)}')" class="px-1.5 text-xs tx3" title="${esc(t('delete'))}">✕</button>
         </div>
         <div class="flex flex-wrap gap-x-4 gap-y-0.5 mt-1.5 text-[11px] tx3 font-mono">
           ${t('dlLoops')}: ${tk.loops_done}${tk.loops > 0 ? '/' + tk.loops : ''} · ${t('dlUptime')}: ${tk.uptime_sec}s
+          ${tk.conn > 1 ? ` · 🔗 ×${tk.conn}` : ''}
           ${tk.mode === 'ram' ? ` · RAM: ${tk.ram_mb} MB` : ''}
           ${tk.mode === 'disk' && tk.save_dir ? ` · 📁 ${esc(tk.save_dir)}` : ''}
           ${tk.speed_cap > 0 ? ` · ≤ ${fmtBytes(tk.speed_cap)}/s` : ''}
+          ${tk.verified ? ` · ✅ ${esc(tk.verified)}` : ''}
           ${tk.error ? ` · <span style="color:var(--bad)">${esc(tk.error)}</span>` : ''}
         </div>
-        ${tk.mode === 'ram' && tk.bytes > 0 ? `<button onclick="dlPreview('${esc(tk.id)}')" class="mt-1.5 px-2 py-0.5 rounded-md inp text-[10px]" style="color:var(--txt)">👁 head</button>` : ''}
+        ${tk.mode === 'ram' && tk.direction === 'down' && tk.bytes > 0 ? `<button onclick="dlPreview('${esc(tk.id)}')" class="mt-1.5 px-2 py-0.5 rounded-md inp text-[10px]" style="color:var(--txt)">👁 head</button>` : ''}
       </div>`;
     }).join('');
   } catch (e) { /* transient */ }
 }
+
+async function dlLoadHistory() {
+  const box = document.getElementById('dlHistoryBox');
+  if (!box) return;
+  try {
+    const h = await api('/dl/history');
+    if (!h.length) { box.innerHTML = `<div class="tx3">${esc(t('dlNoTasks'))}</div>`; return; }
+    box.innerHTML = h.slice(-30).reverse().map(x => `
+      <div class="flex flex-wrap items-center gap-2 py-1 border-b border-[var(--border)]">
+        <span class="tx3 font-mono text-[10px] shrink-0">${esc((x.finished_at || '').replace('T', ' ').slice(0, 16))}</span>
+        <span class="truncate flex-1 min-w-0" style="color:var(--txt)" title="${esc(x.url)}">${esc(x.url)}</span>
+        <span class="px-1.5 py-0.5 rounded-full chip text-[10px] shrink-0">${esc(x.mode)}${x.direction === 'up' ? ' ↑' : ''}</span>
+        <span class="shrink-0 font-mono tx2">${fmtBytes(x.bytes)}</span>
+        <span class="shrink-0 font-mono tx3">${fmtSpeed(x.avg_speed)} ⌀</span>
+        <span class="shrink-0 font-mono tx3">×${x.loops}</span>
+        ${x.verified === 'ok' ? '<span class="shrink-0" style="color:var(--good)">✓</span>' : ''}
+        ${x.verified === 'mismatch' ? '<span class="shrink-0" style="color:var(--bad)">✗</span>' : ''}
+        ${x.error ? `<span class="shrink-0" style="color:var(--bad)" title="${esc(x.error)}">!</span>` : ''}
+      </div>`).join('');
+  } catch (e) { /* ignore */ }
+}
+async function dlClearHistory() {
+  if (!confirm(t('dlHistClear') + '?')) return;
+  try { await api('/dl/history', { method: 'DELETE' }); dlLoadHistory(); } catch (e) { alert(e.message); }
+}
+
+// ---------- repo browser ----------
+async function dlLoadRepos() {
+  const sel = document.getElementById('dlRepoSel');
+  if (!sel || sel.options.length) return;
+  try {
+    const repos = await api('/dl/repos');
+    sel.innerHTML = repos.map(x => `<option value="${esc(x.url)}">${esc(x.name)}</option>`).join('');
+  } catch (e) { /* ignore */ }
+}
+async function dlBrowse(u) {
+  if (!u) return;
+  const list = document.getElementById('dlRepoList');
+  const crumb = document.getElementById('dlRepoCrumb');
+  list.innerHTML = `<div class="tx3 text-xs py-3">${esc(t('loading'))}</div>`;
+  dlRepoChecked.clear();
+  document.getElementById('dlRepoBar').classList.add('hidden');
+  try {
+    const d = await api('/dl/repos/browse?url=' + encodeURIComponent(u));
+    document.getElementById('dlRepoPath').value = d.url;
+    const parts = (d.url || '').split('://');
+    let acc = parts[0] + '://' + (parts[1] || '');
+    let html = `<span class="cursor-pointer" style="color:var(--accent)" onclick="dlBrowse('${esc(acc + '/')}')">${esc(parts[0])}://${(parts[1] || '').split('/')[0]}</span>`;
+    const rest = (parts[1] || '').split('/').slice(1).filter(Boolean);
+    rest.forEach(seg => { acc += '/' + seg; html += ` / <span class="cursor-pointer" style="color:var(--accent)" onclick="dlBrowse('${esc(acc + '/')}')">${esc(seg)}</span>`; });
+    crumb.innerHTML = html;
+    if (!d.entries.length) { list.innerHTML = `<div class="tx3 text-xs py-3">${esc(t('empty'))}</div>`; return; }
+    list.innerHTML = d.entries.map(e => `
+      <div class="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-[var(--bg0)]">
+        ${e.is_dir ? `<span class="shrink-0 cursor-pointer w-4 text-center">📁</span>` : `<input type="checkbox" class="w-3.5 h-3.5 accent-[var(--accent2)] shrink-0" onchange="dlToggleSel('${esc(e.url)}', this.checked)">`}
+        <span class="truncate flex-1 min-w-0 cursor-pointer" style="color:var(--txt)" ${e.is_dir ? `onclick="dlBrowse('${esc(e.url)}')"` : `onclick="dlToggleSel('${esc(e.url)}', true)"`}>${esc(e.name)}${e.is_dir ? '/' : ''}</span>
+        ${!e.is_dir && e.size > 0 ? `<span class="shrink-0 font-mono tx3 text-xs">${fmtBytes(e.size)}${e.size_h ? ' <span class="tx3">(' + esc(e.size_h) + ')</span>' : ''}</span>` : ''}
+      </div>`).join('');
+  } catch (e) { list.innerHTML = `<div class="text-xs py-3" style="color:var(--bad)">${esc(e.message)}</div>`; }
+}
+function dlToggleSel(url, on) {
+  if (on) dlRepoChecked.add(url); else dlRepoChecked.delete(url);
+  const bar = document.getElementById('dlRepoBar');
+  bar.classList.toggle('hidden', dlRepoChecked.size === 0);
+  document.getElementById('dlRepoCount').textContent = `${dlRepoChecked.size} ${t('dlSelected')}`;
+}
+async function dlAddSelected(mode) {
+  if (!dlRepoChecked.size) return;
+  let ok = 0, fail = 0;
+  for (const url of dlRepoChecked) {
+    const body = dlBuildBody({ url, mode });
+    delete body.dir;
+    try { await api('/dl', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) }); ok++; }
+    catch (e) { fail++; }
+  }
+  dlRepoChecked.clear();
+  document.getElementById('dlRepoBar').classList.add('hidden');
+  toast('info', '', `${ok} ${t('added')}${fail ? `, ${fail} ${t('errors')}` : ''}`);
+  dlRefresh();
+}
+
+// ---------- init ----------
 
 async function dlStopTask(id) {
   try { await api(`/dl/${id}/stop`, { method:'POST' }); dlRefresh(); } catch (e) { alert(e.message); }

@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"net"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -112,4 +113,45 @@ func firstWord(s string) string {
 
 func newBufReader(conn net.Conn) *bufio.Reader {
 	return bufio.NewReader(conn)
+}
+
+// ftpDial connects, authenticates (URL creds or anonymous) and sets binary mode.
+func ftpDial(u *url.URL) (*ftpConn, error) {
+	addr := net.JoinHostPort(u.Hostname(), orDefault(u.Port(), "21"))
+	conn, err := net.DialTimeout("tcp", addr, 15*time.Second)
+	if err != nil {
+		return nil, fmt.Errorf("ftp connect: %v", err)
+	}
+	c := &ftpConn{r: newBufReader(conn), w: conn}
+	if _, _, err := c.respText(); err != nil { // greeting
+		conn.Close()
+		return nil, err
+	}
+	user := u.User.Username()
+	if user == "" {
+		user = "anonymous"
+	}
+	pass, _ := u.User.Password()
+	if pass == "" {
+		pass = "digitalis@"
+	}
+	if _, err := c.cmd(230, "USER "+user); err != nil {
+		if _, err := c.cmd(230, "PASS "+pass); err != nil {
+			conn.Close()
+			return nil, err
+		}
+	}
+	if _, err := c.cmd(0, "TYPE I"); err != nil {
+		conn.Close()
+		return nil, err
+	}
+	return c, nil
+}
+
+func (c *ftpConn) close() {
+	c.w.Close()
+}
+
+func dialTimeout(addr string) (net.Conn, error) {
+	return net.DialTimeout("tcp", addr, 15*time.Second)
 }

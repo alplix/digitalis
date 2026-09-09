@@ -50,7 +50,7 @@ func NewServer(engine *torrente.Engine, saveDir, cfgDir string) *Server {
 		saveDir: saveDir,
 		hub:     newWSHub(),
 		cfgDir:  cfgDir,
-		dl:      dl.NewManager(),
+		dl:      dl.NewManager(dlmgrPath(cfgDir)),
 	}
 	go s.broadcastLoop()
 
@@ -252,6 +252,11 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("DELETE /api/dl/{id}", s.dlRemove)
 	mux.HandleFunc("POST /api/dl/{id}/stop", s.dlStop)
 	mux.HandleFunc("GET /api/dl/{id}/ram", s.dlRAMPreview)
+	mux.HandleFunc("GET /api/dl/repos", s.dlRepos)
+	mux.HandleFunc("GET /api/dl/repos/browse", s.dlRepoBrowse)
+	mux.HandleFunc("GET /api/dl/history", s.dlHistory)
+	mux.HandleFunc("DELETE /api/dl/history", s.dlHistoryClear)
+	mux.HandleFunc("GET /api/dl/history.csv", s.dlHistoryCSV)
 	mux.HandleFunc("POST /api/bulk", s.bulkOp)
 	mux.HandleFunc("GET /api/files", s.listFiles)
 	mux.HandleFunc("GET /api/files/download", s.downloadFile)
