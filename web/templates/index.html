@@ -748,6 +748,17 @@
                   <button onclick="testTelegram()" class="px-3 py-2 rounded-lg inp text-xs font-medium" data-i18n="tgTest">Test</button>
                 </div>
               </div>
+              <div class="border-t border-[var(--border)] pt-2">
+                <label class="block text-xs tx2 mb-1" data-i18n="whUrl">Webhook URL (ntfy / Home Assistant)</label>
+                <div class="flex gap-2">
+                  <input id="set-webhook-url" class="flex-1 rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono">
+                  <button onclick="testWebhook()" class="px-3 py-2 rounded-lg inp text-xs font-medium" data-i18n="tgTest">Test</button>
+                </div>
+                <label class="flex items-center justify-between gap-3 mt-2 cursor-pointer">
+                  <span class="tx2" data-i18n="whEnabled">Webhook notifications</span>
+                  <input id="set-webhook-enabled" type="checkbox" class="selchk">
+                </label>
+              </div>
             </div>
             <div class="space-y-2">
               <div class="flex items-center justify-between gap-2">
@@ -766,6 +777,15 @@
             <div class="flex justify-between gap-2"><span class="tx2" data-i18n="peerPort">Peer port</span><span class="font-mono" id="set-port">—</span></div>
             <div class="flex justify-between gap-2"><span class="tx2" data-i18n="baseDirRoot">Base dir</span><span class="font-mono" id="set-basedir">—</span></div>
             <div class="flex justify-between gap-2"><span class="tx2" data-i18n="version">Version</span><span class="font-mono" id="set-version">—</span></div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 mt-3 text-xs">
+            <button onclick="portCheck()" class="px-3 py-1.5 rounded-lg inp text-xs font-medium hover:border-[var(--border2)] transition" style="color:var(--txt)">🔌 <span data-i18n="portTest">Port reachability test</span></button>
+            <span id="portResult" class="font-mono"></span>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 mt-2 text-xs">
+            <a href="#" onclick="this.href = backupURL()" download class="px-3 py-1.5 rounded-lg inp text-xs font-medium hover:border-[var(--border2)] transition" style="color:var(--txt)">⬇ <span data-i18n="backupGet">Download backup</span></a>
+            <button onclick="document.getElementById('backupFile').click()" class="px-3 py-1.5 rounded-lg inp text-xs font-medium hover:border-[var(--border2)] transition" style="color:var(--txt)">⬆ <span data-i18n="backupPut">Restore backup</span></button>
+            <input type="file" id="backupFile" accept=".json" class="hidden" onchange="importBackupFile(this)">
           </div>
         </div>
 
@@ -892,7 +912,12 @@ const I18N = {
     catRules: 'Auto-folder rules (regex → folder)', catRulesHint: 'First matching rule wins, applied before smart detection.',
     diskFull: 'Disk almost full', queued: 'Queued', guardPausedNote: 'torrent(s) paused — free up space to resume',
     diskContent: 'Content', trash: 'Trash', emptyTrash: 'Empty trash', baseDisk: 'Base', diskPath: 'Disk path',
-    shareHours: 'Share link valid for how many hours?', shareCopied: 'Share link copied'
+    shareHours: 'Share link valid for how many hours?', shareCopied: 'Share link copied',
+    wantFile: 'Download this file', skipped: 'skipped', exportTorrent: 'Download .torrent',
+    dropToAdd: 'Drop .torrent files to add', whUrl: 'Webhook URL (ntfy / Home Assistant)', whEnabled: 'Webhook notifications',
+    portTest: 'Port reachability test', portHint: 'closed or router does not support hairpin NAT',
+    backupGet: 'Download backup', backupPut: 'Restore backup', backupConfirm: 'Restore this backup? Settings and torrent records will be replaced.',
+    backupDone: 'Backup restored', diskHistory: 'Free space trend'
   },
   tr: {
     tagline: 'Yüksük Otu — sıfırdan yazılmış BitTorrent istemcisi', noDocker: 'Docker yok',
@@ -956,7 +981,12 @@ const I18N = {
     catRules: 'Otomatik klasör kuralları (regex → klasör)', catRulesHint: 'İlk eşleşen kural kazanır, akıllı tespitten önce uygulanır.',
     diskFull: 'Disk doluyor', queued: 'Sırada', guardPausedNote: 'torrent duraklatıldı — devam etmek için yer açın',
     diskContent: 'İçerik', trash: 'Çöp kutusu', emptyTrash: 'Çöpe boşalt', baseDisk: 'Ana', diskPath: 'Disk yolu',
-    shareHours: 'Paylaşım linki kaç saat geçerli olsun?', shareCopied: 'Paylaşım linki kopyalandı'
+    shareHours: 'Paylaşım linki kaç saat geçerli olsun?', shareCopied: 'Paylaşım linki kopyalandı',
+    wantFile: 'Bu dosyayı indir', skipped: 'atlandı', exportTorrent: '.torrent indir',
+    dropToAdd: '.torrent dosyalarını bırakarak ekle', whUrl: 'Webhook URL (ntfy / Home Assistant)', whEnabled: 'Webhook bildirimleri',
+    portTest: 'Port açıklık testi', portHint: 'kapalı veya router hairpin NAT desteklemiyor',
+    backupGet: 'Yedek al', backupPut: 'Yedeği geri yükle', backupConfirm: 'Bu yedek geri yüklensin mi? Ayarlar ve torrent kayıtları değiştirilecek.',
+    backupDone: 'Yedek geri yüklendi', diskHistory: 'Boş alan trendi'
   },
   de: {
     tagline: 'Ein von Grund auf geschriebener BitTorrent-Client', noDocker: 'Kein Docker',
@@ -1856,9 +1886,11 @@ async function moveTorrent(id) {
 
 // ---------- storage ----------
 let disksData = [];
+let diskHist = [];
 async function refreshDisks() {
   try {
     disksData = await api('/disks');
+    try { diskHist = await api('/disk-history'); } catch (e) { diskHist = []; }
     if (document.getElementById('diskInput')) fillDiskSelect('diskInput');
     renderDisks();
     fileDiskOpts(fileDisk);
@@ -1866,6 +1898,19 @@ async function refreshDisks() {
     const box = document.getElementById('diskList');
     if (box) box.innerHTML = `<div class="card rounded-2xl p-6 text-center tx2 text-sm" style="color:var(--bad)">${esc(t('connError'))} ${esc(e.message)}</div>`;
   }
+}
+
+// sparkline renders the free-space trend as a tiny inline SVG polyline.
+function sparkline(points) {
+  if (!points || points.length < 2) return '';
+  const w = 200, h = 30;
+  const frees = points.map(p => p.free);
+  const min = Math.min(...frees), max = Math.max(...frees);
+  const span = (max - min) || 1;
+  const step = w / (points.length - 1);
+  const pts = points.map((p, i) =>
+    `${(i * step).toFixed(1)},${(h - ((p.free - min) / span) * (h - 2) - 1).toFixed(1)}`).join(' ');
+  return `<svg viewBox="0 0 ${w} ${h}" class="w-full h-7 mt-1" preserveAspectRatio="none" style="background:var(--bg0);border-radius:6px"><polyline fill="none" stroke="var(--accent2)" stroke-width="1.5" points="${pts}"/></svg>`;
 }
 
 function renderDisks() {
@@ -1909,6 +1954,12 @@ function renderDisks() {
       </div>
       ${d.guard_paused ? `<div class="text-[11px] mb-2" style="color:#fbbf24">⚠ ${d.guard_paused} ${esc(t('guardPausedNote'))}</div>` : ''}
       ${catChips ? `<div class="flex flex-wrap gap-1.5">${catChips}</div>` : ''}
+      ${(() => {
+        const h = (diskHist || []).find(x => x.path === d.path);
+        return h && h.points && h.points.length > 1
+          ? `<div class="mt-2 text-[10px] tx3">${esc(t('diskHistory'))} · ${esc(t('free'))}</div>${sparkline(h.points)}`
+          : '';
+      })()}
     </div>`;
   }).join('');
 }
@@ -2110,8 +2161,12 @@ async function refreshDetail(id) {
   const body = document.getElementById('drawerBody');
   if (!body) return;
   try {
-    const d = await api('/torrents/' + id);
+    const [d, peers] = await Promise.all([
+      api('/torrents/' + id),
+      api(`/torrents/${id}/peers`).catch(() => [])
+    ]);
     if (detailId !== id) return;
+    d.peers = peers;
     body.innerHTML = renderDetail(d);
   } catch (e) {
     if (detailId === id) body.innerHTML = `<div class="text-sm" style="color:var(--bad)">${esc(e.message)}</div>`;
@@ -2187,10 +2242,14 @@ function renderFiles(files) {
     const pct = Math.min(100, Math.round(f.pct * 100));
     const ext = (f.path.split('.').pop() || '').toLowerCase();
     const playable = ['mp4','m4v','mkv','webm','mov','avi','ogv','3gp','mpeg','mpg','ts','mp3','m4a','aac','ogg','wav','flac','opus'].includes(ext);
-    return `<div class="frow py-2 border-b border-[var(--border)]">
+    return `<div class="frow py-2 border-b border-[var(--border)] ${f.skip ? 'opacity-40' : ''}">
       <div class="flex items-center justify-between gap-2 text-xs mb-1">
-        <span class="truncate font-mono" style="color:var(--txt2)">${esc(f.path)}</span>
+        <span class="flex items-center gap-2 min-w-0">
+          ${files.length > 1 ? `<input type="checkbox" ${f.skip ? '' : 'checked'} class="w-3.5 h-3.5 accent-[var(--accent2)] shrink-0" onchange="toggleFileWanted('${detailId}', ${f.index}, this.checked)" title="${esc(t('wantFile'))}">` : ''}
+          <span class="truncate font-mono" style="color:var(--txt2)">${esc(f.path)}</span>
+        </span>
         <span class="shrink-0 flex items-center gap-2">
+          ${f.skip ? `<span class="text-[10px] tx3">${esc(t('skipped'))}</span>` : ''}
           ${playable ? `<button onclick="openStream('${detailId}', ${f.index})" class="playbtn" title="${esc(t('watch'))}">▶ ${esc(t('watch'))}</button>` : ''}
           <span class="tx3">${fmtBytes(f.done)} / ${fmtBytes(f.size)}</span>
         </span>
@@ -2200,6 +2259,123 @@ function renderFiles(files) {
       </div>
     </div>`;
   }).join('');
+}
+
+async function toggleFileWanted(id, index, wanted) {
+  // fetch current skip set, flip this index, push back
+  try {
+    const r = await api(`/torrents/${id}/skipped`);
+    let set = new Set(r.files || []);
+    if (wanted) set.delete(index); else set.add(index);
+    await api(`/torrents/${id}/skipped`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({files: [...set]}) });
+    if (detailId === id) refreshDetail(id);
+  } catch (e) {
+    alert(e.message);
+    if (detailId === id) refreshDetail(id);
+  }
+}
+
+function renderPeers(peers) {
+  if (!peers || !peers.length) return `<span class="text-xs tx3">—</span>`;
+  return `<div class="space-y-1">` + peers.map(p => `
+    <div class="flex items-center gap-2 text-xs py-1 border-b border-[var(--border)]">
+      <span class="font-mono truncate" style="color:var(--txt)">${esc(p.addr)}</span>
+      ${p.country ? `<span class="px-1.5 py-0.5 rounded-full chip text-[10px] shrink-0" title="${esc(p.country_name)}">${esc(p.country)}</span>` : ''}
+      <span class="px-1.5 py-0.5 rounded-full chip text-[10px] tx2 truncate max-w-32" title="${esc(p.client)}">${esc(p.client)}</span>
+      ${p.choked ? '<span class="tx3 text-[10px] shrink-0" title="choked">🚫</span>' : ''}
+      <span class="flex-1"></span>
+      <span class="shrink-0 font-mono text-[10px] tx3">${Math.round((p.progress||0)*100)}%</span>
+      <span class="shrink-0 font-mono text-[10px]" style="color:var(--accent2)">↑${fmtBytes(p.up)}</span>
+      <span class="shrink-0 font-mono text-[10px]" style="color:var(--down)">↓${fmtBytes(p.down)}</span>
+    </div>`).join('') + `</div>`;
+}
+
+function exportTorrent(id) {
+  const tok = localStorage.getItem('dg-token') || '';
+  window.open(`/api/torrents/${id}/export` + (tok ? '?token=' + encodeURIComponent(tok) : ''), '_blank');
+}
+
+// ---------- drag & drop + paste ----------
+function setupDropAdd() {
+  const overlayId = 'dropOverlay';
+  document.addEventListener('dragover', e => {
+    e.preventDefault();
+    if (!document.getElementById(overlayId)) {
+      const o = document.createElement('div');
+      o.id = overlayId;
+      o.className = 'fixed inset-0 z-[70] flex items-center justify-center';
+      o.style.background = 'rgba(0,0,0,.6)';
+      o.innerHTML = `<div class="card rounded-2xl p-8 text-lg font-semibold">⬇ ${esc(t('dropToAdd'))}</div>`;
+      document.body.appendChild(o);
+    }
+  });
+  document.addEventListener('dragleave', e => {
+    if (!e.relatedTarget) { const o = document.getElementById(overlayId); if (o) o.remove(); }
+  });
+  document.addEventListener('drop', async e => {
+    e.preventDefault();
+    const o = document.getElementById(overlayId); if (o) o.remove();
+    const files = [...((e.dataTransfer && e.dataTransfer.files) || [])].filter(f => f.name.toLowerCase().endsWith('.torrent'));
+    if (!files.length) return;
+    for (const f of files) await addTorrentFileBlob(f);
+    await refreshCats();
+    refreshTorrentsFromAPI();
+  });
+  document.addEventListener('paste', e => {
+    const txt = ((e.clipboardData || window.clipboardData) && (e.clipboardData || window.clipboardData).getData('text')) || '';
+    if (/^magnet:\?xt=urn:btih:/i.test(txt.trim())) {
+      e.preventDefault();
+      addSourceDirectly(txt.trim());
+    }
+  });
+}
+async function addTorrentFileBlob(file) {
+  const buf = new Uint8Array(await file.arrayBuffer());
+  let bin = '';
+  buf.forEach(b => bin += String.fromCharCode(b));
+  const b64 = btoa(bin);
+  const dirEl = document.getElementById('dirInput');
+  const dir = dirEl ? dirEl.value.trim() : '';
+  try {
+    await api('/torrents', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({source: b64, dir, disk: targetDisk}) });
+    toast('info', file.name, t('added'));
+  } catch (e) { alert(file.name + ': ' + e.message); }
+}
+async function addSourceDirectly(src) {
+  try {
+    await api('/torrents', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({source: src}) });
+    toast('info', src.slice(0, 40) + '…', t('added'));
+    refreshTorrentsFromAPI();
+  } catch (e) { alert(e.message); }
+}
+
+// ---------- port check + backup ----------
+async function portCheck() {
+  const el = document.getElementById('portResult');
+  if (el) el.textContent = '…';
+  try {
+    const r = await api('/portcheck');
+    if (el) el.innerHTML = r.reachable
+      ? `<span style="color:var(--good)">✓ ${esc(r.public_ip)}:${r.port} · ${r.latency_ms}ms</span>`
+      : `<span style="color:var(--bad)">✕ ${esc(r.public_ip)}:${r.port}</span> <span class="tx3">— ${esc(t('portHint'))}</span>`;
+  } catch (e) { if (el) el.textContent = e.message; }
+}
+function backupURL() {
+  const tok = localStorage.getItem('dg-token') || '';
+  return '/api/backup' + (tok ? '?token=' + encodeURIComponent(tok) : '');
+}
+async function importBackupFile(input) {
+  const f = input.files && input.files[0];
+  if (!f) return;
+  if (!confirm(t('backupConfirm'))) { input.value = ''; return; }
+  try {
+    const text = await f.text();
+    const r = await api('/backup', { method:'POST', headers:{'Content-Type':'application/json'}, body: text });
+    toast('info', '', `${t('backupDone')} (${r.applied || 0})`);
+    loadSettings();
+    refreshDisks();
+  } catch (e) { alert(e.message); }
+  input.value = '';
 }
 
 function openStream(id, idx) {
@@ -2258,6 +2434,7 @@ function renderDetail(d) {
         <p class="text-[11px] font-mono tx3 mt-1 break-all">${esc(d.info_hash)}</p>
       </div>
       <div class="shrink-0 flex items-center gap-2">
+        <button onclick="exportTorrent('${d.id}')" class="inp rounded-lg px-2 py-1 text-sm hover:border-[var(--border2)] transition" title="${esc(t('exportTorrent'))}">⬇</button>
         <button onclick="openQR('${esc(d.info_hash)}')" class="inp rounded-lg px-2 py-1 text-sm hover:border-[var(--border2)] transition" title="${esc(t('share'))}">⑃</button>
         <button onclick="closeDetail()" class="shrink-0 inp rounded-lg px-2 py-1 text-sm">✕</button>
       </div>
@@ -2279,6 +2456,12 @@ function renderDetail(d) {
 
     <div class="text-xs uppercase tracking-widest tx2 mb-2">${t('files')} (${(d.files||[]).length})</div>
     <div class="mb-4">${renderFiles(d.files)}</div>
+
+    <div class="flex items-center justify-between mb-2">
+      <div class="text-xs uppercase tracking-widest tx2">${t('peers')} (${d.peers_connected})</div>
+      <button onclick="refreshDetail('${d.id}')" class="px-2 py-1 rounded-md inp text-[11px] hover:border-[var(--border2)] transition" data-i18n="refresh">↻</button>
+    </div>
+    <div class="mb-4">${renderPeers(d.peers)}</div>
 
     <div class="text-xs uppercase tracking-widest tx2 mb-2">${t('pieces')}</div>
     <div class="mb-4">${renderPieceMap(d.pieces)}</div>
@@ -2656,6 +2839,8 @@ async function loadSettings() {
     document.getElementById('set-tg-token').value = '';
     document.getElementById('set-tg-token').placeholder = s.telegram_token_set ? t('tgKeep') : '';
     document.getElementById('set-tg-chat').value = s.telegram_chat || '';
+    document.getElementById('set-webhook-url').value = s.webhook_url || '';
+    document.getElementById('set-webhook-enabled').checked = !!s.webhook_enabled;
     renderRuleRows(s.cat_rules || []);
     document.getElementById('nightSwitch').classList.toggle('on', !!s.night_mode);
     document.getElementById('set-port').textContent = s.peer_port;
@@ -2691,6 +2876,8 @@ async function saveSettings() {
     telegram_enabled: document.getElementById('set-tg-enabled').checked,
     telegram_token: document.getElementById('set-tg-token').value.trim(),
     telegram_chat: document.getElementById('set-tg-chat').value.trim(),
+    webhook_enabled: document.getElementById('set-webhook-enabled').checked,
+    webhook_url: document.getElementById('set-webhook-url').value.trim(),
     cat_rules: collectRuleRows()
   };
   try {
@@ -2872,6 +3059,7 @@ applyTheme();
 applyLang();
 applyNotifUI();
 connectWS();
+setupDropAdd();
 setInterval(refreshTorrentsFromAPI, 4000);
 setInterval(refreshStats, 4000);
 setInterval(renderFeedSummary, 10000);

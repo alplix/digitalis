@@ -443,8 +443,7 @@ func (s *peerSession) handlePiece(msg *peerwire.Message) {
 
 		// notify picker so new downloads continue
 		s.t.mu.Lock()
-		done := s.t.StoredBytes()
-		if done >= s.t.TotalWanted && s.t.TotalWanted > 0 && s.t.State == StateDownloading {
+		if s.t.wantedComplete() && s.t.TotalWanted > 0 && s.t.State == StateDownloading {
 			s.t.State = StateSeeding
 			name := s.t.Name
 			id := s.t.ID

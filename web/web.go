@@ -55,15 +55,19 @@ func NewServer(engine *torrente.Engine, saveDir, cfgDir string) *Server {
 		switch kind {
 		case torrente.NoticeMetadata:
 			s.autoFileMagnet(id)
+			s.applyPendingSkippedFiles(id)
 			s.syncSmartCategory(id)
 		case torrente.NoticeRatio:
 			// a ratio-autoremoved torrent must not come back on restart
 			s.dropRecord(id)
 			s.sendTelegram(fmt.Sprintf("✅ %s reached its share goal.", name))
+			s.sendWebhook(kind, name, fmt.Sprintf("%s reached its share goal.", name))
 		case torrente.NoticeComplete:
 			s.sendTelegram(fmt.Sprintf("⬇️ %s finished downloading.", name))
+			s.sendWebhook(kind, name, fmt.Sprintf("%s finished downloading.", name))
 		case torrente.NoticeDiskGuard:
 			s.sendTelegram(fmt.Sprintf("⚠️ Disk space low — downloads paused (min %s free).", name))
+			s.sendWebhook(kind, name, fmt.Sprintf("Disk space low — downloads paused (min %s free).", name))
 		}
 	}
 
@@ -229,6 +233,15 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /api/files/share", s.createShare)
 	mux.HandleFunc("GET /s/{token}", s.serveShare)
 	mux.HandleFunc("POST /api/telegram/test", s.testTelegram)
+	mux.HandleFunc("POST /api/webhook/test", s.testWebhook)
+	mux.HandleFunc("GET /api/torrents/{id}/peers", s.listPeers)
+	mux.HandleFunc("GET /api/torrents/{id}/export", s.exportTorrent)
+	mux.HandleFunc("GET /api/torrents/{id}/skipped", s.getSkipped)
+	mux.HandleFunc("POST /api/torrents/{id}/skipped", s.setSkipped)
+	mux.HandleFunc("GET /api/portcheck", s.portCheck)
+	mux.HandleFunc("GET /api/backup", s.exportBackup)
+	mux.HandleFunc("POST /api/backup", s.importBackup)
+	mux.HandleFunc("GET /api/disk-history", s.diskHistory)
 	mux.HandleFunc("POST /api/bulk", s.bulkOp)
 	mux.HandleFunc("GET /api/files", s.listFiles)
 	mux.HandleFunc("GET /api/files/download", s.downloadFile)
@@ -457,6 +470,8 @@ type settingsView struct {
 	TelegramEnabled  bool    `json:"telegram_enabled"`
 	TelegramTokenSet bool    `json:"telegram_token_set"`
 	TelegramChat     string  `json:"telegram_chat"`
+	WebhookEnabled   bool    `json:"webhook_enabled"`
+	WebhookURL       string  `json:"webhook_url"`
 	TrashDays        int     `json:"trash_days"`
 	CatRules         []torrente.CatRule `json:"cat_rules"`
 	ServerTokenSet   bool    `json:"server_token_set"`
@@ -488,6 +503,8 @@ func (s *Server) settingsView() settingsView {
 		TelegramEnabled:  v.TelegramEnabled,
 		TelegramTokenSet: v.TelegramToken != "",
 		TelegramChat:     v.TelegramChat,
+		WebhookEnabled:   v.WebhookEnabled,
+		WebhookURL:       v.WebhookURL,
 		TrashDays:        v.TrashDays,
 		CatRules:         catRuleList(v.CatRules),
 		ServerTokenSet:   v.ServerToken != "",

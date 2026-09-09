@@ -87,6 +87,9 @@ type Torrent struct {
 	GuardPaused bool `json:"guard_paused"` // paused by the disk guard; resumes when space recovers
 	Queued      bool `json:"queued"`       // waiting for a download slot
 
+	// Selective download: file indices the user excluded. nil = want all.
+	skippedFiles map[int]bool
+
 	storage *storage.Storage
 	engine  *Engine
 	picker  *picker
@@ -168,6 +171,25 @@ func (t *Torrent) allPiecesPresent() bool {
 		}
 	}
 	return true
+}
+
+// wantedComplete reports whether every needed (non-skipped) piece is on disk.
+// With no selective-download mask this equals allPiecesPresent.
+func (t *Torrent) wantedComplete() bool {
+	if t.storage == nil {
+		return t.TotalWanted <= 0
+	}
+	skip := t.picker.skipMask()
+	n := t.storage.PieceCount()
+	for i := 0; i < n; i++ {
+		if skip != nil && skip[i] {
+			continue
+		}
+		if !t.storage.PiecePresent(i) {
+			return false
+		}
+	}
+	return n > 0
 }
 
 func (t *Torrent) setState(s State) {
@@ -340,7 +362,7 @@ func (e *Engine) AddTorrent(mi *metainfo.MetaInfo, saveDir string) (*Torrent, er
 	e.mu.Unlock()
 
 	done := t.countDoneBytes()
-	if done >= t.TotalWanted && t.TotalWanted > 0 {
+	if t.wantedComplete() && t.TotalWanted > 0 {
 		t.setState(StateSeeding)
 	} else {
 		t.setState(StateDownloading)
@@ -594,7 +616,7 @@ func (e *Engine) Resume(id string) error {
 		return fmt.Errorf("torrent not found")
 	}
 	t.mu.Lock()
-	if t.allPiecesPresent() {
+	if t.wantedComplete() {
 		t.State = StateSeeding
 	} else {
 		t.State = StateDownloading

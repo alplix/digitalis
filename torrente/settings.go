@@ -50,6 +50,11 @@ type Settings struct {
 	TelegramToken   string `json:"telegram_token,omitempty"`
 	TelegramChat    string `json:"telegram_chat,omitempty"`
 
+	// Generic webhook: a POST with {"kind","name","text"} is sent to this URL
+	// on the same events (ntfy.sh, Home Assistant, custom automations).
+	WebhookEnabled bool   `json:"webhook_enabled"`
+	WebhookURL     string `json:"webhook_url,omitempty"`
+
 	// Trash: when a torrent is removed with its files, the data moves to
 	// <root>/.trash and purges automatically after TrashDays. 0 deletes
 	// immediately.
@@ -193,6 +198,8 @@ func (e *Engine) UpdateSettings(patch Settings) (Settings, error) {
 		cur.TelegramToken = patch.TelegramToken
 	}
 	cur.TelegramChat = patch.TelegramChat
+	cur.WebhookEnabled = patch.WebhookEnabled
+	cur.WebhookURL = patch.WebhookURL
 	cur.TrashDays = patch.TrashDays
 	if patch.CatRules == nil {
 		patch.CatRules = []CatRule{}

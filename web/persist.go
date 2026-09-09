@@ -23,6 +23,7 @@ type torrentRecord struct {
 	Category       string   `json:"category"`
 	Disk           string   `json:"disk,omitempty"`
 	CustomTrackers []string `json:"custom_trackers,omitempty"`
+	SkippedFiles   []int    `json:"skipped_files,omitempty"` // selective download
 }
 
 // recordsPath returns the persistence file inside the config directory.
@@ -159,7 +160,51 @@ func (s *Server) addTorrentRecord(rec torrentRecord) error {
 			s.engine.Logf("restore tracker %s on %s failed: %v", u, rec.ID, err)
 		}
 	}
+	if len(rec.SkippedFiles) > 0 {
+		if err := s.engine.SetSkippedFiles(t.ID, rec.SkippedFiles); err != nil {
+			// magnets: metadata is not ready yet; applied on metadata arrival
+			s.engine.Logf("restore skipped-files %s deferred: %v", t.ID, err)
+		}
+	}
 	return nil
+}
+
+// persistSkippedFiles stores the selective-download choice in the record so
+// it survives restarts.
+func (s *Server) persistSkippedFiles(id string, files []int) {
+	s.recordsMu.Lock()
+	updated := false
+	for i := range s.records {
+		if s.records[i].ID == id {
+			s.records[i].SkippedFiles = files
+			updated = true
+			break
+		}
+	}
+	recs := append([]torrentRecord(nil), s.records...)
+	s.recordsMu.Unlock()
+	if updated && s.cfgDir != "" {
+		if err := saveRecords(s.cfgDir, recs); err != nil {
+			s.engine.Logf("persist skipped files: %v", err)
+		}
+	}
+}
+
+// applyPendingSkippedFiles re-applies a deferred selective-download choice
+// once a magnet's metadata becomes available.
+func (s *Server) applyPendingSkippedFiles(id string) {
+	s.recordsMu.Lock()
+	var files []int
+	for _, r := range s.records {
+		if r.ID == id {
+			files = r.SkippedFiles
+			break
+		}
+	}
+	s.recordsMu.Unlock()
+	if len(files) > 0 {
+		_ = s.engine.SetSkippedFiles(id, files)
+	}
 }
 
 // engineAdd mirrors the add logic of POST /api/torrents minus JSON handling.

@@ -21,6 +21,7 @@ type FileRow struct {
 	Size  int64   `json:"size"`
 	Done  int64   `json:"done"`
 	Pct   float64 `json:"pct"`
+	Skip  bool    `json:"skip"` // excluded via selective download
 }
 
 // Detail is the detailed per-torrent view used by the detail panel.
@@ -130,7 +131,8 @@ func (e *Engine) Detail(id string) (*Detail, error) {
 			if f.Length > 0 {
 				pct = float64(f.Done) / float64(f.Length)
 			}
-			d.Files = append(d.Files, FileRow{Index: i, Path: rel, Size: f.Length, Done: f.Done, Pct: pct})
+			skip := t.skippedFiles != nil && t.skippedFiles[i]
+			d.Files = append(d.Files, FileRow{Index: i, Path: rel, Size: f.Length, Done: f.Done, Pct: pct, Skip: skip})
 		}
 	}
 	d.Ratio = t.Ratio()

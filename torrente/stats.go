@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"sync/atomic"
 	"time"
@@ -41,12 +42,25 @@ type CountryStat struct {
 	Conns int64 `json:"conns"`
 }
 
+// DiskPoint is one free-space sample of a storage root.
+type DiskPoint struct {
+	Ts   time.Time `json:"ts"`
+	Free int64     `json:"free"`
+}
+
+// DiskHistory is the free-space trend of one storage root.
+type DiskHistory struct {
+	Path   string      `json:"path"`
+	Points []DiskPoint `json:"points"`
+}
+
 // PersistedStats is what gets written to disk.
 type PersistedStats struct {
-	Since     time.Time         `json:"since"`
-	Days      map[string]*DayStat   `json:"days"`
-	Years     map[string]*YearStat  `json:"years"`
-	Countries map[string]int64      `json:"countries"`
+	Since     time.Time                `json:"since"`
+	Days      map[string]*DayStat      `json:"days"`
+	Years     map[string]*YearStat     `json:"years"`
+	Countries map[string]int64         `json:"countries"`
+	DiskFree  map[string][]DiskPoint   `json:"disk_free,omitempty"`
 }
 
 // StatsView is the JSON snapshot for the dashboard.
@@ -86,6 +100,8 @@ type stats struct {
 	years     map[string]*YearStat
 	countries map[string]int64
 	since     time.Time
+
+	diskFree map[string][]DiskPoint // per-root free-space trend (kept 7 days)
 }
 
 // per-tick sample buffers (also accumulated via atomics to keep hot paths lock-free)
@@ -108,6 +124,7 @@ func (e *Engine) InitStats(configDir string, fallbackBaseDir string) Settings {
 	e.stats.days = make(map[string]*DayStat)
 	e.stats.years = make(map[string]*YearStat)
 	e.stats.countries = make(map[string]int64)
+	e.stats.diskFree = make(map[string][]DiskPoint)
 	e.stats.dayKey = time.Now().Format("2006-01-02")
 	e.stats.since = time.Now()
 	if data, err := os.ReadFile(e.statsFile); err == nil {
@@ -124,6 +141,9 @@ func (e *Engine) InitStats(configDir string, fallbackBaseDir string) Settings {
 			}
 			for k, v := range p.Countries {
 				e.stats.countries[k] = v
+			}
+			for k, v := range p.DiskFree {
+				e.stats.diskFree[k] = v
 			}
 		}
 	}
@@ -195,6 +215,9 @@ func (e *Engine) statsTick() {
 		e.stats.minutes = nil
 	}
 	e.statsMu.Unlock()
+
+	// sample storage-root free space for the disk history chart
+	e.sampleDisks()
 
 	// evaluate the daily upload limit separately (atomic reads)
 	e.mu.Lock()
@@ -391,6 +414,61 @@ func (e *Engine) upToday() int64 {
 	return e.stats.day.Up
 }
 
+// sampleDisks appends a free-space point per storage root at most every 5
+// minutes, keeping 7 days of history.
+func (e *Engine) sampleDisks() {
+	type sample struct {
+		path string
+		free int64
+	}
+	var samples []sample
+	for _, root := range e.Disks() {
+		if f := diskFreeBytes(root); f >= 0 {
+			samples = append(samples, sample{filepath.Clean(root), f})
+		}
+	}
+	if len(samples) == 0 {
+		return
+	}
+	now := time.Now().Truncate(time.Minute)
+	e.statsMu.Lock()
+	defer e.statsMu.Unlock()
+	if e.stats.diskFree == nil {
+		e.stats.diskFree = make(map[string][]DiskPoint)
+	}
+	for _, s := range samples {
+		pts := e.stats.diskFree[s.path]
+		if len(pts) > 0 && now.Sub(pts[len(pts)-1].Ts) < 5*time.Minute {
+			continue
+		}
+		pts = append(pts, DiskPoint{Ts: now, Free: s.free})
+		cutoff := now.Add(-7 * 24 * time.Hour)
+		for len(pts) > 0 && pts[0].Ts.Before(cutoff) {
+			pts = pts[1:]
+		}
+		e.stats.diskFree[s.path] = pts
+	}
+}
+
+// DiskHistory returns the free-space trend per storage root.
+func (e *Engine) DiskHistory() []DiskHistory {
+	e.statsMu.Lock()
+	defer e.statsMu.Unlock()
+	paths := make([]string, 0, len(e.stats.diskFree))
+	for k := range e.stats.diskFree {
+		paths = append(paths, k)
+	}
+	sort.Strings(paths)
+	out := make([]DiskHistory, 0, len(paths))
+	for _, p := range paths {
+		pts := e.stats.diskFree[p]
+		cp := make([]DiskPoint, len(pts))
+		copy(cp, pts)
+		out = append(out, DiskHistory{Path: p, Points: cp})
+	}
+	return out
+}
+
 func (e *Engine) setUploadPaused(p bool) {
 	e.mu.Lock()
 	e.uploadPaused = p
@@ -479,6 +557,7 @@ func (e *Engine) persistStats() {
 		Days:      e.stats.days,
 		Years:     e.stats.years,
 		Countries: e.stats.countries,
+		DiskFree:  e.stats.diskFree,
 	}
 	e.statsMu.Unlock()
 	if e.statsFile == "" {

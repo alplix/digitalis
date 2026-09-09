@@ -112,7 +112,7 @@ func (e *Engine) upgradeMagnet(t *Torrent, rawInfo []byte) error {
 	t.mu.Lock()
 	done := t.countDoneBytes()
 	t.Downloaded = done
-	if done >= t.TotalWanted && t.TotalWanted > 0 {
+	if t.wantedComplete() && t.TotalWanted > 0 {
 		t.State = StateSeeding
 	}
 	if t.Category == "" {

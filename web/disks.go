@@ -208,6 +208,11 @@ func (s *Server) invalidateDiskCache(root string) {
 	diskCacheMu.Unlock()
 }
 
+// diskHistory serves the free-space trend per storage root.
+func (s *Server) diskHistory(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, s.engine.DiskHistory())
+}
+
 // diskRootOf returns the registered storage root that contains saveDir, or ""
 // when it is not under any extra root (i.e. it lives in the base dir).
 func (s *Server) diskRootOf(saveDir string) string {

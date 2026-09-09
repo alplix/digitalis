@@ -88,6 +88,9 @@ func (c *Conn) SetWriteDeadline(d time.Time) error { return c.conn.SetWriteDeadl
 // RemoteAddr returns the remote address.
 func (c *Conn) RemoteAddr() net.Addr { return c.conn.RemoteAddr() }
 
+// PeerID returns the remote peer id learned from the handshake.
+func (c *Conn) PeerID() [20]byte { return c.peerID }
+
 // Close closes the underlying connection.
 func (c *Conn) Close() error { return c.conn.Close() }
 

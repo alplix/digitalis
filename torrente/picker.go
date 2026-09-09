@@ -17,6 +17,7 @@ type picker struct {
 	coveredBy     map[*peerSession]map[int]struct{} // reverse index for cleanup
 	priorityLo    int // inclusive active streaming window (-1 = off)
 	priorityHi    int
+	skip          []bool // piece -> not wanted (selective download); nil = all wanted
 }
 
 func newPicker(t *Torrent) *picker {
@@ -57,6 +58,20 @@ func (p *picker) PriorityWindow() (int, int) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	return p.priorityLo, p.priorityHi
+}
+
+// setSkip installs the "not wanted" piece mask (selective download).
+func (p *picker) setSkip(mask []bool) {
+	p.mu.Lock()
+	p.skip = mask
+	p.mu.Unlock()
+}
+
+// skipMask returns the current mask (nil = everything wanted).
+func (p *picker) skipMask() []bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.skip
 }
 
 // addPeer registers a session. After the session's bitfield/have messages
@@ -152,6 +167,9 @@ p.mu.Lock()
 	total := p.t.storage.PieceCount()
 	if total < 30 {
 		for i := 0; i < total; i++ {
+			if p.skip != nil && p.skip[i] {
+				continue
+			}
 			if !p.t.storage.PiecePresent(i) {
 				if _, reserved := p.reserved[i]; !reserved {
 					if pr := s.peerBitfield.Has(i); pr {
@@ -168,6 +186,9 @@ p.mu.Lock()
 	if p.priorityLo >= 0 {
 		all := true
 		for i := p.priorityLo; i <= p.priorityHi; i++ {
+			if p.skip != nil && p.skip[i] {
+				continue
+			}
 			if p.t.storage.PiecePresent(i) {
 				continue
 			}
@@ -189,6 +210,9 @@ p.mu.Lock()
 	var candidates []int
 	best := int(^uint(0) >> 1)
 	for i := 0; i < total; i++ {
+		if p.skip != nil && p.skip[i] {
+			continue
+		}
 		if p.t.storage.PiecePresent(i) {
 			continue
 		}
