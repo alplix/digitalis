@@ -1991,7 +1991,7 @@ function fillDiskSelect(selId, cur) {
 async function addFromInput() {
   const ta = document.getElementById('sourceInput');
   if (!ta) return;
-  const lines = ta.value.split('\n').map(s=>s.trim()).filter(Boolean);
+  const lines = ta.value.split(/\r?\n|\\n/).map(s=>s.trim()).filter(Boolean);
   if (!lines.length) return;
   const status = document.getElementById('addStatus');
   const dir = document.getElementById('dirInput').value.trim();
@@ -2482,12 +2482,31 @@ function setupDropAdd() {
     refreshTorrentsFromAPI();
   });
   document.addEventListener('paste', e => {
+    // let normal field pastes work (bulk textarea etc.)
+    const tgt = e.target;
+    if (tgt && (tgt.tagName === 'TEXTAREA' || tgt.tagName === 'INPUT' || tgt.isContentEditable)) return;
     const txt = ((e.clipboardData || window.clipboardData) && (e.clipboardData || window.clipboardData).getData('text')) || '';
-    if (/^magnet:\?xt=urn:btih:/i.test(txt.trim())) {
-      e.preventDefault();
-      addSourceDirectly(txt.trim());
-    }
+    const good = txt.split(/\r?\n|\\n/).map(s => s.trim())
+      .filter(s => /^magnet:\?xt=urn:btih:/i.test(s) || /^https?:\/\//i.test(s));
+    if (!good.length) return;
+    e.preventDefault();
+    addLinesDirectly(good);
   });
+}
+async function addLinesDirectly(lines) {
+  let ok = 0, fail = 0, lastErr = '';
+  for (const line of lines) {
+    try {
+      await api('/torrents', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({source: line}) });
+      ok++;
+    } catch (e) { fail++; lastErr = e.message; }
+  }
+  if (ok) toast('info', '', `${ok} ${t('added')}`);
+  if (fail) alert(`${fail} ${t('errors')} — ${lastErr}`);
+  refreshTorrentsFromAPI();
+}
+async function addSourceDirectly(src) {
+  addLinesDirectly(src.split(/\r?\n|\\n/).map(s => s.trim()).filter(Boolean));
 }
 async function addTorrentFileBlob(file) {
   const buf = new Uint8Array(await file.arrayBuffer());
@@ -2500,13 +2519,6 @@ async function addTorrentFileBlob(file) {
     await api('/torrents', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({source: b64, dir, disk: targetDisk}) });
     toast('info', file.name, t('added'));
   } catch (e) { alert(file.name + ': ' + e.message); }
-}
-async function addSourceDirectly(src) {
-  try {
-    await api('/torrents', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({source: src}) });
-    toast('info', src.slice(0, 40) + '…', t('added'));
-    refreshTorrentsFromAPI();
-  } catch (e) { alert(e.message); }
 }
 
 // ---------- port check + backup ----------
