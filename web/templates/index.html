@@ -611,7 +611,7 @@
         </div>
 
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-          <div class="card rounded-2xl p-3"><p class="text-[11px] uppercase tracking-widest tx2 mb-1" data-i18n="dlTotal">Total transferred</p><p class="text-lg font-semibold font-mono" id="dlTotalBytes">0</p></div>
+          <div class="card rounded-2xl p-3"><p class="text-[11px] uppercase tracking-widest tx2 mb-1" data-i18n="dlTotalAll">Total (all time)</p><p class="text-lg font-semibold font-mono" id="dlTotalBytes">0</p></div>
           <div class="card rounded-2xl p-3"><p class="text-[11px] uppercase tracking-widest tx2 mb-1" data-i18n="dlSpeed">Bandwidth</p><p class="text-lg font-semibold font-mono" id="dlTotalSpeed">0 B/s</p></div>
           <div class="card rounded-2xl p-3"><p class="text-[11px] uppercase tracking-widest tx2 mb-1" data-i18n="dlLoops">Loops</p><p class="text-lg font-semibold font-mono" id="dlTotalLoops">0</p></div>
           <div class="card rounded-2xl p-3"><p class="text-[11px] uppercase tracking-widest tx2 mb-1" data-i18n="dlUptime">Uptime</p><p class="text-lg font-semibold font-mono" id="dlTotalUptime">—</p></div>
@@ -639,9 +639,17 @@
         <div class="card rounded-2xl p-4">
           <h2 class="text-sm font-semibold mb-2" data-i18n="dlRepos">Open-source repo browser</h2>
           <div class="flex flex-wrap items-end gap-2 mb-3">
-            <div class="min-w-[200px]">
+            <div>
+              <label class="block text-xs tx2 mb-1" data-i18n="dlRepoCat">Category</label>
+              <select id="dlRepoCat" onchange="dlFilterRepos()" class="inp rounded-lg px-3 py-2 text-sm focus:outline-none cursor-pointer"></select>
+            </div>
+            <div class="min-w-[180px]">
               <label class="block text-xs tx2 mb-1" data-i18n="dlRepoPick">Repository</label>
-              <select id="dlRepoSel" class="inp rounded-lg px-3 py-2 text-sm focus:outline-none cursor-pointer"></select>
+              <select id="dlRepoSel" class="inp rounded-lg px-3 py-2 text-sm focus:outline-none cursor-pointer w-full"></select>
+            </div>
+            <div class="min-w-[140px]">
+              <label class="block text-xs tx2 mb-1" data-i18n="dlRepoSearch">Search file</label>
+              <input id="dlRepoSearch" oninput="dlRenderRepoList()" placeholder="iso, amd64…" class="w-full rounded-lg px-3 py-2 inp text-sm focus:outline-none">
             </div>
             <button onclick="dlBrowse(document.getElementById('dlRepoSel').value)" class="px-4 py-2 rounded-xl btn-primary text-xs font-medium shadow" data-i18n="dlBrowse">Browse</button>
             <input id="dlRepoPath" class="flex-1 min-w-[200px] rounded-lg px-3 py-2 inp text-xs font-mono" placeholder="URL" spellcheck="false">
@@ -1058,14 +1066,15 @@ const I18N = {
     ramKeep: 'Keep last (MB)', dlDeleteEach: 'Delete file after each loop', dlDiscardNote: 'Bytes are counted and thrown away — the machine stays untouched.',
     loopCount: 'Loops (0=∞)', dlInterval: 'Pause between loops (s)', speedCap: 'Speed cap (KB/s, 0=∞)',
     dlStart: 'Start', dlTasks: 'Tasks', dlNoTasks: 'No download tasks yet.',
-    dlTotal: 'Total transferred', dlSpeed: 'Bandwidth', dlLoops: 'Loops', dlUptime: 'Uptime',
+    dlTotal: 'Total (all time)', dlSpeed: 'Bandwidth', dlLoops: 'Loops', dlUptime: 'Uptime',
     dlRun: 'Running', dlDone: 'Done', dlErr: 'Error', dlStop2: 'Stopped', dlStop: 'Stop',
     dlDirDown: 'Download', dlDirUp: 'Upload', dlSched: 'Scheduled', dlConn: 'Parallel connections',
     dlAdvanced: 'Advanced: retries · verification · schedule · proxy',
     dlRetries: 'Retries on error', dlRetryWait: 'Retry wait (s)', dlStartAt: 'Start at (HH:MM)',
     dlProxy: 'Proxy (http/socks5)', dlVerify: 'Verify SHA-256 (optional)', dlUpSize: 'Upload payload size (MB)',
     dlHistory: 'Run history', dlHistClear: 'Clear', dlRepos: 'Open-source repo browser',
-    dlRepoPick: 'Repository', dlBrowse: 'Browse', dlSelected: 'selected'
+    dlRepoPick: 'Repository', dlBrowse: 'Browse', dlSelected: 'selected',
+    dlTotalAll: 'Total (all time)', dlRepoCat: 'Category', dlRepoAll: 'All', dlRepoSearch: 'Search file'
   },
   tr: {
     tagline: 'Yüksük Otu — sıfırdan yazılmış BitTorrent istemcisi', noDocker: 'Docker yok',
@@ -1141,14 +1150,15 @@ const I18N = {
     ramKeep: 'Son (MB) tut', dlDeleteEach: 'Her turdan sonra dosyayı sil', dlDiscardNote: 'Baytlar sayılıp atılır — makine hiç etkilenmez.',
     loopCount: 'Döngü (0=∞)', dlInterval: 'Turlar arası bekleme (sn)', speedCap: 'Hız sınırı (KB/s, 0=∞)',
     dlStart: 'Başlat', dlTasks: 'Görevler', dlNoTasks: 'Henüz indirme görevi yok.',
-    dlTotal: 'Toplam aktarılan', dlSpeed: 'Bant genişliği', dlLoops: 'Döngü', dlUptime: 'Süre',
+    dlTotal: 'Toplam (tüm zamanlar)', dlSpeed: 'Bant genişliği', dlLoops: 'Döngü', dlUptime: 'Süre',
     dlRun: 'İniyor', dlDone: 'Bitti', dlErr: 'Hata', dlStop2: 'Durduruldu', dlStop: 'Durdur',
     dlDirDown: 'İndir', dlDirUp: 'Yükle', dlSched: 'Planlandı', dlConn: 'Paralel bağlantı',
     dlAdvanced: 'Gelişmiş: tekrar deneme · doğrulama · zamanlama · proxy',
     dlRetries: 'Hata halinde yeniden deneme', dlRetryWait: 'Yeniden deneme beklemesi (sn)', dlStartAt: 'Başlangıç saati (SS:DD)',
     dlProxy: 'Proxy (http/socks5)', dlVerify: 'SHA-256 doğrula (isteğe bağlı)', dlUpSize: 'Yüklenecek veri boyutu (MB)',
     dlHistory: 'Çalışma geçmişi', dlHistClear: 'Temizle', dlRepos: 'Açık kaynak repo tarayıcısı',
-    dlRepoPick: 'Depo', dlBrowse: 'Gözat', dlSelected: 'seçildi'
+    dlRepoPick: 'Depo', dlBrowse: 'Gözat', dlSelected: 'seçildi',
+    dlTotalAll: 'Toplam (tüm zamanlar)', dlRepoCat: 'Kategori', dlRepoAll: 'Tümü', dlRepoSearch: 'Dosya ara'
   },
   de: {
     tagline: 'Ein von Grund auf geschriebener BitTorrent-Client', noDocker: 'Kein Docker',
@@ -1210,7 +1220,8 @@ const I18N = {
     loopCount: 'Durchläufe (0=∞)', dlInterval: 'Pause zwischen Durchläufen (s)', speedCap: 'Drossel (KB/s, 0=∞)',
     dlStart: 'Start', dlTasks: 'Aufgaben', dlNoTasks: 'Noch keine Download-Aufgaben.',
     dlTotal: 'Insgesamt geladen', dlSpeed: 'Bandbreite', dlLoops: 'Durchläufe', dlUptime: 'Laufzeit',
-    dlRun: 'Läuft', dlDone: 'Fertig', dlErr: 'Fehler', dlStop2: 'Gestoppt', dlStop: 'Stopp'
+    dlRun: 'Läuft', dlDone: 'Fertig', dlErr: 'Fehler', dlStop2: 'Gestoppt', dlStop: 'Stopp',
+    dlTotalAll: 'Gesamt (alle Zeiten)', dlRepoCat: 'Kategorie', dlRepoAll: 'Alle', dlRepoSearch: 'Datei suchen'
   },
   fr: {
     tagline: 'Un client BitTorrent écrit from scratch', noDocker: 'Pas de Docker',
@@ -1272,7 +1283,8 @@ const I18N = {
     loopCount: 'Tours (0=∞)', dlInterval: 'Pause entre les tours (s)', speedCap: 'Limite (Ko/s, 0=∞)',
     dlStart: 'Démarrer', dlTasks: 'Tâches', dlNoTasks: 'Aucune tâche de téléchargement.',
     dlTotal: 'Total téléchargé', dlSpeed: 'Bande passante', dlLoops: 'Tours', dlUptime: 'Durée',
-    dlRun: 'En cours', dlDone: 'Terminé', dlErr: 'Erreur', dlStop2: 'Arrêté', dlStop: 'Arrêter'
+    dlRun: 'En cours', dlDone: 'Terminé', dlErr: 'Erreur', dlStop2: 'Arrêté', dlStop: 'Arrêter',
+    dlTotalAll: 'Total (tout temps)', dlRepoCat: 'Catégorie', dlRepoAll: 'Tous', dlRepoSearch: 'Rechercher un fichier'
   },
   es: {
     tagline: 'Un cliente BitTorrent escrito desde cero', noDocker: 'Sin Docker',
@@ -1334,7 +1346,8 @@ const I18N = {
     loopCount: 'Vueltas (0=∞)', dlInterval: 'Pausa entre vueltas (s)', speedCap: 'Límite (KB/s, 0=∞)',
     dlStart: 'Iniciar', dlTasks: 'Tareas', dlNoTasks: 'Aún no hay tareas de descarga.',
     dlTotal: 'Total descargado', dlSpeed: 'Ancho de banda', dlLoops: 'Vueltas', dlUptime: 'Tiempo activo',
-    dlRun: 'Ejecutando', dlDone: 'Hecho', dlErr: 'Error', dlStop2: 'Detenida', dlStop: 'Detener'
+    dlRun: 'Ejecutando', dlDone: 'Hecho', dlErr: 'Error', dlStop2: 'Detenida', dlStop: 'Detener',
+    dlTotalAll: 'Total (histórico)', dlRepoCat: 'Categoría', dlRepoAll: 'Todos', dlRepoSearch: 'Buscar archivo'
   },
   it: {
     tagline: 'Un client BitTorrent scritto da zero', noDocker: 'Niente Docker',
@@ -1396,7 +1409,8 @@ const I18N = {
     loopCount: 'Giri (0=∞)', dlInterval: 'Pausa tra i giri (s)', speedCap: 'Limite (KB/s, 0=∞)',
     dlStart: 'Avvia', dlTasks: 'Attività', dlNoTasks: 'Nessuna attività di download.',
     dlTotal: 'Totale scaricato', dlSpeed: 'Larghezza di banda', dlLoops: 'Giri', dlUptime: 'Uptime',
-    dlRun: 'In corso', dlDone: 'Fatto', dlErr: 'Errore', dlStop2: 'Fermato', dlStop: 'Ferma'
+    dlRun: 'In corso', dlDone: 'Fatto', dlErr: 'Errore', dlStop2: 'Fermato', dlStop: 'Ferma',
+    dlTotalAll: 'Totale (storico)', dlRepoCat: 'Categoria', dlRepoAll: 'Tutti', dlRepoSearch: 'Cerca file'
   },
   pt: {
     tagline: 'Um cliente BitTorrent escrito do zero', noDocker: 'Sem Docker',
@@ -1458,7 +1472,8 @@ const I18N = {
     loopCount: 'Voltas (0=∞)', dlInterval: 'Pausa entre voltas (s)', speedCap: 'Limite (KB/s, 0=∞)',
     dlStart: 'Iniciar', dlTasks: 'Tarefas', dlNoTasks: 'Nenhuma tarefa de download ainda.',
     dlTotal: 'Total baixado', dlSpeed: 'Largura de banda', dlLoops: 'Voltas', dlUptime: 'Tempo',
-    dlRun: 'Baixando', dlDone: 'Concluído', dlErr: 'Erro', dlStop2: 'Parado', dlStop: 'Parar'
+    dlRun: 'Baixando', dlDone: 'Concluído', dlErr: 'Erro', dlStop2: 'Parado', dlStop: 'Parar',
+    dlTotalAll: 'Total (histórico)', dlRepoCat: 'Categoria', dlRepoAll: 'Todos', dlRepoSearch: 'Buscar arquivo'
   },
   ru: {
     tagline: 'BitTorrent-клиент, написанный с нуля', noDocker: 'Без Docker',
@@ -1520,7 +1535,8 @@ const I18N = {
     loopCount: 'Круги (0=∞)', dlInterval: 'Пауза между кругами (с)', speedCap: 'Ограничение (КБ/с, 0=∞)',
     dlStart: 'Старт', dlTasks: 'Задачи', dlNoTasks: 'Задач загрузки пока нет.',
     dlTotal: 'Всего загружено', dlSpeed: 'Пропускная способность', dlLoops: 'Круги', dlUptime: 'Время',
-    dlRun: 'Работает', dlDone: 'Готово', dlErr: 'Ошибка', dlStop2: 'Остановлено', dlStop: 'Стоп'
+    dlRun: 'Работает', dlDone: 'Готово', dlErr: 'Ошибка', dlStop2: 'Остановлено', dlStop: 'Стоп',
+    dlTotalAll: 'Всего (за всё время)', dlRepoCat: 'Категория', dlRepoAll: 'Все', dlRepoSearch: 'Поиск файла'
   },
   ja: {
     tagline: 'ゼロから書いたBitTorrentクライアント', noDocker: 'Docker不使用',
@@ -1582,7 +1598,8 @@ const I18N = {
     loopCount: 'ループ回数 (0=∞)', dlInterval: 'ループ間の待機 (秒)', speedCap: '速度制限 (KB/s, 0=無制限)',
     dlStart: '開始', dlTasks: 'タスク', dlNoTasks: 'ダウンロードタスクはまだありません。',
     dlTotal: '合計ダウンロード', dlSpeed: '帯域幅', dlLoops: 'ループ', dlUptime: '稼働時間',
-    dlRun: '実行中', dlDone: '完了', dlErr: 'エラー', dlStop2: '停止済み', dlStop: '停止'
+    dlRun: '実行中', dlDone: '完了', dlErr: 'エラー', dlStop2: '停止済み', dlStop: '停止',
+    dlTotalAll: '合計（全期間）', dlRepoCat: 'カテゴリ', dlRepoAll: 'すべて', dlRepoSearch: 'ファイル検索'
   },
   zh: {
     tagline: '从头编写的BitTorrent客户端', noDocker: '无Docker',
@@ -1644,7 +1661,8 @@ const I18N = {
     loopCount: '循环次数 (0=∞)', dlInterval: '循环间隔 (秒)', speedCap: '速度上限 (KB/s, 0=无限)',
     dlStart: '开始', dlTasks: '任务', dlNoTasks: '还没有下载任务。',
     dlTotal: '累计下载', dlSpeed: '带宽', dlLoops: '循环', dlUptime: '运行时长',
-    dlRun: '进行中', dlDone: '已完成', dlErr: '错误', dlStop2: '已停止', dlStop: '停止'
+    dlRun: '进行中', dlDone: '已完成', dlErr: '错误', dlStop2: '已停止', dlStop: '停止',
+    dlTotalAll: '总计（全部时间）', dlRepoCat: '分类', dlRepoAll: '全部', dlRepoSearch: '搜索文件'
   },
   ar: {
     tagline: 'عميل BitTorrent مكتوب من الصفر', noDocker: 'بدون Docker',
@@ -1706,7 +1724,8 @@ const I18N = {
     loopCount: 'الدورات (0=∞)', dlInterval: 'الانتظار بين الدورات (ث)', speedCap: 'حد السرعة (كيلوبايت/ث، 0=∞)',
     dlStart: 'بدء', dlTasks: 'المهام', dlNoTasks: 'لا توجد مهام تنزيل بعد.',
     dlTotal: 'إجمالي التنزيل', dlSpeed: 'عرض النطاق', dlLoops: 'الدورات', dlUptime: 'مدة التشغيل',
-    dlRun: 'قيد التنفيذ', dlDone: 'تم', dlErr: 'خطأ', dlStop2: 'متوقف', dlStop: 'إيقاف'
+    dlRun: 'قيد التنفيذ', dlDone: 'تم', dlErr: 'خطأ', dlStop2: 'متوقف', dlStop: 'إيقاف',
+    dlTotalAll: 'الإجمالي (كل الأوقات)', dlRepoCat: 'الفئة', dlRepoAll: 'الكل', dlRepoSearch: 'بحث عن ملف'
   },
   hi: {
     tagline: 'शुरू से लिखा गया BitTorrent क्लाइंट', noDocker: 'Docker रहित',
@@ -1768,7 +1787,8 @@ const I18N = {
     loopCount: 'चक्कर (0=∞)', dlInterval: 'चक्करों के बीच ठहराव (से)', speedCap: 'गति सीमा (KB/s, 0=असीमित)',
     dlStart: 'शुरू', dlTasks: 'कार्य', dlNoTasks: 'अभी कोई डाउनलोड कार्य नहीं।',
     dlTotal: 'कुल डाउनलोड', dlSpeed: 'बैंडविड्थ', dlLoops: 'चक्कर', dlUptime: 'अपटाइम',
-    dlRun: 'चल रहा', dlDone: 'पूर्ण', dlErr: 'त्रुटि', dlStop2: 'रुका', dlStop: 'रोकें'
+    dlRun: 'चल रहा', dlDone: 'पूर्ण', dlErr: 'त्रुटि', dlStop2: 'रुका', dlStop: 'रोकें',
+    dlTotalAll: 'कुल (सभी समय)', dlRepoCat: 'श्रेणी', dlRepoAll: 'सभी', dlRepoSearch: 'फ़ाइल खोजें'
   }
 };
 
@@ -3624,13 +3644,35 @@ async function dlClearHistory() {
 }
 
 // ---------- repo browser ----------
+let dlRepos = [];
 async function dlLoadRepos() {
   const sel = document.getElementById('dlRepoSel');
   if (!sel || sel.options.length) return;
   try {
-    const repos = await api('/dl/repos');
-    sel.innerHTML = repos.map(x => `<option value="${esc(x.url)}">${esc(x.name)}</option>`).join('');
+    dlRepos = await api('/dl/repos');
+    const cats = [...new Set(dlRepos.map(x => x.cat || 'misc'))];
+    const catSel = document.getElementById('dlRepoCat');
+    catSel.innerHTML = `<option value="">${esc(t('dlRepoAll'))}</option>` + cats.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+    dlFilterRepos();
   } catch (e) { /* ignore */ }
+}
+function dlFilterRepos() {
+  const cat = (document.getElementById('dlRepoCat') || {}).value || '';
+  const sel = document.getElementById('dlRepoSel');
+  if (!sel) return;
+  const list = dlRepos.filter(x => !cat || (x.cat || 'misc') === cat);
+  sel.innerHTML = list.map(x => `<option value="${esc(x.url)}" title="${esc(x.url)}">${esc(x.name)}</option>`).join('');
+  dlRenderRepoList();
+}
+function dlRenderRepoList() {
+  // filters the currently listed entries by the search box (live)
+  const q = ((document.getElementById('dlRepoSearch') || {}).value || '').toLowerCase();
+  const list = document.getElementById('dlRepoList');
+  if (!list || !q) return;
+  [...list.children].forEach(row => {
+    const name = (row.textContent || '').toLowerCase();
+    row.style.display = name.includes(q) ? '' : 'none';
+  });
 }
 async function dlBrowse(u) {
   if (!u) return;
@@ -3655,6 +3697,7 @@ async function dlBrowse(u) {
         <span class="truncate flex-1 min-w-0 cursor-pointer" style="color:var(--txt)" ${e.is_dir ? `onclick="dlBrowse('${esc(e.url)}')"` : `onclick="dlToggleSel('${esc(e.url)}', true)"`}>${esc(e.name)}${e.is_dir ? '/' : ''}</span>
         ${!e.is_dir && e.size > 0 ? `<span class="shrink-0 font-mono tx3 text-xs">${fmtBytes(e.size)}${e.size_h ? ' <span class="tx3">(' + esc(e.size_h) + ')</span>' : ''}</span>` : ''}
       </div>`).join('');
+    dlRenderRepoList();
   } catch (e) { list.innerHTML = `<div class="text-xs py-3" style="color:var(--bad)">${esc(e.message)}</div>`; }
 }
 function dlToggleSel(url, on) {

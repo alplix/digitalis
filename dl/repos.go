@@ -16,24 +16,66 @@ import (
 type Repo struct {
 	Name string `json:"name"`
 	URL  string `json:"url"`
+	Cat  string `json:"cat"`
 }
 
 func Repos() []Repo {
 	return []Repo{
-		{Name: "Debian", URL: "https://deb.debian.org/debian/"},
-		{Name: "Ubuntu", URL: "http://archive.ubuntu.com/ubuntu/"},
-		{Name: "FreeBSD", URL: "https://download.freebsd.org/ftp/releases/"},
-		{Name: "Fedora", URL: "https://download.fedoraproject.org/pub/fedora/linux/"},
-		{Name: "Arch Linux", URL: "https://geo.mirror.pkgbuild.com/"},
-		{Name: "Alpine Linux", URL: "https://dl-cdn.alpinelinux.org/alpine/"},
-		{Name: "openSUSE", URL: "https://download.opensuse.org/"},
-		{Name: "AlmaLinux", URL: "https://repo.almalinux.org/almalinux/"},
-		{Name: "Rocky Linux", URL: "https://download.rockylinux.org/pub/rocky/"},
-		{Name: "Linux Kernel", URL: "https://cdn.kernel.org/pub/"},
-		{Name: "NixOS", URL: "https://channels.nixos.org/"},
-		{Name: "Raspberry Pi OS", URL: "https://downloads.raspberrypi.org/"},
-		{Name: "CentOS Vault", URL: "https://vault.centos.org/"},
-		{Name: "Manjaro", URL: "https://mirror.manjaro.org/repos/"},
+		// Linux distributions
+		{Name: "Debian", URL: "https://deb.debian.org/debian/", Cat: "linux"},
+		{Name: "Debian CD/DVD images", URL: "https://cdimage.debian.org/debian-cd/", Cat: "linux"},
+		{Name: "Ubuntu archive", URL: "http://archive.ubuntu.com/ubuntu/", Cat: "linux"},
+		{Name: "Ubuntu releases (ISO)", URL: "https://releases.ubuntu.com/", Cat: "linux"},
+		{Name: "Ubuntu CD images", URL: "https://cdimage.ubuntu.com/", Cat: "linux"},
+		{Name: "Linux Mint", URL: "https://mirrors.edge.kernel.org/linuxmint/", Cat: "linux"},
+		{Name: "Fedora", URL: "https://download.fedoraproject.org/pub/fedora/linux/", Cat: "linux"},
+		{Name: "Arch Linux", URL: "https://geo.mirror.pkgbuild.com/", Cat: "linux"},
+		{Name: "Manjaro", URL: "https://mirror.manjaro.org/repos/", Cat: "linux"},
+		{Name: "EndeavourOS", URL: "https://mirror.alpix.eu/endeavouros/", Cat: "linux"},
+		{Name: "Alpine Linux", URL: "https://dl-cdn.alpinelinux.org/alpine/", Cat: "linux"},
+		{Name: "openSUSE", URL: "https://download.opensuse.org/", Cat: "linux"},
+		{Name: "AlmaLinux", URL: "https://repo.almalinux.org/almalinux/", Cat: "linux"},
+		{Name: "Rocky Linux", URL: "https://download.rockylinux.org/pub/rocky/", Cat: "linux"},
+		{Name: "CentOS Vault", URL: "https://vault.centos.org/", Cat: "linux"},
+		{Name: "NixOS", URL: "https://channels.nixos.org/", Cat: "linux"},
+		{Name: "Void Linux", URL: "https://repo-default.voidlinux.org/", Cat: "linux"},
+		{Name: "Gentoo", URL: "https://distfiles.gentoo.org/", Cat: "linux"},
+		{Name: "Slackware", URL: "https://slackware.cs.utah.edu/pub/slackware/", Cat: "linux"},
+		{Name: "Kali Linux", URL: "https://http.kali.org/kali/", Cat: "linux"},
+		{Name: "MX Linux", URL: "https://mxrepo.com/mx/repo/", Cat: "linux"},
+		{Name: "Pop!_OS", URL: "https://iso.pop-os.org/", Cat: "linux"},
+		{Name: "elementary OS", URL: "https://builds.elementary.io/", Cat: "linux"},
+		{Name: "Deepin", URL: "https://community-packages.deepin.com/deepin/", Cat: "linux"},
+
+		// BSD family
+		{Name: "FreeBSD releases", URL: "https://download.freebsd.org/ftp/releases/", Cat: "bsd"},
+		{Name: "FreeBSD FTP", URL: "https://download.freebsd.org/ftp/pub/FreeBSD/", Cat: "bsd"},
+		{Name: "OpenBSD", URL: "https://cdn.openbsd.org/pub/OpenBSD/", Cat: "bsd"},
+		{Name: "NetBSD", URL: "https://cdn.netbsd.org/pub/NetBSD/", Cat: "bsd"},
+		{Name: "DragonFly BSD", URL: "https://mirror-master.dragonflybsd.org/dragonfly/", Cat: "bsd"},
+
+		// Software & ISO archives
+		{Name: "Kernel.org", URL: "https://cdn.kernel.org/pub/", Cat: "software"},
+		{Name: "GNU (ftp.gnu.org)", URL: "https://ftp.gnu.org/gnu/", Cat: "software"},
+		{Name: "Apache", URL: "https://downloads.apache.org/", Cat: "software"},
+		{Name: "GNOME", URL: "https://download.gnome.org/sources/", Cat: "software"},
+		{Name: "KDE", URL: "https://download.kde.org/stable/", Cat: "software"},
+		{Name: "Mozilla (archive)", URL: "https://archive.mozilla.org/pub/", Cat: "software"},
+		{Name: "LibreOffice", URL: "https://documentfoundation.mirror.garr.it/libreoffice/stable/", Cat: "software"},
+		{Name: "VideoLAN (VLC)", URL: "https://get.videolan.org/vlc/", Cat: "software"},
+		{Name: "CTAN (TeX)", URL: "https://ftp.fau.de/ctan/", Cat: "software"},
+		{Name: "CRAN (R)", URL: "https://cran.r-project.org/", Cat: "software"},
+		{Name: "CPAN (Perl)", URL: "https://www.cpan.org/", Cat: "software"},
+		{Name: "Eclipse", URL: "https://download.eclipse.org/eclipse/", Cat: "software"},
+		{Name: "Rust static builds", URL: "https://static.rust-lang.org/dist/", Cat: "software"},
+		{Name: "Go toolchains", URL: "https://go.dev/dl/", Cat: "software"},
+
+		// Misc / testing-friendly mirrors
+		{Name: "Kernel test ISOs (netboot)", URL: "https://archive.ubuntu.com/ubuntu/dists/", Cat: "misc"},
+		{Name: "Debian netboot", URL: "https://deb.debian.org/debian/dists/stable/main/installer-amd64/", Cat: "misc"},
+		{Name: "TUNA mirror (CN)", URL: "https://mirrors.tuna.tsinghua.edu.cn/", Cat: "misc"},
+		{Name: "GARR mirror (IT)", URL: "https://mirrors.garr.it/mirrors/", Cat: "misc"},
+		{Name: "UAPT mirror (TR)", URL: "https://mirror.veriteknik.com.tr/", Cat: "misc"},
 	}
 }
 

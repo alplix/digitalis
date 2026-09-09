@@ -151,6 +151,7 @@ type HistoryEntry struct {
 	Direction   string    `json:"direction"`
 	State       string    `json:"state"`
 	Bytes       int64     `json:"bytes"`
+	Files       int64     `json:"files"`
 	Loops       int64     `json:"loops"`
 	DurationSec int64     `json:"duration_sec"`
 	AvgSpeed    int64     `json:"avg_speed"`
@@ -160,6 +161,14 @@ type HistoryEntry struct {
 }
 
 const historyMax = 500
+
+// persisted wrap: all-time base counters + run history.
+type histFile struct {
+	Bytes   int64          `json:"bytes"`
+	Loops   int64          `json:"loops"`
+	Files   int64          `json:"files"`
+	History []HistoryEntry `json:"history"`
+}
 
 func (m *Manager) recordHistory(t *Task) {
 	if m == nil {
@@ -176,6 +185,7 @@ func (m *Manager) recordHistory(t *Task) {
 		Direction:   t.Direction,
 		State:       t.State,
 		Bytes:       atomic.LoadInt64(&t.Bytes),
+		Files:       atomic.LoadInt64(&t.Files),
 		Loops:       atomic.LoadInt64(&t.LoopsDone),
 		DurationSec: duration,
 		Verified:    t.Verified,
@@ -192,8 +202,11 @@ func (m *Manager) recordHistory(t *Task) {
 	if len(m.history) > historyMax {
 		m.history = m.history[len(m.history)-historyMax:]
 	}
-	snap := make([]HistoryEntry, len(m.history))
-	copy(snap, m.history)
+	// fold the finished task into the all-time counters
+	m.base.Bytes += entry.Bytes
+	m.base.Loops += entry.Loops
+	m.base.Files += entry.Files
+	snap := histFile{Bytes: m.base.Bytes, Loops: m.base.Loops, Files: m.base.Files, History: m.history}
 	path := m.histPath
 	m.histMu.Unlock()
 
@@ -215,10 +228,21 @@ func (m *Manager) loadHistory() {
 	if err != nil {
 		return
 	}
-	var out []HistoryEntry
-	if json.Unmarshal(data, &out) == nil && len(out) > 0 {
+	var wrapped histFile
+	if json.Unmarshal(data, &wrapped) == nil && wrapped.History != nil {
 		m.histMu.Lock()
-		m.history = out
+		m.history = wrapped.History
+		m.base.Bytes = wrapped.Bytes
+		m.base.Loops = wrapped.Loops
+		m.base.Files = wrapped.Files
+		m.histMu.Unlock()
+		return
+	}
+	// legacy format: plain array of entries
+	var legacy []HistoryEntry
+	if json.Unmarshal(data, &legacy) == nil && len(legacy) > 0 {
+		m.histMu.Lock()
+		m.history = legacy
 		m.histMu.Unlock()
 	}
 }
@@ -232,12 +256,14 @@ func (m *Manager) History() []HistoryEntry {
 	return out
 }
 
-// ClearHistory wipes the stored run history.
+// ClearHistory wipes the stored run history and all-time counters.
 func (m *Manager) ClearHistory() {
 	m.histMu.Lock()
 	m.history = nil
+	m.base.Bytes, m.base.Loops, m.base.Files = 0, 0, 0
+	path := m.histPath
 	m.histMu.Unlock()
-	if m.histPath != "" {
-		os.Remove(m.histPath)
+	if path != "" {
+		os.Remove(path)
 	}
 }

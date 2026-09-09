@@ -104,6 +104,9 @@ type Totals struct {
 	Loops     int64     `json:"loops"`
 	Files     int64     `json:"files"`
 	StartedAt time.Time `json:"started_at"`
+	BaseBytes int64     `json:"base_bytes"` // all-time totals from finished tasks (persisted)
+	BaseLoops int64     `json:"base_loops"`
+	BaseFiles int64     `json:"base_files"`
 }
 
 // Manager owns all download tasks and the run history.
@@ -115,10 +118,15 @@ type Manager struct {
 	histMu   sync.Mutex
 	history  []HistoryEntry
 	histPath string
+	base     struct {
+		Bytes int64 `json:"bytes"`
+		Loops int64 `json:"loops"`
+		Files int64 `json:"files"`
+	}
 }
 
 // NewManager creates an empty download manager. historyPath ("" = memory
-// only) persists finished runs across restarts.
+// only) persists finished runs and all-time totals across restarts.
 func NewManager(historyPath string) *Manager {
 	m := &Manager{tasks: make(map[string]*Task), started: time.Now(), histPath: historyPath}
 	m.loadHistory()
@@ -265,7 +273,9 @@ func (m *Manager) Remove(id string) error {
 	return nil
 }
 
-// List returns all tasks (oldest first) plus aggregated totals.
+// List returns all tasks (oldest first) plus aggregated totals. The totals
+// combine persisted all-time counters with the bytes of currently running
+// tasks, so the numbers survive restarts.
 func (m *Manager) List() ([]*Task, Totals) {
 	m.mu.Lock()
 	ids := append([]string(nil), m.order...)
@@ -274,6 +284,11 @@ func (m *Manager) List() ([]*Task, Totals) {
 	out := make([]*Task, 0, len(ids))
 	var tot Totals
 	tot.StartedAt = m.started
+	m.histMu.Lock()
+	tot.BaseBytes = m.base.Bytes
+	tot.BaseLoops = m.base.Loops
+	tot.BaseFiles = m.base.Files
+	m.histMu.Unlock()
 	for _, id := range ids {
 		m.mu.Lock()
 		t := m.tasks[id]
@@ -287,6 +302,9 @@ func (m *Manager) List() ([]*Task, Totals) {
 		tot.Files += atomic.LoadInt64(&t.Files)
 		tot.Speed += t.currentSpeed()
 	}
+	tot.Bytes += tot.BaseBytes
+	tot.Loops += tot.BaseLoops
+	tot.Files += tot.BaseFiles
 	return out, tot
 }
 
