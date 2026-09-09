@@ -848,6 +848,10 @@ func (e *Engine) Torrents() []*Torrent {
 
 		t.mu.Lock()
 		c := *t
+		// The copy embeds t.mu in LOCKED state (we hold it right now); any
+		// later Lock on the copy would deadlock forever. Reset it — the
+		// snapshot is read-only from here on.
+		c.mu = sync.Mutex{}
 		c.DownloadSpeed = rateD
 		c.UploadSpeed = rateU
 		ph, pt := t.PieceStats()

@@ -1436,7 +1436,7 @@ function fmtBytes(b) {
   while (v >= 1024 && i < units.length-1) { v /= 1024; i++; }
   return v.toFixed(v >= 10 || i === 0 ? 0 : 1) + ' ' + units[i];
 }
-function fmtSpeed(bps) { if (!bps) return '—'; return fmtBytes(bps) + '/s'; }
+function fmtSpeed(bps) { if (!bps) return '0 B/s'; return fmtBytes(bps) + '/s'; }
 function fmtRatio(r) { if (!r || r < 0.001) return '—'; return r >= 10 ? r.toFixed(1) : r.toFixed(3); }
 function fmtAgo(iso) { return fmtTime(iso); }
 
