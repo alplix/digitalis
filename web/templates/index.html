@@ -242,6 +242,10 @@
         <svg class="nav-ico w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3a1 1 0 00-1 1 17 17 0 0017 17 1 1 0 001-1v-3a1 1 0 00-1-1 10 10 0 01-9-9 1 1 0 00-1-1H5zM5.5 21a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg>
         <span class="hidden md:inline">RSS</span>
       </div>
+      <div class="nav-item rounded-lg px-2 md:px-3 py-2 flex items-center gap-2.5" data-view="dl" onclick="show('dl')">
+        <svg class="nav-ico w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+        <span class="hidden md:inline" data-i18n="dl">Downloader</span>
+      </div>
       <div class="nav-item rounded-lg px-2 md:px-3 py-2 flex items-center gap-2.5" data-view="files" onclick="show('files')">
         <svg class="nav-ico w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4h16v16H4zM4 9h16M9 4v16"/></svg>
         <span class="hidden md:inline" data-i18n="files">Files</span>
@@ -520,6 +524,66 @@
           <div id="fileList" class="space-y-0.5 text-sm">
             <div class="py-6 text-center tx2" data-i18n="loading">Loading...</div>
           </div>
+        </div>
+      </section>
+
+      <!-- ============ DOWNLOADER ============ -->
+      <section id="view-dl" class="view">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <h1 class="text-xl md:text-2xl font-bold" data-i18n="dl">Downloader</h1>
+        </div>
+        <div class="card rounded-2xl p-4 mb-4">
+          <label class="block text-xs tx2 mb-1" data-i18n="dlURL">URL</label>
+          <input id="dlUrl" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono" spellcheck="false" placeholder="https://example.com/file.zip  ·  ftp://mirror/file.iso">
+          <div class="text-xs tx2 mt-3 mb-1" data-i18n="dlMode">Destination</div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-2" id="dlModeCards">
+            <button onclick="dlSetMode('discard')" id="dlmc-discard" class="text-left rounded-xl p-3 border transition" style="border-color:var(--border)">
+              <div class="text-sm font-semibold" style="color:var(--txt)">🚮 <span data-i18n="dlDiscard">Discard</span></div>
+              <div class="text-[11px] tx3 mt-1" data-i18n="dlDiscardHint">Count only — no RAM, no disk</div>
+            </button>
+            <button onclick="dlSetMode('ram')" id="dlmc-ram" class="text-left rounded-xl p-3 border transition" style="border-color:var(--border)">
+              <div class="text-sm font-semibold" style="color:var(--txt)">🧠 <span data-i18n="dlRAM">RAM</span></div>
+              <div class="text-[11px] tx3 mt-1" data-i18n="dlRAMHint">Keep the last N MB in memory</div>
+            </button>
+            <button onclick="dlSetMode('disk')" id="dlmc-disk" class="text-left rounded-xl p-3 border transition" style="border-color:var(--border)">
+              <div class="text-sm font-semibold" style="color:var(--txt)">💾 <span data-i18n="dlDisk">Save to disk</span></div>
+              <div class="text-[11px] tx3 mt-1" data-i18n="dlDiskHint">Write into a storage root</div>
+            </button>
+          </div>
+          <div id="dlOpts" class="mt-3"></div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+            <div>
+              <label class="block text-xs tx2 mb-1" data-i18n="loopCount">Loops (0=∞)</label>
+              <input id="dlLoops" type="number" min="0" value="0" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono">
+            </div>
+            <div>
+              <label class="block text-xs tx2 mb-1" data-i18n="dlInterval">Pause between loops (s)</label>
+              <input id="dlInterval" type="number" min="0" value="0" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono">
+            </div>
+            <div>
+              <label class="block text-xs tx2 mb-1" data-i18n="speedCap">Speed cap (KB/s, 0=∞)</label>
+              <input id="dlCap" type="number" min="0" value="0" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono">
+            </div>
+          </div>
+          <div class="mt-3">
+            <button onclick="dlStartTask()" class="px-5 py-2 rounded-xl btn-primary text-sm font-medium shadow transition">⏬ <span data-i18n="dlStart">Start</span></button>
+            <span id="dlStatus" class="ml-3 text-xs tx2"></span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+          <div class="card rounded-2xl p-3"><p class="text-[11px] uppercase tracking-widest tx2 mb-1" data-i18n="dlTotal">Total downloaded</p><p class="text-lg font-semibold font-mono" id="dlTotalBytes">0</p></div>
+          <div class="card rounded-2xl p-3"><p class="text-[11px] uppercase tracking-widest tx2 mb-1" data-i18n="dlSpeed">Bandwidth</p><p class="text-lg font-semibold font-mono" id="dlTotalSpeed">0 B/s</p></div>
+          <div class="card rounded-2xl p-3"><p class="text-[11px] uppercase tracking-widest tx2 mb-1" data-i18n="dlLoops">Loops</p><p class="text-lg font-semibold font-mono" id="dlTotalLoops">0</p></div>
+          <div class="card rounded-2xl p-3"><p class="text-[11px] uppercase tracking-widest tx2 mb-1" data-i18n="dlUptime">Uptime</p><p class="text-lg font-semibold font-mono" id="dlTotalUptime">—</p></div>
+        </div>
+
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-sm font-semibold" data-i18n="dlTasks">Tasks</h2>
+          <button onclick="dlRefresh()" class="px-3 py-1.5 rounded-lg inp text-xs hover:border-[var(--border2)] transition" data-i18n="refresh">↻</button>
+        </div>
+        <div id="dlTaskList" class="space-y-2">
+          <div class="card rounded-2xl p-6 text-center tx2 text-sm" data-i18n="dlNoTasks">No download tasks yet.</div>
         </div>
       </section>
 
@@ -917,7 +981,15 @@ const I18N = {
     dropToAdd: 'Drop .torrent files to add', whUrl: 'Webhook URL (ntfy / Home Assistant)', whEnabled: 'Webhook notifications',
     portTest: 'Port reachability test', portHint: 'closed or router does not support hairpin NAT',
     backupGet: 'Download backup', backupPut: 'Restore backup', backupConfirm: 'Restore this backup? Settings and torrent records will be replaced.',
-    backupDone: 'Backup restored', diskHistory: 'Free space trend'
+    backupDone: 'Backup restored', diskHistory: 'Free space trend',
+    dl: 'Downloader', dlURL: 'URL', dlMode: 'Destination',
+    dlDiscard: 'Discard', dlDiscardHint: 'Count only — no RAM, no disk',
+    dlRAM: 'RAM', dlRAMHint: 'Keep the last N MB in memory', dlDisk: 'Save to disk', dlDiskHint: 'Write into a storage root',
+    ramKeep: 'Keep last (MB)', dlDeleteEach: 'Delete file after each loop', dlDiscardNote: 'Bytes are counted and thrown away — the machine stays untouched.',
+    loopCount: 'Loops (0=∞)', dlInterval: 'Pause between loops (s)', speedCap: 'Speed cap (KB/s, 0=∞)',
+    dlStart: 'Start', dlTasks: 'Tasks', dlNoTasks: 'No download tasks yet.',
+    dlTotal: 'Total downloaded', dlSpeed: 'Bandwidth', dlLoops: 'Loops', dlUptime: 'Uptime',
+    dlRun: 'Running', dlDone: 'Done', dlErr: 'Error', dlStop2: 'Stopped', dlStop: 'Stop'
   },
   tr: {
     tagline: 'Yüksük Otu — sıfırdan yazılmış BitTorrent istemcisi', noDocker: 'Docker yok',
@@ -986,7 +1058,15 @@ const I18N = {
     dropToAdd: '.torrent dosyalarını bırakarak ekle', whUrl: 'Webhook URL (ntfy / Home Assistant)', whEnabled: 'Webhook bildirimleri',
     portTest: 'Port açıklık testi', portHint: 'kapalı veya router hairpin NAT desteklemiyor',
     backupGet: 'Yedek al', backupPut: 'Yedeği geri yükle', backupConfirm: 'Bu yedek geri yüklensin mi? Ayarlar ve torrent kayıtları değiştirilecek.',
-    backupDone: 'Yedek geri yüklendi', diskHistory: 'Boş alan trendi'
+    backupDone: 'Yedek geri yüklendi', diskHistory: 'Boş alan trendi',
+    dl: 'İndirici', dlURL: 'URL', dlMode: 'Hedef',
+    dlDiscard: 'Yok et', dlDiscardHint: 'Sadece say — RAM yok, disk yok',
+    dlRAM: 'RAM', dlRAMHint: 'Sadece son N MB bellekte tut', dlDisk: 'Diske kaydet', dlDiskHint: 'Seçili depolama köküne yazar',
+    ramKeep: 'Son (MB) tut', dlDeleteEach: 'Her turdan sonra dosyayı sil', dlDiscardNote: 'Baytlar sayılıp atılır — makine hiç etkilenmez.',
+    loopCount: 'Döngü (0=∞)', dlInterval: 'Turlar arası bekleme (sn)', speedCap: 'Hız sınırı (KB/s, 0=∞)',
+    dlStart: 'Başlat', dlTasks: 'Görevler', dlNoTasks: 'Henüz indirme görevi yok.',
+    dlTotal: 'Toplam indirilen', dlSpeed: 'Bant genişliği', dlLoops: 'Döngü', dlUptime: 'Süre',
+    dlRun: 'İniyor', dlDone: 'Bitti', dlErr: 'Hata', dlStop2: 'Durduruldu', dlStop: 'Durdur'
   },
   de: {
     tagline: 'Ein von Grund auf geschriebener BitTorrent-Client', noDocker: 'Kein Docker',
@@ -1040,7 +1120,15 @@ const I18N = {
     portTest: 'Port-Erreichbarkeitstest', portHint: 'geschlossen oder Router ohne Hairpin-NAT',
     backupGet: 'Backup herunterladen', backupPut: 'Backup wiederherstellen',
     backupConfirm: 'Dieses Backup wiederherstellen? Einstellungen und Torrent-Einträge werden ersetzt.',
-    backupDone: 'Backup wiederhergestellt', diskHistory: 'Freier Speicher-Trend'
+    backupDone: 'Backup wiederhergestellt', diskHistory: 'Freier Speicher-Trend',
+    dl: 'Downloader', dlURL: 'URL', dlMode: 'Ziel',
+    dlDiscard: 'Verwerfen', dlDiscardHint: 'Nur zählen — kein RAM, keine Festplatte',
+    dlRAM: 'RAM', dlRAMHint: 'Nur die letzten N MB im Speicher behalten', dlDisk: 'Auf Festplatte speichern', dlDiskHint: 'In das gewählte Speicherziel schreiben',
+    ramKeep: 'Letzte (MB) behalten', dlDeleteEach: 'Datei nach jedem Durchlauf löschen', dlDiscardNote: 'Bytes werden gezählt und verworfen — die Maschine bleibt unberührt.',
+    loopCount: 'Durchläufe (0=∞)', dlInterval: 'Pause zwischen Durchläufen (s)', speedCap: 'Drossel (KB/s, 0=∞)',
+    dlStart: 'Start', dlTasks: 'Aufgaben', dlNoTasks: 'Noch keine Download-Aufgaben.',
+    dlTotal: 'Insgesamt geladen', dlSpeed: 'Bandbreite', dlLoops: 'Durchläufe', dlUptime: 'Laufzeit',
+    dlRun: 'Läuft', dlDone: 'Fertig', dlErr: 'Fehler', dlStop2: 'Gestoppt', dlStop: 'Stopp'
   },
   fr: {
     tagline: 'Un client BitTorrent écrit from scratch', noDocker: 'Pas de Docker',
@@ -1094,7 +1182,15 @@ const I18N = {
     portTest: 'Test d’accessibilité du port', portHint: 'fermé ou routeur sans hairpin NAT',
     backupGet: 'Télécharger la sauvegarde', backupPut: 'Restaurer la sauvegarde',
     backupConfirm: 'Restaurer cette sauvegarde ? Les réglages et torrents seront remplacés.',
-    backupDone: 'Sauvegarde restaurée', diskHistory: 'Tendance d’espace libre'
+    backupDone: 'Sauvegarde restaurée', diskHistory: 'Tendance d’espace libre',
+    dl: 'Téléchargeur', dlURL: 'URL', dlMode: 'Destination',
+    dlDiscard: 'Jeter', dlDiscardHint: 'Compter seulement — ni RAM ni disque',
+    dlRAM: 'RAM', dlRAMHint: 'Garder les derniers N Mo en mémoire', dlDisk: 'Enregistrer sur disque', dlDiskHint: 'Écrit dans la racine choisie',
+    ramKeep: 'Garder les derniers (Mo)', dlDeleteEach: 'Supprimer le fichier après chaque tour', dlDiscardNote: 'Les octets sont comptés puis jetés — la machine reste intacte.',
+    loopCount: 'Tours (0=∞)', dlInterval: 'Pause entre les tours (s)', speedCap: 'Limite (Ko/s, 0=∞)',
+    dlStart: 'Démarrer', dlTasks: 'Tâches', dlNoTasks: 'Aucune tâche de téléchargement.',
+    dlTotal: 'Total téléchargé', dlSpeed: 'Bande passante', dlLoops: 'Tours', dlUptime: 'Durée',
+    dlRun: 'En cours', dlDone: 'Terminé', dlErr: 'Erreur', dlStop2: 'Arrêté', dlStop: 'Arrêter'
   },
   es: {
     tagline: 'Un cliente BitTorrent escrito desde cero', noDocker: 'Sin Docker',
@@ -1148,7 +1244,15 @@ const I18N = {
     portTest: 'Prueba de acceso al puerto', portHint: 'cerrado o router sin hairpin NAT',
     backupGet: 'Descargar copia de seguridad', backupPut: 'Restaurar copia de seguridad',
     backupConfirm: '¿Restaurar esta copia? Se reemplazarán ajustes y torrents.',
-    backupDone: 'Copia restaurada', diskHistory: 'Tendencia de espacio libre'
+    backupDone: 'Copia restaurada', diskHistory: 'Tendencia de espacio libre',
+    dl: 'Descargador', dlURL: 'URL', dlMode: 'Destino',
+    dlDiscard: 'Descartar', dlDiscardHint: 'Solo contar — sin RAM ni disco',
+    dlRAM: 'RAM', dlRAMHint: 'Mantener los últimos N MB en memoria', dlDisk: 'Guardar en disco', dlDiskHint: 'Escribe en la raíz elegida',
+    ramKeep: 'Mantener últimos (MB)', dlDeleteEach: 'Borrar el archivo tras cada vuelta', dlDiscardNote: 'Los bytes se cuentan y se descartan — la máquina no se ve afectada.',
+    loopCount: 'Vueltas (0=∞)', dlInterval: 'Pausa entre vueltas (s)', speedCap: 'Límite (KB/s, 0=∞)',
+    dlStart: 'Iniciar', dlTasks: 'Tareas', dlNoTasks: 'Aún no hay tareas de descarga.',
+    dlTotal: 'Total descargado', dlSpeed: 'Ancho de banda', dlLoops: 'Vueltas', dlUptime: 'Tiempo activo',
+    dlRun: 'Ejecutando', dlDone: 'Hecho', dlErr: 'Error', dlStop2: 'Detenida', dlStop: 'Detener'
   },
   it: {
     tagline: 'Un client BitTorrent scritto da zero', noDocker: 'Niente Docker',
@@ -1202,7 +1306,15 @@ const I18N = {
     portTest: 'Test raggiungibilità porta', portHint: 'chiusa o router senza hairpin NAT',
     backupGet: 'Scarica backup', backupPut: 'Ripristina backup',
     backupConfirm: 'Ripristinare questo backup? Impostazioni e torrent verranno sostituiti.',
-    backupDone: 'Backup ripristinato', diskHistory: 'Trend spazio libero'
+    backupDone: 'Backup ripristinato', diskHistory: 'Trend spazio libero',
+    dl: 'Downloader', dlURL: 'URL', dlMode: 'Destinazione',
+    dlDiscard: 'Scarta', dlDiscardHint: 'Solo conteggio — né RAM né disco',
+    dlRAM: 'RAM', dlRAMHint: 'Mantiene gli ultimi N MB in memoria', dlDisk: 'Salva su disco', dlDiskHint: 'Scrive nella radice scelta',
+    ramKeep: 'Mantieni ultimi (MB)', dlDeleteEach: 'Elimina il file dopo ogni giro', dlDiscardNote: 'I byte vengono contati e buttati — la macchina resta intatta.',
+    loopCount: 'Giri (0=∞)', dlInterval: 'Pausa tra i giri (s)', speedCap: 'Limite (KB/s, 0=∞)',
+    dlStart: 'Avvia', dlTasks: 'Attività', dlNoTasks: 'Nessuna attività di download.',
+    dlTotal: 'Totale scaricato', dlSpeed: 'Larghezza di banda', dlLoops: 'Giri', dlUptime: 'Uptime',
+    dlRun: 'In corso', dlDone: 'Fatto', dlErr: 'Errore', dlStop2: 'Fermato', dlStop: 'Ferma'
   },
   pt: {
     tagline: 'Um cliente BitTorrent escrito do zero', noDocker: 'Sem Docker',
@@ -1256,7 +1368,15 @@ const I18N = {
     portTest: 'Teste de acessibilidade da porta', portHint: 'fechada ou roteador sem hairpin NAT',
     backupGet: 'Baixar backup', backupPut: 'Restaurar backup',
     backupConfirm: 'Restaurar este backup? Ajustes e torrents serão substituídos.',
-    backupDone: 'Backup restaurado', diskHistory: 'Tendência de espaço livre'
+    backupDone: 'Backup restaurado', diskHistory: 'Tendência de espaço livre',
+    dl: 'Baixador', dlURL: 'URL', dlMode: 'Destino',
+    dlDiscard: 'Descartar', dlDiscardHint: 'Apenas contar — sem RAM nem disco',
+    dlRAM: 'RAM', dlRAMHint: 'Mantém os últimos N MB na memória', dlDisk: 'Salvar no disco', dlDiskHint: 'Grava na raiz escolhida',
+    ramKeep: 'Manter últimos (MB)', dlDeleteEach: 'Excluir o arquivo após cada volta', dlDiscardNote: 'Os bytes são contados e descartados — a máquina fica intacta.',
+    loopCount: 'Voltas (0=∞)', dlInterval: 'Pausa entre voltas (s)', speedCap: 'Limite (KB/s, 0=∞)',
+    dlStart: 'Iniciar', dlTasks: 'Tarefas', dlNoTasks: 'Nenhuma tarefa de download ainda.',
+    dlTotal: 'Total baixado', dlSpeed: 'Largura de banda', dlLoops: 'Voltas', dlUptime: 'Tempo',
+    dlRun: 'Baixando', dlDone: 'Concluído', dlErr: 'Erro', dlStop2: 'Parado', dlStop: 'Parar'
   },
   ru: {
     tagline: 'BitTorrent-клиент, написанный с нуля', noDocker: 'Без Docker',
@@ -1310,7 +1430,15 @@ const I18N = {
     portTest: 'Проверка доступности порта', portHint: 'закрыт или роутер без hairpin NAT',
     backupGet: 'Скачать бэкап', backupPut: 'Восстановить бэкап',
     backupConfirm: 'Восстановить этот бэкап? Настройки и торренты будут заменены.',
-    backupDone: 'Бэкап восстановлен', diskHistory: 'Тренд свободного места'
+    backupDone: 'Бэкап восстановлен', diskHistory: 'Тренд свободного места',
+    dl: 'Загрузчик', dlURL: 'URL', dlMode: 'Назначение',
+    dlDiscard: 'Выбросить', dlDiscardHint: 'Только счёт — ни RAM, ни диск',
+    dlRAM: 'RAM', dlRAMHint: 'Держит последние N МБ в памяти', dlDisk: 'Сохранить на диск', dlDiskHint: 'Пишет в выбранный корень',
+    ramKeep: 'Хранить последние (МБ)', dlDeleteEach: 'Удалять файл после каждого круга', dlDiscardNote: 'Байты считаются и выбрасываются — машина не затрагивается.',
+    loopCount: 'Круги (0=∞)', dlInterval: 'Пауза между кругами (с)', speedCap: 'Ограничение (КБ/с, 0=∞)',
+    dlStart: 'Старт', dlTasks: 'Задачи', dlNoTasks: 'Задач загрузки пока нет.',
+    dlTotal: 'Всего загружено', dlSpeed: 'Пропускная способность', dlLoops: 'Круги', dlUptime: 'Время',
+    dlRun: 'Работает', dlDone: 'Готово', dlErr: 'Ошибка', dlStop2: 'Остановлено', dlStop: 'Стоп'
   },
   ja: {
     tagline: 'ゼロから書いたBitTorrentクライアント', noDocker: 'Docker不使用',
@@ -1364,7 +1492,15 @@ const I18N = {
     portTest: 'ポート到達性テスト', portHint: '閉じているか、ルータがhairpin NAT非対応',
     backupGet: 'バックアップ取得', backupPut: 'バックアップ復元',
     backupConfirm: 'このバックアップを復元しますか？設定とトレント記録が置き換わります。',
-    backupDone: 'バックアップを復元しました', diskHistory: '空き容量の推移'
+    backupDone: 'バックアップを復元しました', diskHistory: '空き容量の推移',
+    dl: 'ダウンローダー', dlURL: 'URL', dlMode: '保存先',
+    dlDiscard: '破棄', dlDiscardHint: 'カウントのみ — RAMもディスクも使わない',
+    dlRAM: 'RAM', dlRAMHint: '最新のN MBだけメモリに保持', dlDisk: 'ディスクに保存', dlDiskHint: '選択したルートに書き込む',
+    ramKeep: '末尾を保持 (MB)', dlDeleteEach: '各ループ後にファイル削除', dlDiscardNote: 'バイトを数えて捨てるだけ — マシンには何も起きません。',
+    loopCount: 'ループ回数 (0=∞)', dlInterval: 'ループ間の待機 (秒)', speedCap: '速度制限 (KB/s, 0=無制限)',
+    dlStart: '開始', dlTasks: 'タスク', dlNoTasks: 'ダウンロードタスクはまだありません。',
+    dlTotal: '合計ダウンロード', dlSpeed: '帯域幅', dlLoops: 'ループ', dlUptime: '稼働時間',
+    dlRun: '実行中', dlDone: '完了', dlErr: 'エラー', dlStop2: '停止済み', dlStop: '停止'
   },
   zh: {
     tagline: '从头编写的BitTorrent客户端', noDocker: '无Docker',
@@ -1418,7 +1554,15 @@ const I18N = {
     portTest: '端口连通性测试', portHint: '已关闭或路由器不支持 hairpin NAT',
     backupGet: '下载备份', backupPut: '恢复备份',
     backupConfirm: '恢复此备份？设置和种子记录将被替换。',
-    backupDone: '备份已恢复', diskHistory: '空闲空间趋势'
+    backupDone: '备份已恢复', diskHistory: '空闲空间趋势',
+    dl: '下载器', dlURL: 'URL', dlMode: '目标',
+    dlDiscard: '丢弃', dlDiscardHint: '仅计数 — 不占内存、不写磁盘',
+    dlRAM: '内存', dlRAMHint: '仅在内存保留最近 N MB', dlDisk: '保存到磁盘', dlDiskHint: '写入所选存储根目录',
+    ramKeep: '保留末尾 (MB)', dlDeleteEach: '每轮后删除文件', dlDiscardNote: '字节被计数后丢弃 — 机器不受影响。',
+    loopCount: '循环次数 (0=∞)', dlInterval: '循环间隔 (秒)', speedCap: '速度上限 (KB/s, 0=无限)',
+    dlStart: '开始', dlTasks: '任务', dlNoTasks: '还没有下载任务。',
+    dlTotal: '累计下载', dlSpeed: '带宽', dlLoops: '循环', dlUptime: '运行时长',
+    dlRun: '进行中', dlDone: '已完成', dlErr: '错误', dlStop2: '已停止', dlStop: '停止'
   },
   ar: {
     tagline: 'عميل BitTorrent مكتوب من الصفر', noDocker: 'بدون Docker',
@@ -1472,7 +1616,15 @@ const I18N = {
     portTest: 'اختبار وصول المنفذ', portHint: 'مغلق أو الراوتر لا يدعم hairpin NAT',
     backupGet: 'تنزيل نسخة احتياطية', backupPut: 'استعادة النسخة الاحتياطية',
     backupConfirm: 'استعادة هذه النسخة؟ ستُستبدل الإعدادات وسجلات التورنتات.',
-    backupDone: 'تمت استعادة النسخة الاحتياطية', diskHistory: 'اتجاه المساحة الحرة'
+    backupDone: 'تمت استعادة النسخة الاحتياطية', diskHistory: 'اتجاه المساحة الحرة',
+    dl: 'المنزّل', dlURL: 'الرابط', dlMode: 'الوجهة',
+    dlDiscard: 'إهمال', dlDiscardHint: 'العدّ فقط — لا ذاكرة ولا قرص',
+    dlRAM: 'الذاكرة', dlRAMHint: 'يحتفظ بآخر N ميجابايت في الذاكرة', dlDisk: 'حفظ على القرص', dlDiskHint: 'يكتب في الجذر المختار',
+    ramKeep: 'الاحتفاظ بآخر (ميجابايت)', dlDeleteEach: 'حذف الملف بعد كل دورة', dlDiscardNote: 'تُحسب البايتات ثم تُهمَل — لا يتأثر الجهاز.',
+    loopCount: 'الدورات (0=∞)', dlInterval: 'الانتظار بين الدورات (ث)', speedCap: 'حد السرعة (كيلوبايت/ث، 0=∞)',
+    dlStart: 'بدء', dlTasks: 'المهام', dlNoTasks: 'لا توجد مهام تنزيل بعد.',
+    dlTotal: 'إجمالي التنزيل', dlSpeed: 'عرض النطاق', dlLoops: 'الدورات', dlUptime: 'مدة التشغيل',
+    dlRun: 'قيد التنفيذ', dlDone: 'تم', dlErr: 'خطأ', dlStop2: 'متوقف', dlStop: 'إيقاف'
   },
   hi: {
     tagline: 'शुरू से लिखा गया BitTorrent क्लाइंट', noDocker: 'Docker रहित',
@@ -1526,7 +1678,15 @@ const I18N = {
     portTest: 'पोर्ट पहुंच परीक्षण', portHint: 'बंद या राउटर hairpin NAT समर्थन नहीं करता',
     backupGet: 'बैकअप डाउनलोड', backupPut: 'बैकअप पुनर्स्थापित करें',
     backupConfirm: 'यह बैकअप पुनर्स्थापित करें? सेटिंग्स और टोरेंट रिकॉर्ड बदल जाएंगे।',
-    backupDone: 'बैकअप पुनर्स्थापित हुआ', diskHistory: 'खाली स्थान रुझान'
+    backupDone: 'बैकअप पुनर्स्थापित हुआ', diskHistory: 'खाली स्थान रुझान',
+    dl: 'डाउनलोडर', dlURL: 'URL', dlMode: 'गंतव्य',
+    dlDiscard: 'छोड़ें', dlDiscardHint: 'केवल गिनती — RAM नहीं, डिस्क नहीं',
+    dlRAM: 'RAM', dlRAMHint: 'अंतिम N MB ही मेमोरी में रखे', dlDisk: 'डिस्क पर सहेजें', dlDiskHint: 'चुने गए रूट में लिखता है',
+    ramKeep: 'अंतिम (MB) रखें', dlDeleteEach: 'हर चक्कर के बाद फ़ाइल हटाएं', dlDiscardNote: 'बाइट गिने और फेंके जाते हैं — मशीन असरदार नहीं होती।',
+    loopCount: 'चक्कर (0=∞)', dlInterval: 'चक्करों के बीच ठहराव (से)', speedCap: 'गति सीमा (KB/s, 0=असीमित)',
+    dlStart: 'शुरू', dlTasks: 'कार्य', dlNoTasks: 'अभी कोई डाउनलोड कार्य नहीं।',
+    dlTotal: 'कुल डाउनलोड', dlSpeed: 'बैंडविड्थ', dlLoops: 'चक्कर', dlUptime: 'अपटाइम',
+    dlRun: 'चल रहा', dlDone: 'पूर्ण', dlErr: 'त्रुटि', dlStop2: 'रुका', dlStop: 'रोकें'
   }
 };
 
@@ -1586,6 +1746,7 @@ function show(name) {
   if (name === 'settings') loadSettings();
   if (name === 'guide') renderGuide();
   if (name === 'files') openFiles();
+  if (name === 'dl') { dlSetMode(dlMode); dlRefresh(); }
 }
 
 // ---------- formatting ----------
@@ -3226,6 +3387,114 @@ async function fileShare(p) {
   } catch (e) { alert(e.message); }
 }
 
+// ---------- downloader ----------
+let dlMode = 'discard';
+const dlModes = ['discard', 'ram', 'disk'];
+let dlTasks = [];
+
+function dlSetMode(m) {
+  if (!dlModes.includes(m)) m = 'discard';
+  dlMode = m;
+  dlModes.forEach(x => {
+    const el = document.getElementById('dlmc-' + x);
+    if (el) el.style.borderColor = x === m ? 'var(--accent2)' : 'var(--border)';
+  });
+  const box = document.getElementById('dlOpts');
+  if (!box) return;
+  if (m === 'ram') {
+    box.innerHTML = `<div><label class="block text-xs tx2 mb-1" data-i18n="ramKeep">Keep last (MB)</label><input id="dlRamMB" type="number" min="1" max="1024" value="16" class="w-full md:w-40 rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono"></div>`;
+  } else if (m === 'disk') {
+    const opts = (disksData || []).map(d => `<option value="${esc(d.path)}">${esc(diskLabel(d.path))}</option>`).join('');
+    box.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div><label class="block text-xs tx2 mb-1" data-i18n="disk">Disk</label><select id="dlDisk" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none">${opts}</select></div>
+      <div><label class="block text-xs tx2 mb-1" data-i18n="category">Folder</label><input id="dlFolder" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono" placeholder="test"></div>
+      <label class="flex items-center gap-2 text-xs tx2 cursor-pointer md:col-span-2"><input type="checkbox" id="dlDelEach" class="accent-[var(--accent2)]"> <span data-i18n="dlDeleteEach">Delete file after each loop</span></label>
+    </div>`;
+  } else {
+    box.innerHTML = `<div class="text-[11px] tx3" data-i18n="dlDiscardNote">Bytes are counted and thrown away — the machine stays untouched.</div>`;
+  }
+  applyLang();
+}
+
+async function dlStartTask() {
+  const url = document.getElementById('dlUrl').value.trim();
+  if (!url) return;
+  const st = document.getElementById('dlStatus');
+  const body = {
+    url, mode: dlMode,
+    loops: parseInt(document.getElementById('dlLoops').value) || 0,
+    interval: parseInt(document.getElementById('dlInterval').value) || 0,
+    speed_cap: (parseInt(document.getElementById('dlCap').value) || 0) * 1024
+  };
+  if (dlMode === 'ram') body.ram_mb = parseInt((document.getElementById('dlRamMB') || {}).value) || 16;
+  if (dlMode === 'disk') {
+    body.disk = (document.getElementById('dlDisk') || {}).value || '';
+    body.category = ((document.getElementById('dlFolder') || {}).value || '').trim();
+    body.delete_each = document.getElementById('dlDelEach') ? document.getElementById('dlDelEach').checked : false;
+  }
+  try {
+    await api('/dl', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    document.getElementById('dlUrl').value = '';
+    dlRefresh();
+  } catch (e) { st.innerHTML = `<span style="color:var(--bad)">${esc(e.message)}</span>`; }
+}
+
+async function dlRefresh() {
+  const box = document.getElementById('dlTaskList');
+  if (!box) return;
+  try {
+    const d = await api('/dl');
+    dlTasks = d.tasks || [];
+    const tot = d.total || {};
+    document.getElementById('dlTotalBytes').textContent = fmtBytes(tot.bytes || 0);
+    document.getElementById('dlTotalSpeed').textContent = fmtSpeed(tot.speed || 0);
+    document.getElementById('dlTotalLoops').textContent = tot.loops || 0;
+    const up = tot.started_at ? Math.max(0, Math.floor((Date.now() - new Date(tot.started_at).getTime())/1000)) : 0;
+    document.getElementById('dlTotalUptime').textContent = up >= 3600 ? (up/3600).toFixed(1)+'h' : (up >= 60 ? Math.floor(up/60)+'m' : up+'s');
+    if (!dlTasks.length) {
+      box.innerHTML = `<div class="card rounded-2xl p-6 text-center tx2 text-sm">${esc(t('dlNoTasks'))}</div>`;
+      return;
+    }
+    box.innerHTML = dlTasks.map(tk => {
+      const stateTxt = { running: t('dlRun'), done: t('dlDone'), error: t('dlErr'), stopped: t('dlStop2') }[tk.state] || tk.state;
+      const stateColor = tk.state === 'running' ? 'var(--accent2)' : (tk.state === 'error' ? 'var(--bad)' : 'var(--txt3)');
+      const modeTxt = { discard: '🚮 ' + t('dlDiscard'), ram: '🧠 RAM', disk: '💾 ' + t('dlDisk') }[tk.mode] || tk.mode;
+      return `<div class="card rounded-2xl p-3">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="chip px-2 py-0.5 rounded-full text-[10px] font-semibold" style="color:${stateColor}">${esc(stateTxt)}</span>
+          <span class="font-mono text-xs truncate flex-1 min-w-0" style="color:var(--txt)" title="${esc(tk.url)}">${esc(tk.url)}</span>
+          <span class="shrink-0 px-2 py-0.5 rounded-full chip text-[10px] tx2">${esc(modeTxt)}</span>
+          <span class="shrink-0 text-xs font-mono tx2">${fmtBytes(tk.bytes)}</span>
+          <span class="shrink-0 text-xs font-mono tx3">${fmtSpeed(tk.speed)}</span>
+          ${tk.state === 'running' ? `<button onclick="dlStopTask('${esc(tk.id)}')" class="px-1.5 text-xs" style="color:var(--bad)" title="${esc(t('dlStop'))}">■</button>` : ''}
+          <button onclick="dlRemoveTask('${esc(tk.id)}')" class="px-1.5 text-xs tx3" title="${esc(t('delete'))}">✕</button>
+        </div>
+        <div class="flex flex-wrap gap-x-4 gap-y-0.5 mt-1.5 text-[11px] tx3 font-mono">
+          ${t('dlLoops')}: ${tk.loops_done}${tk.loops > 0 ? '/' + tk.loops : ''} · ${t('dlUptime')}: ${tk.uptime_sec}s
+          ${tk.mode === 'ram' ? ` · RAM: ${tk.ram_mb} MB` : ''}
+          ${tk.mode === 'disk' && tk.save_dir ? ` · 📁 ${esc(tk.save_dir)}` : ''}
+          ${tk.speed_cap > 0 ? ` · ≤ ${fmtBytes(tk.speed_cap)}/s` : ''}
+          ${tk.error ? ` · <span style="color:var(--bad)">${esc(tk.error)}</span>` : ''}
+        </div>
+        ${tk.mode === 'ram' && tk.bytes > 0 ? `<button onclick="dlPreview('${esc(tk.id)}')" class="mt-1.5 px-2 py-0.5 rounded-md inp text-[10px]" style="color:var(--txt)">👁 head</button>` : ''}
+      </div>`;
+    }).join('');
+  } catch (e) { /* transient */ }
+}
+
+async function dlStopTask(id) {
+  try { await api(`/dl/${id}/stop`, { method:'POST' }); dlRefresh(); } catch (e) { alert(e.message); }
+}
+async function dlRemoveTask(id) {
+  try { await api(`/dl/${id}`, { method:'DELETE' }); dlRefresh(); } catch (e) { alert(e.message); }
+}
+async function dlPreview(id) {
+  try {
+    const r = await api(`/dl/${id}/ram`);
+    prompt(t('dlRAM') + ' (head):', r.head);
+  } catch (e) { alert(e.message); }
+}
+
 // ---------- init ----------
 applyTheme();
 applyLang();
@@ -3236,6 +3505,7 @@ setInterval(refreshTorrentsFromAPI, 4000);
 setInterval(refreshStats, 4000);
 setInterval(renderFeedSummary, 10000);
 setInterval(refreshStorage, 30000);
+setInterval(() => { if (document.getElementById('view-dl').classList.contains('active')) dlRefresh(); }, 2000);
 ensureAuth();
 
 if ('serviceWorker' in navigator) {

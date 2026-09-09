@@ -17,6 +17,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/alplix/digitalis/dl"
 	"github.com/alplix/digitalis/metainfo"
 	"github.com/alplix/digitalis/torrente"
 )
@@ -37,6 +38,8 @@ type Server struct {
 	rssMu      sync.Mutex
 	feeds      []rssFeed
 	rssSpawned bool
+
+	dl *dl.Manager
 }
 
 // NewServer creates a web server around an engine. cfgDir is the persistent
@@ -47,6 +50,7 @@ func NewServer(engine *torrente.Engine, saveDir, cfgDir string) *Server {
 		saveDir: saveDir,
 		hub:     newWSHub(),
 		cfgDir:  cfgDir,
+		dl:      dl.NewManager(),
 	}
 	go s.broadcastLoop()
 
@@ -243,6 +247,11 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /api/backup", s.exportBackup)
 	mux.HandleFunc("POST /api/backup", s.importBackup)
 	mux.HandleFunc("GET /api/disk-history", s.diskHistory)
+	mux.HandleFunc("GET /api/dl", s.dlList)
+	mux.HandleFunc("POST /api/dl", s.dlStart)
+	mux.HandleFunc("DELETE /api/dl/{id}", s.dlRemove)
+	mux.HandleFunc("POST /api/dl/{id}/stop", s.dlStop)
+	mux.HandleFunc("GET /api/dl/{id}/ram", s.dlRAMPreview)
 	mux.HandleFunc("POST /api/bulk", s.bulkOp)
 	mux.HandleFunc("GET /api/files", s.listFiles)
 	mux.HandleFunc("GET /api/files/download", s.downloadFile)
