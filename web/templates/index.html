@@ -2780,7 +2780,7 @@ async function fileList() {
     const qs = new URLSearchParams();
     if (fileDisk) qs.set('disk', fileDisk);
     if (filePath) qs.set('path', filePath);
-    fileEntries = await api('/api/files?' + qs.toString());
+    fileEntries = await api('/files?' + qs.toString());
     document.getElementById('filePath').textContent = '/' + filePath;
     if (!fileEntries.length) {
       box.innerHTML = `<div class="py-6 text-center tx2">${esc(t('empty'))}</div>`;
@@ -2814,7 +2814,7 @@ async function fileMkdir() {
   const n = prompt(t('newFolder'));
   if (!n || !n.trim()) return;
   try {
-    await api('/api/files/mkdir', { method:'POST', headers:{'Content-Type':'application/json'},
+    await api('/files/mkdir', { method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ disk: fileDisk, path: fileJoin(filePath, n.trim()).replace(/\/+/g,'/') }) });
     await fileList();
   } catch (e) { alert(e.message); }
@@ -2828,7 +2828,7 @@ async function fileUpload(input) {
   if (fileDisk) qs.set('disk', fileDisk);
   if (filePath) qs.set('path', filePath);
   try {
-    await fetch(API + '/api/files/upload?' + qs.toString(), { method:'POST', body: fd });
+    await fetch(API + '/files/upload?' + qs.toString(), { method:'POST', body: fd });
     await fileList();
   } catch (e) { alert(e.message); }
   input.value = '';
@@ -2840,7 +2840,7 @@ async function fileRename(p) {
   const nn = prompt(t('rename'), old);
   if (!nn || !nn.trim() || nn.trim() === old) return;
   try {
-    await api('/api/files/move', { method:'POST', headers:{'Content-Type':'application/json'},
+    await api('/files/move', { method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ disk: fileDisk, src: p, dst: fileJoin(base, nn.trim()).replace(/\/+/g,'/') }) });
     await fileList();
   } catch (e) { alert(e.message); }
@@ -2848,7 +2848,7 @@ async function fileRename(p) {
 async function fileDel(p) {
   if (!confirm(t('delete') + ': ' + p + '?')) return;
   try {
-    await api('/api/files/delete', { method:'POST', headers:{'Content-Type':'application/json'},
+    await api('/files/delete', { method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ disk: fileDisk, path: p }) });
     await fileList();
   } catch (e) { alert(e.message); }
@@ -2857,7 +2857,7 @@ async function fileShare(p) {
   const h = parseInt(prompt(t('shareHours'), '24'), 10);
   if (isNaN(h) || h <= 0) return;
   try {
-    const r = await api('/api/files/share', { method:'POST', headers:{'Content-Type':'application/json'},
+    const r = await api('/files/share', { method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ disk: fileDisk, path: p, hours: h }) });
     const abs = location.origin + r.url;
     (navigator.clipboard ? navigator.clipboard.writeText(abs) : Promise.reject()).then(
