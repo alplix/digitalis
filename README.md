@@ -14,6 +14,8 @@
 
 *Zero torrent libraries. Zero bloat. One beautiful binary.*
 
+<img src="docs/screenshot-dashboard.png" alt="Digitalis dashboard" width="900"/>
+
 </div>
 
 ---
@@ -32,49 +34,58 @@ does it all with a flower on its lapel. 🌺
 
 ## ✨ Features
 
+### Core engine
+
 | | Feature | Details |
 |---|---------|---------|
 | 🔄 | **Native protocol** | Tracker announce (HTTP & UDP), peer-wire protocol, bitfield — all hand-written |
-| 🧲 | **Magnet metadata** | BEP-9 `ut_metadata` over BEP-10 extensions — magnets resolve to full metadata directly from peers |
-| 📡 | **DHT + PEX** | Embedded distributed hash table node (`get_peers`/`announce`) + peer exchange between connected peers |
-| 🔁 | **Torrent persistence** | Every torrent is recorded and restored automatically across restarts (`torrents.json`) |
-| 🔔 | **Notifications** | WebSocket push on download complete & metadata fetched, shown as toasts in the UI |
-| 🖇 | **Bulk actions** | Multi-select pause / resume / delete across torrents |
-| ⏱ | **Per-torrent limit** | Individual download cap per torrent, set from the detail panel |
-| 🎯 | **Rare-first picking** | Smart piece selection for faster, fairer downloads |
-| 🌐 | **Multilingual UI** | **12 languages** with a live switcher: EN, TR, DE, FR, ES, IT, PT, RU, JA, ZH, AR, HI |
-| 🗂️ | **Categories** | Nested folders (`unix/linux/debian`), created on the fly, save dir per torrent, drag-free moving |
-| 🔌 | **Flexible input** | Raw `.torrent`, magnet URI, or file upload — paste in bulk |
-| 📈 | **Dashboard stats** | Hourly / daily / monthly / yearly traffic charts + per-torrent counters |
-| 📡 | **Live chart** | Per-second traffic via a built-in WebSocket feed (`/ws`) — no polling jitter |
-| 🔍 | **Torrent detail** | Drawer with piece map, per-file progress, health, trackers, comment/creator, rate limit |
-| 🧹 | **Search & filter** | Instant search, state/category filters and name/size/progress/speed sorting |
-| 📖 | **Guide view** | In-app rehber/guide covering magnets, settings, persistence and discovery |
-| 🌗 | **Theme toggle** | Digital-forest dark mode *and* a light variant, remembered in `localStorage` |
-| 🌍 | **Country log** | Every peer connection geolocated via an embedded IP→country table (no API calls) |
-| 🔗 | **Custom trackers** | Add/remove trackers per torrent over HTTP, UDP or WebSocket from the UI |
-| 📁 | **Watch folder** | Drop `.torrent` files in a directory — auto-added & seeded |
-| 🚀 | **Speed control** | Global download & upload rate limits, plus a daily upload cap (auto-pause at midnight-reset) |
-| 💾 | **Reboot-proof** | Settings, statistics & torrents persist to disk; ships with a ready-made `systemd` unit |
-| 🎨 | **Themer's dream** | Deep forest-green "digital woods" theme, with light/dark toggle |
+| 🧲 | **Magnet metadata** | BEP-9 `ut_metadata` over BEP-10 — magnets resolve to full metadata straight from peers |
+| 📡 | **DHT + PEX** | Embedded DHT node (`get_peers`/`announce`) + peer exchange between connected peers |
+| 🎯 | **Rare-first picking** | Smart piece selection with streaming-priority windows |
+| 👥 | **Peer list** | Live peers per torrent: IP, country, client name, progress, choke flags, ↑↓ totals |
+| 🧩 | **Selective download** | Tick the files you want, untick the rest — pieces of skipped files are never fetched |
+| ⏬ | **.torrent export** | Every torrent (including magnets that resolved metadata) can be exported back as a `.torrent` file |
+| 🔁 | **Persistence** | Torrents, settings, statistics and RSS feeds survive restarts — no manual re-add |
+
+### Web dashboard
+
+| | Feature | Details |
+|---|---------|---------|
+| 📈 | **Live dashboard** | KPI cards, 1 Hz live transfer chart over WebSocket, activity charts (day / month / year / all) |
+| 🔍 | **Torrent manager** | Instant search, state/category filters, 5 sort modes, multi-select bulk pause/resume/delete |
+| 🧲 | **Drag & drop add** | Drop `.torrent` files anywhere on the page, paste a magnet — it's added |
+| 🗂️ | **Categories** | Nested folders (`unix/linux/debian`) with a visual folder-creation dialog and disk targeting |
+| 🤖 | **Auto-folder rules** | Regex → folder rules; a magnet lands in the right library folder the moment metadata arrives |
+| 🌐 | **Multilingual UI** | **12 languages** with live switching: EN, TR, DE, FR, ES, IT, PT, RU, JA, ZH, AR, HI |
+| 📖 | **Guide** | Built-in guide covering magnets, categories, settings and troubleshooting |
+| 🌗 | **Dark & light theme** | Digital-forest palette, remembered per browser |
+| 📱 | **PWA** | Installable web app — runs like a native app on desktop and mobile |
+
+### Storage & automation
+
+| | Feature | Details |
+|---|---------|---------|
+| 💽 | **Multi-disk storage** | Register extra storage roots; move torrents between disks and categories |
+| 🛡️ | **Disk guard** | Free space below your threshold? Downloads pause automatically and resume when space recovers |
+| 🗑️ | **Trash with retention** | Deleted torrents move to `.trash` and purge after N days — no more accidental data loss |
+| 🚦 | **Download queue** | Cap simultaneous downloads; the rest wait and start in add order |
+| 📁 | **File manager** | Browse / upload / download / mkdir / move / rename / delete across every registered disk |
+| 🔗 | **Share links** | Tokenized, expiring download links for any file — perfect for LAN sharing |
+| 📊 | **Disk history** | 7-day free-space trend sparkline per disk |
+| 🔔 | **Telegram + Webhook** | Get notified on completion, share-goal reached or disk-guard events (ntfy.sh / Home Assistant ready) |
+| 🌙 | **Night mode** | Quiet hours with rate caps or a full pause window |
+| 🎯 | **Ratio & seed-day goals** | Stop or remove a torrent once it reaches its share target — global or per torrent |
+| 🔐 | **Access protection** | Optional access token for the whole UI/API; media streams carry it automatically |
+| 🩺 | **Port check** | One click: is your peer port reachable from the internet? |
+| 💾 | **Backup / restore** | One JSON file with all settings, torrent records and RSS feeds — move hosts in minutes |
 
 ---
 
 ## 🖼️ Screenshot
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│  🌸 Digitalis  [Choose language ▾] [No Docker] [Port 51413] │
-│  ┌───────────┐ ┌───────────┐ ┌───────────┐ ┌──────────────┐ │
-│  │ Total  3  │ │ Down  1   │ │ Seed  2   │ │ Upload 1.2GB │ │
-│  └───────────┘ └───────────┘ └───────────┘ └──────────────┘ │
-│  Add torrent:  magnet:?xt=urn:btih:...          [ Add ]     │
-│  ┌────────────────────────────────────────────────────────┐ │
-│  │ ▸ Ubuntu 24.04 Desktop          [downloading] 45% ▓▓  │ │
-│  │   ↓ 1.2 MB/s   ↑ 0 B/s   Peer: 12   Seed/Leech 300/22  │ │
-│  └────────────────────────────────────────────────────────┘ │
-└──────────────────────────────────────────────────────────────┘
-```
+The dashboard — dark digital-forest theme, live transfer chart, storage & feed panels:
+
+<img src="docs/screenshot-dashboard.png" alt="Digitalis dashboard" width="900"/>
 
 ---
 
@@ -104,7 +115,9 @@ go build -o digitalis ./cmd/digitalis
 
 Then open the dashboard: **`http://YOUR-SERVER:1919/`** 🎉
 
-> 🔓 Open port `51413` on your router for inbound peer connections (better seeding).
+> 🔓 Forward port `51413` on your router for inbound peer connections —
+> the **Settings → Client → Port reachability test** button tells you instantly
+> whether it worked.
 
 ---
 
@@ -137,35 +150,62 @@ sudo systemctl enable --now digitalis
 
 ---
 
+## 🛡️ Automation & protection
+
+Everything lives under **Settings → Automation & protection**:
+
+- **Disk guard** — set a free-space floor in GB. When a storage root dips below it,
+  all downloading torrents on *that* root pause and a badge appears on the Storage
+  page. Space recovers → the queue starts them again.
+- **Download queue** — `max_active_downloads` keeps only N torrents downloading;
+  the rest wait (⏳ badge) and start in the order they were added.
+- **Trash retention** — removed torrents land in `<root>/.trash` and are purged
+  after N days (0 = delete immediately). Empty it manually per disk from the
+  Storage page.
+- **Telegram / Webhook** — bot token + chat id, or any webhook URL (ntfy.sh,
+  Home Assistant, …). Events: download complete, share goal reached, disk guard
+  engaged. Test buttons included.
+- **Auto-folder rules** — case-insensitive regex → folder rules evaluated in
+  order, before the built-in smart categorizer.
+
+---
+
 ## 🔌 HTTP API
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET`   | `/api/torrents` | List all torrents + live status |
-| `GET`   | `/api/torrents/{id}` | Detail view: piece map, file progress, health, trackers |
-| `GET`   | `/ws` | WebSocket: 1 Hz live ticks (speeds, counters, torrent list) |
-| `POST`  | `/api/torrents` | Add: `{"source": "magnet:/http:/base64(.torrent)", "dir": "unix/linux"}` |
-| `POST`  | `/api/torrents/{id}/pause` | Pause a torrent |
-| `POST`  | `/api/torrents/{id}/resume` | Resume a torrent |
-| `POST`  | `/api/torrents/{id}/delete` | Remove a torrent |
-| `POST`  | `/api/torrents/{id}/move` | Move to a category: `{"category": "unix/linux/debian"}` |
-| `POST`  | `/api/torrents/{id}/trackers` | Add a custom tracker: `{"url": "udp://tracker.opentrackr.org:1337/announce"}` |
-| `DELETE`| `/api/torrents/{id}/trackers` | Remove a tracker: `{"url": "..."}` |
-| `PATCH` | `/api/torrents/{id}` | Update: `{"download_limit": 500000}` (per-torrent rate cap) |
-| `POST`  | `/api/bulk` | Multi-select actions: `{"action": "pause"\|"resume"\|"delete", "ids": ["...","..."]}` |
-| `GET`   | `/api/files?path=unix/linux` | Browse the save directory for the in-app file browser |
-| `GET`   | `/api/categories` | List category folders + torrent counts |
-| `POST`  | `/api/categories` | Create nested folders: `{"path": "unix/linux/debian"}` |
-| `DELETE`| `/api/categories` | Delete an empty category: `{"path": "unix"}` |
-| `GET`   | `/api/stats` | Dashboard: hourly/daily/monthly/yearly traffic + country connection log |
-| `GET`/`POST` | `/api/settings` | Read/update rates, daily upload cap, base dir |
+| `GET`   | `/api/torrents` | List all torrents + live status (queued / guard-paused flags included) |
+| `GET`   | `/api/torrents/{id}` | Detail: piece map, per-file progress, health, trackers |
+| `GET`   | `/api/torrents/{id}/peers` | Live peer list (IP, country, client, flags, totals) |
+| `GET`   | `/api/torrents/{id}/export` | Download the torrent as a `.torrent` file |
+| `GET`/`POST` | `/api/torrents/{id}/skipped` | Read / set selectively-skipped file indices |
+| `POST`  | `/api/torrents` | Add: `{"source": "magnet:… / https://… / base64(.torrent)", "dir": "unix/linux", "disk": ""}` |
+| `POST`  | `/api/torrents/{id}/pause` \| `resume` | Pause / resume |
+| `POST`  | `/api/torrents/{id}/delete` | Remove torrent **and** its files (respects trash retention) |
+| `POST`  | `/api/torrents/{id}/move` | Move to a category and/or disk: `{"category": "movies/1080p", "disk": "/mnt/disk2"}` |
+| `PATCH` | `/api/torrents/{id}` | Per-torrent settings: download limit, ratio target, seed days, sequential |
+| `POST`  | `/api/bulk` | `{"action": "pause"\|"resume"\|"delete", "ids": [...]}` |
+| `GET`   | `/api/categories` | Category tree + torrent counts |
+| `POST`/`DELETE` | `/api/categories` | Create / delete category folders |
+| `GET`   | `/api/files` | Browse any storage root: `?disk=&path=` |
+| `GET`   | `/api/files/download` | Download a file: `?disk=&path=` |
+| `POST`  | `/api/files/upload` \| `mkdir` \| `move` \| `delete` | File-manager operations |
+| `POST`  | `/api/files/share` | Create an expiring share link → `/s/{token}` |
+| `GET`   | `/api/disks` | Registered roots: volume usage, content size, torrent count, trash, guard state |
+| `POST`/`DELETE` | `/api/disks` | Register / remove a storage root |
+| `POST`  | `/api/disks/trash/empty` | Empty the trash of one root |
+| `GET`   | `/api/disk-history` | 7-day free-space trend per root |
+| `GET`   | `/api/stats` | Hourly/daily/monthly/yearly traffic + country log |
+| `GET`/`POST` | `/api/settings` | Rates, night mode, goals, guard, queue, trash, rules, Telegram, webhook |
+| `POST`  | `/api/telegram/test` \| `/api/webhook/test` | Send a test notification |
+| `GET`   | `/api/portcheck` | Public-IP + peer-port reachability test |
+| `GET`/`POST` | `/api/backup` | Download / restore a full backup JSON |
 | `GET`   | `/api/trackers` | Global tracker table (announces, success/fail, working) |
+| `GET`/`POST`/`DELETE` | `/api/rss` | RSS feeds: add, remove, poll (`POST /api/rss/poll` = all) |
+| `GET`   | `/ws` | WebSocket: 1 Hz live ticks + completion/metadata notices |
 
-```bash
-curl -X POST localhost:1919/api/torrents \
-  -H 'Content-Type: application/json' \
-  -d '{"source": "magnet:?xt=urn:btih:08ada5a...", "dir": "linux/debian"}'
-```
+All endpoints accept `Authorization: Bearer <token>` (or `?token=`) when access
+protection is enabled.
 
 ---
 
@@ -176,23 +216,33 @@ digitalis/
 ├── bencode/    → hand-rolled bencode encoder/decoder (+ DecodePrefix for BEP-9 splices)
 ├── metainfo/   → .torrent parser, magnet URI, info-hash (+ raw-info extraction for ut_metadata)
 ├── tracker/    → HTTP/UDP tracker announce client
-├── peerwire/   → peer-wire protocol messages, handshake, BEP-10 extension enabler (reserved bit)
-├── storage/    → file layout + per-piece SHA-1 verification
-├── geo/        → embedded IP→country table (357k ranges, generated by geo/geobuild)
-├── dht/        → self-contained UDP KRPC DHT client (get_peers/announce against 5 routers)
-├── torrente/   → core engine: piece picker, sessions, rate limits, detail view, settings,
-│                 statistics, magnets (extend.go: ut_metadata + PEX), discovery (discovery.go),
-│                 DHT bridge (dhtbridge.go)
-│   ├── extend.go       → BEP-9 ut_metadata exchange + BEP-11 PEX messages
-│   ├── discovery.go    → peer dialing, magnet→storage upgrade, notifications, per-torrent limits
-│   ├── dhtbridge.go    → lazy DHT startup, get_peers crawl, announce loop
-│   └── settings.go / stats.go / trackers.go → persistence & aggregation
+├── peerwire/   → peer-wire messages, handshake, BEP-10 extension enabler
+├── storage/    → file layout + per-piece SHA-1 verification + selective-write awareness
+├── geo/        → embedded IP→country table (generated by geo/geobuild, no network calls)
+├── dht/        → self-contained UDP KRPC DHT client (get_peers/announce)
+├── torrente/   → core engine
+│   ├── picker.go      → rare-first piece picker with streaming window + skip mask
+│   ├── selective.go   → file-level selective download (piece masks, completion semantics)
+│   ├── automation.go  → disk guard, download queue, trash, auto-category rules
+│   ├── peers.go       → live peer views (client fingerprinting, geolocation)
+│   ├── export.go      → .torrent export from raw info dict
+│   ├── extend.go      → BEP-9 ut_metadata + BEP-11 PEX
+│   ├── discovery.go   → peer dialing, magnet→storage upgrade
+│   ├── dhtbridge.go   → lazy DHT startup, get_peers crawl, announce loop
+│   └── settings.go / stats.go / detail.go / trackers.go
 ├── web/        → embedded HTTP server (embed.FS) + multilingual UI
-│   ├── web.go  → REST API, torrent detail endpoint, bulk/limit/file-browser handlers
-│   ├── persist.go → torrent records (torrents.json) with automatic restore
-│   ├── ws.go   → WebSocket broadcast hub (live 1 Hz ticks + completion/metadata notices)
-│   └── templates/index.html   → forest-themed Tailwind dashboard (12 languages, guide, toasts, bulk)
-└── cmd/digitalis/main.go      → entrypoint, flags, watch folder
+│   ├── web.go    → REST API
+│   ├── disks.go  → multi-disk storage views (cached) + trash endpoints
+│   ├── files.go  → file manager (list/upload/download/mkdir/move/delete)
+│   ├── share.go  → tokenized expiring share links
+│   ├── backup.go → full backup / restore
+│   ├── telegram.go + webhook notifications
+│   ├── portcheck.go → peer-port reachability test
+│   ├── rss.go    → RSS/Atom auto-downloader
+│   ├── persist.go → torrent records with restore
+│   ├── ws.go     → WebSocket broadcast hub
+│   └── templates/index.html → forest-themed Tailwind dashboard (12 languages)
+└── cmd/digitalis/main.go → entrypoint, flags, watch folder
 ```
 
 **Data flow**
@@ -236,74 +286,19 @@ remembered in `localStorage`.
 
 ---
 
-## 🗂️ Categories & folders
-
-Every category **is a folder** under the base save directory. Create nested paths
-like `unix/linux/debian` and torrents added to that category land in exactly that
-folder — the directory tree mirrors your taxonomy, and files are re-arranged
-automatically when you move a torrent between categories.
-
-```bash
-curl -X POST localhost:1919/api/categories \
-  -H 'Content-Type: application/json' \
-  -d '{"path": "unix/linux/debian"}'
-```
-
----
-
-## 🔗 Custom trackers
-
-Public trackers can die; keep torrents alive by managing trackers per torrent from
-the UI or the API. Any `http://`, `https://`, `udp://` or `ws://` announce URL works,
-and the tracker table tracks announces, successes, failures and live seeders.
-
-```bash
-curl -X POST localhost:1919/api/torrents/{id}/trackers \
-  -H 'Content-Type: application/json' \
-  -d '{"url": "udp://tracker.opentrackr.org:1337/announce"}'
-```
-
----
-
-## 🌍 Country log
-
-Every new peer connection is geolocated against a compact, **embedded** IP→country
-table (built from the DB-IP database, ~200 KB compressed ranges) — no network calls,
-no big query API. The dashboard's *Stats* view shows today's top countries with flag
-badges, and totals persist to disk.
-
----
-
-## ⚙️ Settings & daily upload cap
-
-Rates and the base save directory are stored in the OS config dir
-(`~/.config/digitalis/settings.json`). Set a **daily upload cap** (bytes) and once
-the client has shared that much in a calendar day it pauses all seeding until
-midnight, when the counter resets automatically. Per-torrent counters, announce
-statistics and country logs live in `stats.json`, and torrent records (magnet
-sources + categories) are kept in `torrents.json` so every torrent comes back after
-a restart — no manual re-add.
-
-Give any single torrent its own **download cap** from the detail panel
-(`PATCH /api/torrents/{id}`, field `download_limit`); the global setting stays the
-ceiling, per-torrent limits run underneath it.
-
----
-
 ## 🧪 Testing
 
 ```bash
 go vet ./...
+go test ./torrente
 go build -o digitalis ./cmd/digitalis
 ```
 
 Validated against **`webtorrent.io` Sintel** (129 MB, 987 pieces): full download,
 SHA-1 verification, and seeding confirmed with live peers. **Magnet add** resolves
-metadata over BEP-9 `ut_metadata` directly from peers (trackers + DHT together find
-enough peers in seconds), survives restarts, and seeds the same session. Detail
-endpoint returns the piece map + per-file progress; the WebSocket handshake, 1 Hz
-live ticks and completion/metadata notices verified with a raw `Sec-WebSocket-Key`
-upgrade.
+metadata over BEP-9 `ut_metadata` directly from peers, survives restarts, and seeds
+the same session. Unit tests cover the scheduler (night mode, ratio/seed goals),
+disk guard, download queue, trash retention and auto-category rules.
 
 ---
 
