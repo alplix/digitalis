@@ -29,8 +29,8 @@ func (m *Manager) startCrawl(t *Task) {
 	var downloader = func() {
 		defer dlWG.Done()
 		for furl := range files {
-			if t.stopped.Load() {
-				continue
+			if t.stopped.Load() || t.stopReached() {
+				continue // drain the queue without pulling more data
 			}
 			m.fetchCrawlFile(t, base, furl)
 		}
@@ -63,7 +63,7 @@ func (m *Manager) startCrawl(t *Task) {
 			re, _ = regexp.Compile(`(?i)` + t.opts.Include)
 		}
 		for len(queue) > 0 {
-			if t.stopped.Load() {
+			if t.stopped.Load() || t.stopReached() {
 				return
 			}
 			it := queue[0]
@@ -87,6 +87,12 @@ func (m *Manager) startCrawl(t *Task) {
 					continue
 				}
 				if re != nil && !re.MatchString(e.Name) {
+					continue
+				}
+				if t.opts.MinSize > 0 && e.Size > 0 && e.Size < t.opts.MinSize {
+					continue
+				}
+				if t.opts.MaxSize > 0 && e.Size > 0 && e.Size > t.opts.MaxSize {
 					continue
 				}
 				foundHere++
@@ -185,9 +191,9 @@ func (m *Manager) fetchFileInto(t *Task, rawURL, base string) error {
 	var xferErr error
 	switch strings.ToLower(u.Scheme) {
 	case "ftp":
-		xferErr = ftpGet(u, cw, func() bool { return t.stopped.Load() })
+		xferErr = ftpGet(u, cw, t.dlStopped)
 	default:
-		xferErr = httpGet(rawURL, t.opts.Proxy, cw, func() bool { return t.stopped.Load() })
+		xferErr = httpGet(rawURL, t.opts.Proxy, cw, t.dlStopped)
 	}
 	if xferErr != nil {
 		return xferErr

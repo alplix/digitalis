@@ -367,6 +367,18 @@
           </div>
         </div>
 
+        <div class="card rounded-2xl p-4 mb-6">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-semibold" data-i18n="dl">İndirici</h3>
+            <div class="live-legend flex gap-4 text-xs tx2">
+              <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:var(--accent2)"></span>⬇ <b class="font-mono" id="dashDlSpeed">0 B/s</b></span>
+              <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#fbbf24"></span><span data-i18n="dlTasks">Görevler</span> <b class="font-mono" id="dashDlTasks">0</b></span>
+            </div>
+          </div>
+          <svg id="dashDlChart" viewBox="0 0 600 60" preserveAspectRatio="none" class="w-full h-16 rounded-lg" style="background:var(--bg0)"></svg>
+          <div class="flex justify-between text-[10px] tx3 mt-1"><span id="dashDlT0">-120s</span><span>now</span></div>
+        </div>
+
         <div class="grid grid-cols-1 gap-4">
           <div class="card rounded-2xl p-4">
             <div class="flex items-center justify-between mb-3">
@@ -541,7 +553,7 @@
               <button onclick="dlSetDir('up')" id="dldir-up" class="px-2 py-1 rounded-md border font-medium" style="border-color:var(--border);color:var(--txt3)">↑ <span data-i18n="dlDirUp">Upload</span></button>
             </div>
           </div>
-          <input id="dlUrl" oninput="dlUrlHintUpdate()" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono" spellcheck="false" placeholder="https://example.com/file.zip  ·  https://repo.example.org/  ·  ftp://mirror/file.iso">
+          <textarea id="dlUrl" oninput="dlUrlHintUpdate()" rows="2" spellcheck="false" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono" style="resize:vertical;min-height:58px" placeholder="https://example.com/file.zip&#10;https://repo.example.org/&#10;ftp://mirror/file.iso&#10;— bir satıra bir URL (toplu ekleme)"></textarea>
           <div id="dlUrlHint" class="text-[11px] mt-1 hidden" style="color:var(--accent2)">🔍 <span data-i18n="dlDirDetected">Directory detected — recursive mirror crawl enabled</span></div>
           <div class="text-xs tx2 mt-3 mb-1" data-i18n="dlMode">Destination</div>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-2" id="dlModeCards">
@@ -559,6 +571,19 @@
             </button>
           </div>
           <div id="dlOpts" class="mt-3"></div>
+          <div class="flex flex-wrap items-end gap-2 mt-3">
+            <div class="min-w-[170px]">
+              <label class="block text-xs tx2 mb-1" data-i18n="dlProfiles">Task profiles</label>
+              <select id="dlProfiles" onchange="dlProfileSelect()" class="inp rounded-lg px-3 py-2 text-sm focus:outline-none cursor-pointer w-full"></select>
+            </div>
+            <div>
+              <label class="block text-xs tx2 mb-1" data-i18n="dlProfileName">Profile name</label>
+              <input id="dlProfileName" class="w-40 rounded-lg px-3 py-2 inp text-sm focus:outline-none" placeholder="repo-yansit">
+            </div>
+            <button onclick="dlProfileSave()" class="px-3 py-2 rounded-lg inp text-xs font-medium hover:border-[var(--border2)] transition" data-i18n="dlProfileSave">💾 Save</button>
+            <button onclick="dlProfileApply()" class="px-3 py-2 rounded-lg inp text-xs font-medium hover:border-[var(--border2)] transition" data-i18n="dlProfileApply">▶ Apply</button>
+            <button onclick="dlProfileDelete()" class="px-3 py-2 rounded-lg inp text-xs font-medium transition" style="color:var(--bad)" data-i18n="dlProfileDel">🗑</button>
+          </div>
           <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
             <div>
               <label class="block text-xs tx2 mb-1" data-i18n="loopCount">Loops (0=∞)</label>
@@ -578,7 +603,7 @@
             </div>
           </div>
           <details class="mt-3">
-            <summary class="text-xs tx2 cursor-pointer select-none" data-i18n="dlAdvanced">Advanced: retries · verification · schedule · proxy</summary>
+            <summary class="text-xs tx2 cursor-pointer select-none" data-i18n="dlAdvanced">Advanced: retries · verification · schedule · repeat · stop conditions</summary>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
               <div>
                 <label class="block text-xs tx2 mb-1" data-i18n="dlRetries">Retries on error</label>
@@ -595,6 +620,27 @@
               <div>
                 <label class="block text-xs tx2 mb-1" data-i18n="dlProxy">Proxy (http/socks5)</label>
                 <input id="dlProxy" placeholder="socks5://host:1080" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono">
+              </div>
+              <div>
+                <label class="block text-xs tx2 mb-1" data-i18n="dlRepeat">Repeat every</label>
+                <select id="dlRepeat" class="w-full rounded-xl px-2 py-2 inp text-sm focus:outline-none cursor-pointer">
+                  <option value="">—</option>
+                  <option value="hourly" data-i18n="dlRepHourly">hourly</option>
+                  <option value="daily" data-i18n="dlRepDaily">daily</option>
+                  <option value="weekly" data-i18n="dlRepWeekly">weekly</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs tx2 mb-1" data-i18n="dlStopMB">Stop after (MB)</label>
+                <input id="dlStopMB" type="number" min="0" value="0" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono">
+              </div>
+              <div>
+                <label class="block text-xs tx2 mb-1" data-i18n="dlStopFiles">Stop after (files)</label>
+                <input id="dlStopFiles" type="number" min="0" value="0" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono">
+              </div>
+              <div>
+                <label class="block text-xs tx2 mb-1" data-i18n="dlStopMin">Stop after (min)</label>
+                <input id="dlStopMin" type="number" min="0" value="0" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono">
               </div>
               <div class="md:col-span-4">
                 <label class="block text-xs tx2 mb-1" data-i18n="dlVerify">Verify SHA-256 (optional)</label>
@@ -668,8 +714,17 @@
               <label class="block text-xs tx2 mb-1" data-i18n="dlFilter">File filter (regex)</label>
               <input id="dlInc" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono" placeholder="\\.iso$">
             </div>
+            <div>
+              <label class="block text-xs tx2 mb-1" data-i18n="dlMinMB">Min file size (MB)</label>
+              <input id="dlMinMB" type="number" min="0" value="0" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono">
+            </div>
+            <div>
+              <label class="block text-xs tx2 mb-1" data-i18n="dlMaxMB">Max file size (MB, 0=∞)</label>
+              <input id="dlMaxMB" type="number" min="0" value="0" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono">
+            </div>
             <button onclick="dlStartCrawl('discard')" class="self-end px-4 py-2 rounded-xl btn-primary text-xs font-medium shadow" style="color:var(--btn-txt)">🔄 <span data-i18n="dlCrawlDiscard">Crawl all — discard</span></button>
             <button onclick="dlStartCrawl('disk')" class="self-end px-4 py-2 rounded-xl btn-primary text-xs font-medium shadow" style="color:var(--btn-txt)">💾 <span data-i18n="dlCrawlSave">Crawl all — save to disk</span></button>
+            <div class="md:col-span-2"></div>
           </div>
           <div id="dlRepoBar" class="hidden mt-3 flex flex-wrap items-center gap-2 text-xs">
             <span id="dlRepoCount" class="tx2 font-medium"></span>
@@ -1094,7 +1149,12 @@ const I18N = {
     dlDepth: 'Crawl depth (0=∞)', dlFilter: 'File filter (regex)',
     dlCrawlDiscard: 'Crawl all — discard', dlCrawlSave: 'Crawl all — save to disk',
     dlCrawlStarted: 'Crawl started', dlRepoHint: 'Browse a repo directory first',
-    dlFound: 'Found', dlCrawled: 'Indexed'
+    dlFound: 'Found', dlCrawled: 'Indexed',
+    dlProfiles: 'Task profiles', dlProfileName: 'Profile name', dlProfileSave: 'Save', dlProfileApply: 'Apply', dlProfilePick: 'Select profile…',
+    dlRepeat: 'Repeat every', dlRepHourly: 'hourly', dlRepDaily: 'daily', dlRepWeekly: 'weekly',
+    dlStopMB: 'Stop after (MB)', dlStopFiles: 'Stop after (files)', dlStopMin: 'Stop after (min)',
+    dlMinMB: 'Min file size (MB)', dlMaxMB: 'Max file size (MB, 0=∞)',
+    dlCycle: 'cycle', dlStoppedBy: 'stopped by'
   },
   tr: {
     tagline: 'Yüksük Otu — sıfırdan yazılmış BitTorrent istemcisi', noDocker: 'Docker yok',
@@ -1184,7 +1244,12 @@ const I18N = {
     dlDepth: 'Tarama derinliği (0=∞)', dlFilter: 'Dosya filtresi (regex)',
     dlCrawlDiscard: 'Tümünü tara — yok et', dlCrawlSave: 'Tümünü tara — diske kaydet',
     dlCrawlStarted: 'Tarama başladı', dlRepoHint: 'Önce bir depo dizini gez',
-    dlFound: 'Bulunan', dlCrawled: 'Taranan'
+    dlFound: 'Bulunan', dlCrawled: 'Taranan',
+    dlProfiles: 'Görev profilleri', dlProfileName: 'Profil adı', dlProfileSave: 'Kaydet', dlProfileApply: 'Uygula', dlProfilePick: 'Profil seç…',
+    dlRepeat: 'Tekrarla', dlRepHourly: 'saatlik', dlRepDaily: 'günlük', dlRepWeekly: 'haftalık',
+    dlStopMB: 'Dur (MB)', dlStopFiles: 'Dur (dosya)', dlStopMin: 'Dur (dk)',
+    dlMinMB: 'Min dosya boyutu (MB)', dlMaxMB: 'Max dosya boyutu (MB, 0=∞)',
+    dlCycle: 'döngü', dlStoppedBy: 'durduran'
   },
   de: {
     tagline: 'Ein von Grund auf geschriebener BitTorrent-Client', noDocker: 'Kein Docker',
@@ -1874,7 +1939,7 @@ function show(name) {
   if (name === 'settings') loadSettings();
   if (name === 'guide') renderGuide();
   if (name === 'files') openFiles();
-  if (name === 'dl') { dlSetMode(dlMode); dlLoadRepos(); dlLoadHistory(); dlRefresh(); }
+  if (name === 'dl') { dlSetMode(dlMode); dlLoadProfiles(); dlLoadRepos(); dlLoadHistory(); dlRefresh(); }
 }
 
 // ---------- formatting ----------
@@ -3585,7 +3650,13 @@ function dlBuildBody(extra) {
     retry_wait: parseInt(document.getElementById('dlRetryWait').value) || 0,
     verify_sha256: (document.getElementById('dlVerify').value || '').trim(),
     proxy: (document.getElementById('dlProxy').value || '').trim(),
-    start_at: (document.getElementById('dlStartAt').value || '').trim()
+    start_at: (document.getElementById('dlStartAt').value || '').trim(),
+    repeat: (document.getElementById('dlRepeat') || {}).value || '',
+    stop_mb: parseInt(document.getElementById('dlStopMB').value) || 0,
+    stop_files: parseInt(document.getElementById('dlStopFiles').value) || 0,
+    stop_min: parseInt(document.getElementById('dlStopMin').value) || 0,
+    min_size_mb: parseInt(document.getElementById('dlMinMB').value) || 0,
+    max_size_mb: parseInt(document.getElementById('dlMaxMB').value) || 0
   }, extra || {});
   if (dlMode === 'ram') body.ram_mb = parseInt((document.getElementById('dlRamMB') || {}).value) || 16;
   if (dlMode === 'disk' && dlDir === 'down') {
@@ -3597,15 +3668,109 @@ function dlBuildBody(extra) {
   return body;
 }
 
-async function dlStartTask() {
-  const url = document.getElementById('dlUrl').value.trim();
-  if (!url) return;
-  const st = document.getElementById('dlStatus');
+// dlVal reads a form profile (ignores the URL box).
+function dlProfileFromForm() {
+  return {
+    url: '',
+    mode: dlMode, direction: dlDir,
+    loops: parseInt(document.getElementById('dlLoops').value) || 0,
+    interval: parseInt(document.getElementById('dlInterval').value) || 0,
+    speed_cap: (parseInt(document.getElementById('dlCap').value) || 0) * 1024,
+    conn: parseInt(document.getElementById('dlConn').value) || 1,
+    retries: parseInt(document.getElementById('dlRetries').value) || 0,
+    retry_wait: parseInt(document.getElementById('dlRetryWait').value) || 0,
+    verify_sha256: (document.getElementById('dlVerify').value || '').trim(),
+    proxy: (document.getElementById('dlProxy').value || '').trim(),
+    start_at: (document.getElementById('dlStartAt').value || '').trim(),
+    repeat: (document.getElementById('dlRepeat') || {}).value || '',
+    stop_mb: parseInt(document.getElementById('dlStopMB').value) || 0,
+    stop_files: parseInt(document.getElementById('dlStopFiles').value) || 0,
+    stop_min: parseInt(document.getElementById('dlStopMin').value) || 0,
+    min_size_mb: parseInt(document.getElementById('dlMinMB').value) || 0,
+    max_size_mb: parseInt(document.getElementById('dlMaxMB').value) || 0
+  };
+}
+
+// dlValToForm applies a profile onto the form controls.
+function dlProfileToForm(p) {
+  dlSetMode(p.mode || 'discard');
+  if (p.direction === 'up') dlSetDir('up'); else dlSetDir('down');
+  document.getElementById('dlLoops').value = p.loops || 0;
+  document.getElementById('dlInterval').value = p.interval || 0;
+  document.getElementById('dlCap').value = Math.round((p.speed_cap || 0) / 1024);
+  document.getElementById('dlConn').value = p.conn || 1;
+  document.getElementById('dlRetries').value = p.retries || 0;
+  document.getElementById('dlRetryWait').value = p.retry_wait || 0;
+  document.getElementById('dlVerify').value = p.verify_sha256 || '';
+  document.getElementById('dlProxy').value = p.proxy || '';
+  document.getElementById('dlStartAt').value = p.start_at || '';
+  document.getElementById('dlRepeat').value = p.repeat || '';
+  document.getElementById('dlStopMB').value = p.stop_mb || 0;
+  document.getElementById('dlStopFiles').value = p.stop_files || 0;
+  document.getElementById('dlStopMin').value = p.stop_min || 0;
+  document.getElementById('dlMinMB').value = p.min_size_mb || 0;
+  document.getElementById('dlMaxMB').value = p.max_size_mb || 0;
+  if (p.ram_mb) { const rb = document.getElementById('dlRamMB'); if (rb) rb.value = p.ram_mb; }
+}
+
+let dlProfiles = [];
+async function dlLoadProfiles() {
+  try { dlProfiles = await api('/dl/profiles'); } catch (e) { return; }
+  const sel = document.getElementById('dlProfiles');
+  if (!sel) return;
+  sel.innerHTML = `<option value="">— ${esc(t('dlProfilePick'))} —</option>` + dlProfiles.map(p => `<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('');
+}
+function dlProfileSelect() {
+  const sel = document.getElementById('dlProfiles');
+  const p = dlProfiles.find(x => x.name === sel.value);
+  document.getElementById('dlProfileName').value = p ? p.name : '';
+}
+async function dlProfileSave() {
+  const name = (document.getElementById('dlProfileName').value || '').trim();
+  if (!name) return;
+  const body = dlProfileFromForm();
+  body.name = name;
   try {
-    await api('/dl', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(dlBuildBody()) });
-    document.getElementById('dlUrl').value = '';
-    dlRefresh();
-  } catch (e) { st.innerHTML = `<span style="color:var(--bad)">${esc(e.message)}</span>`; }
+    await api('/dl/profiles', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    toast('info', '', name + ' ✓');
+    await dlLoadProfiles();
+    document.getElementById('dlProfiles').value = name;
+  } catch (e) { alert(e.message); }
+}
+async function dlProfileApply() {
+  const sel = document.getElementById('dlProfiles');
+  const p = dlProfiles.find(x => x.name === sel.value);
+  if (!p) { alert(t('dlProfilePick')); return; }
+  dlProfileToForm(p);
+}
+async function dlProfileDelete() {
+  const sel = document.getElementById('dlProfiles');
+  const p = dlProfiles.find(x => x.name === sel.value);
+  if (!p) return;
+  if (!confirm(p.name + '?')) return;
+  try {
+    await api('/dl/profiles/' + encodeURIComponent(p.name), { method:'DELETE' });
+    await dlLoadProfiles();
+  } catch (e) { alert(e.message); }
+}
+
+async function dlStartTask() {
+  const raw = document.getElementById('dlUrl').value;
+  const urls = raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+  if (!urls.length) return;
+  const st = document.getElementById('dlStatus');
+  let ok = 0;
+  const errs = [];
+  for (const url of urls) {
+    try {
+      await api('/dl', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(dlBuildBody({ url })) });
+      ok++;
+    } catch (e) { errs.push(`${url}: ${e.message}`); }
+  }
+  document.getElementById('dlUrl').value = '';
+  st.innerHTML = errs.length ? `<span style="color:var(--bad)">${esc(errs[0])}</span>` : '';
+  if (ok) toast('info', '', `${ok} ${t('added')}${errs.length ? `, ${errs.length} ${t('errors')}` : ''}`);
+  dlRefresh();
 }
 
 async function dlRefresh() {
@@ -3644,6 +3809,9 @@ async function dlRefresh() {
         <div class="flex flex-wrap gap-x-4 gap-y-0.5 mt-1.5 text-[11px] tx3 font-mono">
           ${t('dlLoops')}: ${tk.loops_done}${tk.loops > 0 ? '/' + tk.loops : ''} · ${t('dlUptime')}: ${tk.uptime_sec}s
           ${tk.crawl ? ` · 🔍 ${t('dlFound')}: ${tk.found} · ${t('dlCrawled')}: ${tk.crawled} · ${t('dlDone')}: ${tk.files}` : ''}
+          ${tk.repeat ? ` · ⏰ ${esc(tk.repeat)}` : ''}
+          ${tk.cycles > 1 ? ` · ${esc(t('dlCycle'))}: ${tk.cycles}` : ''}
+          ${tk.stopped_by ? ` · ⏹ ${esc(t('dlStoppedBy'))}: ${esc(tk.stopped_by)}` : ''}
           ${tk.conn > 1 ? ` · 🔗 ×${tk.conn}` : ''}
           ${tk.mode === 'ram' ? ` · RAM: ${tk.ram_mb} MB` : ''}
           ${tk.mode === 'disk' && tk.save_dir ? ` · 📁 ${esc(tk.save_dir)}` : ''}
@@ -3659,6 +3827,33 @@ async function dlRefresh() {
     dlLogOpen.forEach(id => dlPullLog(id));
   } catch (e) { /* transient */ }
 }
+
+// ---------- dashboard dl speed sparkline ----------
+const dlChartPts = [];
+function dlDashTick() {
+  api('/dl').then(d => {
+    const tasks = d.tasks || [];
+    const speed = tasks.reduce((s, t) => s + (t.speed || 0), 0);
+    const active = tasks.filter(t => t.state === 'running' || t.state === 'scheduled').length;
+    dlChartPts.push({ ts: Date.now(), speed, active });
+    if (dlChartPts.length > 60) dlChartPts.shift();
+    const sp = document.getElementById('dashDlSpeed');
+    if (sp) sp.textContent = fmtSpeed(speed);
+    const at = document.getElementById('dashDlTasks');
+    if (at) at.textContent = active;
+    dlDrawChart();
+  }).catch(() => {});
+}
+function dlDrawChart() {
+  const svg = document.getElementById('dashDlChart');
+  if (!svg) return;
+  const n = dlChartPts.length;
+  if (n < 2) { svg.innerHTML = ''; return; }
+  const max = Math.max(1, ...dlChartPts.map(p => p.speed));
+  const pts = dlChartPts.map((p, i) => `${(i / (n - 1)) * 600},${59 - (p.speed / max) * 50}`).join(' ');
+  svg.innerHTML = `<polyline points="${pts}" fill="none" stroke="var(--accent2)" stroke-width="2"/>`;
+}
+setInterval(dlDashTick, 2000);
 
 async function dlPullLog(id) {
   const el = document.getElementById('dl-log-' + id);

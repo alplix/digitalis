@@ -2,6 +2,7 @@ package web
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"path/filepath"
@@ -103,6 +104,12 @@ type dlRequest struct {
 	Crawl      bool   `json:"crawl"`
 	Depth      int    `json:"depth"`
 	Include    string `json:"include"`
+	Repeat     string `json:"repeat"`
+	MinSizeMB  int64  `json:"min_size_mb"`
+	MaxSizeMB  int64  `json:"max_size_mb"`
+	StopMB     int64  `json:"stop_mb"`
+	StopFiles  int64  `json:"stop_files"`
+	StopMin    int64  `json:"stop_min"`
 }
 
 // dlList serves every task plus aggregate totals.
@@ -122,6 +129,7 @@ func (s *Server) dlStart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	mode := dl.Mode(strings.ToLower(strings.TrimSpace(req.Mode)))
+	const mb = 1024 * 1024
 	opts := dl.Options{
 		URL:        req.URL,
 		Mode:       mode,
@@ -142,6 +150,12 @@ func (s *Server) dlStart(w http.ResponseWriter, r *http.Request) {
 		Crawl:      req.Crawl,
 		Depth:      req.Depth,
 		Include:    req.Include,
+		Repeat:     req.Repeat,
+		MinSize:    req.MinSizeMB * mb,
+		MaxSize:    req.MaxSizeMB * mb,
+		StopMB:     req.StopMB * mb,
+		StopFiles:  req.StopFiles,
+		StopMin:    req.StopMin,
 	}
 	if mode == dl.ModeDisk && opts.Direction != "up" {
 		category, saveDir, err := s.resolveDiskDir(req.Disk, req.Category)
@@ -217,4 +231,85 @@ func safeHead(data []byte, n int) string {
 		}
 	}
 	return sb.String()
+}
+
+// dlProfilesList serves all saved task profiles.
+func (s *Server) dlProfilesList(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, s.dl.Profiles())
+}
+
+// dlProfileSave stores a named profile.
+func (s *Server) dlProfileSave(w http.ResponseWriter, r *http.Request) {
+	var p dl.Profile
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
+		return
+	}
+	if err := s.dl.SaveProfile(p); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"ok": "saved"})
+}
+
+// dlProfileDelete removes a saved profile.
+func (s *Server) dlProfileDelete(w http.ResponseWriter, r *http.Request) {
+	if err := s.dl.DeleteProfile(r.PathValue("name")); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"ok": "deleted"})
+}
+
+// dlTaskEvent sends a Telegram/webhook alert whenever a downloader task ends.
+func (s *Server) dlTaskEvent(t *dl.Task) {
+	if t.State != "done" && t.State != "error" {
+		return
+	}
+	if t.Direction == "up" {
+		return
+	}
+	var emoji string
+	switch t.State {
+	case "error":
+		emoji = "❌"
+	case "stopped":
+		emoji = "⏹"
+	default:
+		emoji = "✅"
+	}
+	var sb strings.Builder
+	sb.WriteString(emoji + " Downloader task " + t.State + ":\n")
+	sb.WriteString("  " + t.URL + "\n")
+	sb.WriteString("  " + string(t.Mode))
+	if t.Crawl {
+		sb.WriteString(" · crawl")
+	}
+	if t.Repeat != "" {
+		sb.WriteString(" · repeat=" + t.Repeat)
+	}
+	sb.WriteString(fmt.Sprintf(" · %s · %d files · %d loops · %ds", humanMB(t.Bytes), t.Files, t.LoopsDone, t.UptimeSec))
+	if t.StoppedBy != "" {
+		sb.WriteString("\n  stopped by condition: " + t.StoppedBy)
+	}
+	if t.Error != "" {
+		sb.WriteString("\n  error: " + t.Error)
+	}
+	text := sb.String()
+	s.sendTelegram(text)
+	s.sendWebhook("dl", t.ID, text)
+}
+
+// humanMB formats a byte count for alert messages.
+func humanMB(n int64) string {
+	if n < 0 {
+		n = 0
+	}
+	if n >= 1024*1024*1024 {
+		return strconv.FormatFloat(float64(n)/(1024*1024*1024), 'f', 1, 64) + " GB"
+	}
+	if n >= 1024*1024 {
+		return strconv.FormatFloat(float64(n)/(1024*1024), 'f', 1, 64) + " MB"
+	}
+	return strconv.FormatInt(n, 10) + " B"
 }

@@ -53,6 +53,7 @@ func NewServer(engine *torrente.Engine, saveDir, cfgDir string) *Server {
 		dl:      dl.NewManager(dlmgrPath(cfgDir)),
 	}
 	go s.broadcastLoop()
+	s.dl.SetOnDone(s.dlTaskEvent)
 
 	// Streaming notifications (download complete, magnet metadata resolved).
 	engine.OnNotice = func(kind, id, name string) {
@@ -258,6 +259,9 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /api/dl/history", s.dlHistory)
 	mux.HandleFunc("DELETE /api/dl/history", s.dlHistoryClear)
 	mux.HandleFunc("GET /api/dl/history.csv", s.dlHistoryCSV)
+	mux.HandleFunc("GET /api/dl/profiles", s.dlProfilesList)
+	mux.HandleFunc("POST /api/dl/profiles", s.dlProfileSave)
+	mux.HandleFunc("DELETE /api/dl/profiles/{name}", s.dlProfileDelete)
 	mux.HandleFunc("POST /api/bulk", s.bulkOp)
 	mux.HandleFunc("GET /api/files", s.listFiles)
 	mux.HandleFunc("GET /api/files/download", s.downloadFile)

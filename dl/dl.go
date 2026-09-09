@@ -54,6 +54,12 @@ type Options struct {
 	VerifySHA  string `json:"verify_sha256"`      // expected hex digest; verified in every mode
 	Proxy      string `json:"proxy"`              // http(s):// or socks5:// proxy URL
 	StartAt    string `json:"start_at"`           // "HH:MM": wait until the next occurrence
+	Repeat     string `json:"repeat"`             // "" | hourly | daily | weekly: re-run cycles on a schedule
+	MinSize    int64  `json:"min_size"`           // crawl: skip files smaller than this (bytes)
+	MaxSize    int64  `json:"max_size"`           // crawl: skip files larger than this (bytes)
+	StopMB     int64  `json:"stop_mb"`            // auto-end after this many bytes (0 = off)
+	StopFiles  int64  `json:"stop_files"`         // auto-end after this many files (0 = off)
+	StopMin    int64  `json:"stop_min"`           // auto-end after this many minutes (0 = off)
 }
 
 // Task is one download job with live counters.
@@ -73,6 +79,9 @@ type Task struct {
 	Depth     int    `json:"depth,omitempty"`
 	Include   string `json:"include,omitempty"`
 	Verified  string `json:"verified,omitempty"` // "ok" | "mismatch" when a digest was checked
+	Repeat    string `json:"repeat,omitempty"`   // hourly | daily | weekly schedule
+	StoppedBy string `json:"stopped_by,omitempty"` // size | files | time: stop condition that ended the task
+	Cycles    int64  `json:"cycles,omitempty"`   // completed repeat cycles (1 = single run)
 
 	State     string    `json:"state"` // running | done | error | stopped | scheduled
 	Bytes     int64     `json:"bytes"`
@@ -106,6 +115,9 @@ type Task struct {
 	winMu      sync.Mutex
 	winBytes   int64
 	winStarted time.Time
+
+	stopOnce   sync.Once
+	stopReason string
 }
 
 // LogLine is one terminal-style event line of a task.
@@ -166,14 +178,48 @@ type Manager struct {
 		Loops int64 `json:"loops"`
 		Files int64 `json:"files"`
 	}
+
+	profMu   sync.Mutex
+	profiles map[string]Profile
+	profPath string
+
+	onDoneMu sync.Mutex
+	onDone   func(*Task)
 }
 
 // NewManager creates an empty download manager. historyPath ("" = memory
-// only) persists finished runs and all-time totals across restarts.
+// only) persists finished runs and all-time totals across restarts. Saved
+// task profiles live next to the history file.
 func NewManager(historyPath string) *Manager {
-	m := &Manager{tasks: make(map[string]*Task), started: time.Now(), histPath: historyPath}
+	m := &Manager{
+		tasks:    make(map[string]*Task),
+		started:  time.Now(),
+		histPath: historyPath,
+		profiles: make(map[string]Profile),
+	}
+	if historyPath != "" {
+		m.profPath = filepath.Join(filepath.Dir(historyPath), "dl_profiles.json")
+	}
 	m.loadHistory()
+	m.loadProfiles()
 	return m
+}
+
+// SetOnDone registers a callback invoked (asynchronously) whenever a task
+// reaches its final state. The web layer uses it for Telegram/webhook alerts.
+func (m *Manager) SetOnDone(fn func(*Task)) {
+	m.onDoneMu.Lock()
+	m.onDone = fn
+	m.onDoneMu.Unlock()
+}
+
+func (m *Manager) finishNotify(t *Task) {
+	m.onDoneMu.Lock()
+	fn := m.onDone
+	m.onDoneMu.Unlock()
+	if fn != nil {
+		go fn(t)
+	}
 }
 
 // Add validates the options and starts a new task.
@@ -261,6 +307,29 @@ func (m *Manager) Add(opts Options) (*Task, error) {
 		(strings.HasSuffix(opts.URL, "/") || strings.HasSuffix(opts.URL, "\\")) {
 		opts.Crawl = true
 	}
+	switch opts.Repeat {
+	case "", "hourly", "daily", "weekly":
+	default:
+		return nil, fmt.Errorf("unknown repeat %q", opts.Repeat)
+	}
+	if opts.MinSize < 0 {
+		opts.MinSize = 0
+	}
+	if opts.MaxSize < 0 {
+		opts.MaxSize = 0
+	}
+	if opts.MinSize > 0 && opts.MaxSize > 0 && opts.MinSize > opts.MaxSize {
+		return nil, fmt.Errorf("min size is larger than max size")
+	}
+	if opts.StopMB < 0 {
+		opts.StopMB = 0
+	}
+	if opts.StopFiles < 0 {
+		opts.StopFiles = 0
+	}
+	if opts.StopMin < 0 {
+		opts.StopMin = 0
+	}
 
 	buf := make([]byte, 4)
 	rand.Read(buf)
@@ -279,6 +348,7 @@ func (m *Manager) Add(opts Options) (*Task, error) {
 		Crawl:     opts.Crawl,
 		Depth:     opts.Depth,
 		Include:   opts.Include,
+		Repeat:    opts.Repeat,
 		State:     "running",
 		opts:      opts,
 		stop:      make(chan struct{}),
@@ -366,6 +436,7 @@ func (m *Manager) List() ([]*Task, Totals) {
 		tot.Files += atomic.LoadInt64(&t.Files)
 		t.Speed = t.currentSpeed()
 		tot.Speed += t.Speed
+		t.UptimeSec = int64(time.Since(t.StartedAt).Seconds())
 	}
 	tot.Bytes += tot.BaseBytes
 	tot.Loops += tot.BaseLoops
@@ -410,57 +481,74 @@ func (m *Manager) run(t *Task) {
 	if t.opts.StartAt != "" {
 		t.log("ok", "schedule reached, starting")
 	}
-	if t.opts.Crawl {
-		t.log("ok", "crawl started: %s (depth %s, filter %q)", t.crawlBase, depthStr(t.opts.Depth), t.opts.Include)
-		m.startCrawl(t)
-		t.mu.Lock()
-		switch {
-		case t.stopped.Load():
-			t.State = "stopped"
-		case t.Error != "":
-			t.State = "error"
-		default:
-			t.State = "done"
+	if t.opts.Repeat != "" {
+		t.log("info", "repeat mode: %s — cycles keep running until stopped", t.opts.Repeat)
+	}
+	if t.stopReached() {
+		t.log("info", "stop condition already met at launch")
+	}
+
+	// Run cycles; with Repeat set the whole execution re-runs on a schedule.
+	for cycle := 1; ; cycle++ {
+		if t.stopped.Load() {
+			break
 		}
-		t.EndedAt = time.Now()
-		t.mu.Unlock()
-		t.log("ok", "crawl finished: %d files, %s", atomic.LoadInt64(&t.Files), humanBytes(atomic.LoadInt64(&t.Bytes)))
-		m.recordHistory(t)
-		return
-	}
-	if t.opts.VerifySHA != "" {
-		t.log("info", "sha256 verification enabled (%s…)", strings.ToLower(t.opts.VerifySHA)[:8])
-	}
-	conns := t.opts.Conn
-	if conns < 1 {
-		conns = 1
-	}
-	if conns > 16 {
-		conns = 16
-	}
-	if t.opts.Mode == ModeDisk && conns > 1 {
-		// parallel streams would clobber the same output file
-		conns = 1
-		t.log("warn", "disk mode writes a single stream (parallel ignored)")
-	}
-	if conns > 1 {
-		t.log("info", "spawning %d parallel streams", conns)
-	}
-	if conns == 1 {
-		m.loopShard(t)
-	} else {
-		var wg sync.WaitGroup
-		for i := 0; i < conns; i++ {
-			wg.Add(1)
-			go func(id int) { defer wg.Done(); t.log("info", "stream #%d open", id+1); m.loopShard(t) }(i)
+		if cycle > 1 {
+			t.log("ok", "repeat cycle #%d starting", cycle)
 		}
-		wg.Wait()
+		if t.opts.VerifySHA != "" {
+			t.log("info", "sha256 verification enabled (%s…)", strings.ToLower(t.opts.VerifySHA)[:8])
+		}
+		if t.opts.Crawl {
+			t.log("ok", "crawl started: %s (depth %s, filter %q)", t.crawlBase, depthStr(t.opts.Depth), t.opts.Include)
+			m.startCrawl(t)
+			t.log("ok", "crawl finished: %d files, %s", atomic.LoadInt64(&t.Files), humanBytes(atomic.LoadInt64(&t.Bytes)))
+		} else {
+			conns := t.opts.Conn
+			if conns < 1 {
+				conns = 1
+			}
+			if conns > 16 {
+				conns = 16
+			}
+			if t.opts.Mode == ModeDisk && conns > 1 {
+				// parallel streams would clobber the same output file
+				conns = 1
+				t.log("warn", "disk mode writes a single stream (parallel ignored)")
+			}
+			if conns > 1 {
+				t.log("info", "spawning %d parallel streams", conns)
+			}
+			if conns == 1 {
+				m.loopShard(t)
+			} else {
+				var wg sync.WaitGroup
+				for i := 0; i < conns; i++ {
+					wg.Add(1)
+					go func(id int) { defer wg.Done(); t.log("info", "stream #%d open", id+1); m.loopShard(t) }(i)
+				}
+				wg.Wait()
+			}
+			if !t.stopped.Load() && !t.stopReached() {
+				t.log("info", "cycle #%d complete: %s in %d loops", cycle, humanBytes(atomic.LoadInt64(&t.Bytes)), atomic.LoadInt64(&t.LoopsDone))
+			}
+		}
+		atomic.StoreInt64(&t.Cycles, int64(cycle))
+		if t.opts.Repeat == "" || t.stopped.Load() || t.stopReached() {
+			break
+		}
+		if !t.waitRepeat() {
+			break
+		}
 	}
 
 	t.mu.Lock()
 	switch {
 	case t.stopped.Load():
 		t.State = "stopped"
+	case t.stopReason != "":
+		t.State = "done"
+		t.StoppedBy = t.stopReason
 	case t.Error != "":
 		t.State = "error"
 	default:
@@ -468,14 +556,101 @@ func (m *Manager) run(t *Task) {
 	}
 	t.EndedAt = time.Now()
 	t.mu.Unlock()
-	t.log("info", "task finished: %s", t.State)
+	t.log("info", "task finished after %d cycle(s): %s", atomic.LoadInt64(&t.Cycles), t.State)
 	m.recordHistory(t)
+	m.finishNotify(t)
+}
+
+// dlStopped reports whether the task was manually stopped or any auto-end
+// condition fired; it can be polled inside a transfer loop to abort mid-file.
+func (t *Task) dlStopped() bool { return t.stopped.Load() || t.stopReached() }
+
+// stopReached reports whether any configured auto-end condition fired.
+func (t *Task) stopReached() bool {
+	switch {
+	case t.opts.StopMB > 0 && atomic.LoadInt64(&t.Bytes) >= t.opts.StopMB:
+		return t.declareStop("size")
+	case t.opts.StopFiles > 0 && atomic.LoadInt64(&t.Files) >= t.opts.StopFiles:
+		return t.declareStop("files")
+	case t.opts.StopMin > 0 && t.started.Add(time.Duration(t.opts.StopMin)*time.Minute).Before(time.Now()):
+		return t.declareStop("time")
+	}
+	return false
+}
+
+// declareStop marks the first stop condition that fired (idempotent).
+func (t *Task) declareStop(reason string) bool {
+	t.stopOnce.Do(func() {
+		t.stopReason = reason
+		t.log("ok", "stop condition reached (%s)", reason)
+	})
+	return true
+}
+
+// waitRepeat blocks until the next scheduled repeat slot, or until the task is
+// stopped. Returns false when the task was stopped while waiting.
+func (t *Task) waitRepeat() bool {
+	now := time.Now()
+	hh, mm := parseHHMM(t.opts.StartAt)
+	switch t.opts.Repeat {
+	case "hourly":
+		next := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), mm, 0, 0, now.Location())
+		if !next.After(now) {
+			next = next.Add(time.Hour)
+		}
+		t.log("info", "next hourly run at %s", next.Format("2006-01-02 15:04"))
+		for {
+			if t.stopped.Load() {
+				return false
+			}
+			if time.Now().After(next) {
+				return true
+			}
+			time.Sleep(time.Second)
+		}
+	case "daily":
+		next := time.Date(now.Year(), now.Month(), now.Day(), hh, mm, 0, 0, now.Location())
+		if !next.After(now) {
+			next = next.Add(24 * time.Hour)
+		}
+		t.log("info", "next daily run at %s", next.Format("2006-01-02 15:04"))
+		for {
+			if t.stopped.Load() {
+				return false
+			}
+			if time.Now().After(next) {
+				return true
+			}
+			time.Sleep(time.Second)
+		}
+	case "weekly":
+		// without an explicit start time, repeat exactly 7 days after launch
+		if t.opts.StartAt == "" {
+			hh, mm = now.Hour(), now.Minute()
+		}
+		next := time.Date(now.Year(), now.Month(), now.Day(), hh, mm, 0, 0, now.Location())
+		if !next.After(now) {
+			next = next.Add(7 * 24 * time.Hour)
+		}
+		t.log("info", "next weekly run at %s", next.Format("2006-01-02 15:04"))
+		for {
+			if t.stopped.Load() {
+				return false
+			}
+			if time.Now().After(next) {
+				return true
+			}
+			time.Sleep(time.Second)
+		}
+	default:
+		return true
+	}
 }
 
 // loopShard runs the full loop set; parallel tasks run several shards.
 func (m *Manager) loopShard(t *Task) {
 	for loop := int64(1); t.opts.Loops == 0 || loop <= int64(t.opts.Loops); loop++ {
-		if t.stopped.Load() {
+		if t.stopped.Load() || t.stopReached() {
 			return
 		}
 		atomic.StoreInt64(&t.Current, 0)
@@ -533,6 +708,7 @@ func (m *Manager) loopShard(t *Task) {
 		}
 		dur := time.Since(loopStart).Seconds()
 		cur := atomic.LoadInt64(&t.Current)
+		atomic.AddInt64(&t.Files, 1)
 		t.log("ok", "loop %s complete: %s in %.1fs", loopTag, humanBytes(cur), dur)
 		if t.opts.VerifySHA != "" {
 			t.mu.Lock()
