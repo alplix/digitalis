@@ -100,6 +100,9 @@ type dlRequest struct {
 	VerifySHA  string `json:"verify_sha256"`
 	Proxy      string `json:"proxy"`
 	StartAt    string `json:"start_at"`
+	Crawl      bool   `json:"crawl"`
+	Depth      int    `json:"depth"`
+	Include    string `json:"include"`
 }
 
 // dlList serves every task plus aggregate totals.
@@ -136,6 +139,9 @@ func (s *Server) dlStart(w http.ResponseWriter, r *http.Request) {
 		VerifySHA:  req.VerifySHA,
 		Proxy:      req.Proxy,
 		StartAt:    req.StartAt,
+		Crawl:      req.Crawl,
+		Depth:      req.Depth,
+		Include:    req.Include,
 	}
 	if mode == dl.ModeDisk && opts.Direction != "up" {
 		category, saveDir, err := s.resolveDiskDir(req.Disk, req.Category)

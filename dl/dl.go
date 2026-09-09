@@ -9,10 +9,8 @@ package dl
 
 import (
 	"crypto/rand"
-	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"hash"
 	"io"
 	"net/http"
 	"net/url"
@@ -47,6 +45,9 @@ type Options struct {
 	Interval   int    `json:"interval"`           // seconds between loops
 	SpeedCap   int64  `json:"speed_cap"`          // bytes/sec, 0 = unlimited
 	DeleteEach bool   `json:"delete_each"`        // disk mode: remove the file after each loop
+	Crawl      bool   `json:"crawl"`              // recursive mirror: walk all dirs, pull every file
+	Depth      int    `json:"depth"`              // crawl depth limit (0 = unlimited)
+	Include    string `json:"include"`            // filename regex filter while crawling
 	Conn       int    `json:"conn"`               // parallel streams (down, discard/ram), 1-16
 	Retries    int    `json:"retries"`            // extra attempts per loop on error
 	RetryWait  int    `json:"retry_wait"`         // seconds between attempts
@@ -68,11 +69,16 @@ type Task struct {
 	Retries   int    `json:"retries,omitempty"`
 	Proxy     string `json:"proxy,omitempty"`
 	StartAt   string `json:"start_at,omitempty"`
+	Crawl     bool   `json:"crawl,omitempty"`
+	Depth     int    `json:"depth,omitempty"`
+	Include   string `json:"include,omitempty"`
 	Verified  string `json:"verified,omitempty"` // "ok" | "mismatch" when a digest was checked
 
 	State     string    `json:"state"` // running | done | error | stopped | scheduled
 	Bytes     int64     `json:"bytes"`
 	Files     int64     `json:"files"`
+	Found     int64     `json:"found"`   // crawl: files discovered
+	Crawled   int64     `json:"crawled"` // crawl: directories indexed
 	LoopsDone int64     `json:"loops_done"`
 	Speed     int64     `json:"speed"`
 	UptimeSec int64     `json:"uptime_sec"`
@@ -91,6 +97,8 @@ type Task struct {
 	started time.Time
 	manager *Manager
 	stopped atomic.Bool
+
+	crawlBase string
 
 	logMu sync.Mutex
 	logs  []LogLine
@@ -241,6 +249,12 @@ func (m *Manager) Add(opts Options) (*Task, error) {
 	if opts.StartAt != "" && !validHHMM(opts.StartAt) {
 		return nil, fmt.Errorf("start_at must be HH:MM")
 	}
+	if opts.Depth < 0 {
+		opts.Depth = 0
+	}
+	if opts.Crawl && opts.Direction == "up" {
+		return nil, fmt.Errorf("crawl works with downloads only")
+	}
 
 	buf := make([]byte, 4)
 	rand.Read(buf)
@@ -256,12 +270,18 @@ func (m *Manager) Add(opts Options) (*Task, error) {
 		Retries:   opts.Retries,
 		Proxy:     opts.Proxy,
 		StartAt:   opts.StartAt,
+		Crawl:     opts.Crawl,
+		Depth:     opts.Depth,
+		Include:   opts.Include,
 		State:     "running",
 		opts:      opts,
 		stop:      make(chan struct{}),
 		started:   time.Now(),
 		StartedAt: time.Now(),
 		manager:   m,
+	}
+	if opts.Crawl {
+		t.crawlBase = strings.TrimSuffix(strings.TrimSpace(opts.URL), "/") + "/"
 	}
 	if t.opts.StartAt != "" {
 		t.State = "scheduled"
@@ -382,6 +402,24 @@ func (m *Manager) run(t *Task) {
 	}
 	if t.opts.StartAt != "" {
 		t.log("ok", "schedule reached, starting")
+	}
+	if t.opts.Crawl {
+		t.log("ok", "crawl started: %s (depth %s, filter %q)", t.crawlBase, depthStr(t.opts.Depth), t.opts.Include)
+		m.startCrawl(t)
+		t.mu.Lock()
+		switch {
+		case t.stopped.Load():
+			t.State = "stopped"
+		case t.Error != "":
+			t.State = "error"
+		default:
+			t.State = "done"
+		}
+		t.EndedAt = time.Now()
+		t.mu.Unlock()
+		t.log("ok", "crawl finished: %d files, %s", atomic.LoadInt64(&t.Files), humanBytes(atomic.LoadInt64(&t.Bytes)))
+		m.recordHistory(t)
+		return
 	}
 	if t.opts.VerifySHA != "" {
 		t.log("info", "sha256 verification enabled (%s…)", strings.ToLower(t.opts.VerifySHA)[:8])
@@ -591,64 +629,14 @@ func (t *Task) finish(state, errMsg string) {
 
 // fetchOnce downloads the URL once into the mode's sink.
 func (m *Manager) fetchOnce(t *Task) error {
-	u, err := url.Parse(t.opts.URL)
-	if err != nil {
-		return err
-	}
-	th := &throttle{rate: t.opts.SpeedCap}
-	var w io.Writer
-	switch t.opts.Mode {
-	case ModeDiscard:
-		w = io.Discard
-	case ModeRAM:
-		w = t.ring // bounded; keeps the most recent bytes only
-	case ModeDisk:
-		name := strings.TrimSpace(t.opts.Filename)
-		if name == "" {
-			name = baseName(u)
-		}
-		t.outPath = filepath.Join(t.opts.SaveDir, name)
-		f, ferr := os.Create(t.outPath)
-		if ferr != nil {
-			return ferr
-		}
-		defer f.Close()
-		t.log("info", "writing to %s", t.outPath)
-		w = f
-	default:
-		return fmt.Errorf("unknown mode")
-	}
-	var hasher hash.Hash
-	if strings.TrimSpace(t.opts.VerifySHA) != "" {
-		hasher = sha256.New()
-		w = io.MultiWriter(w, hasher)
-	}
-	cw := &countingWriter{w: w, t: t, th: th}
+	return m.fetchFileInto(t, t.opts.URL, "")
+}
 
-	var xferErr error
-	switch strings.ToLower(u.Scheme) {
-	case "ftp":
-		xferErr = ftpGet(u, cw)
-	default:
-		xferErr = httpGet(t.opts.URL, t.opts.Proxy, cw)
+func depthStr(d int) string {
+	if d <= 0 {
+		return "∞"
 	}
-	if xferErr != nil {
-		return xferErr
-	}
-	if hasher != nil {
-		got := hex.EncodeToString(hasher.Sum(nil))
-		want := strings.ToLower(strings.TrimSpace(t.opts.VerifySHA))
-		if got != want {
-			t.mu.Lock()
-			t.Verified = "mismatch"
-			t.mu.Unlock()
-			return fmt.Errorf("sha256 mismatch: got %s", got)
-		}
-		t.mu.Lock()
-		t.Verified = "ok"
-		t.mu.Unlock()
-	}
-	return nil
+	return strconv.Itoa(d)
 }
 
 func httpGet(rawURL, proxy string, w io.Writer) error {
