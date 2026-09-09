@@ -304,7 +304,7 @@ func (s *Server) rssAdd(f *rssFeed, src string, size int64) {
 	}
 	cat := f.Category
 	if cat == "" && t.MetaInfo != nil {
-		cat = torrente.Categorize(t.Name, t.MetaInfo.Info.Files)
+		cat = s.autoCategory(t.Name, t.MetaInfo.Info.Files)
 	}
 	t.SetCategory(cat)
 	s.persistRecord(torrentRecord{Kind: rssKind(src), ID: t.ID, Source: src, Category: cat})

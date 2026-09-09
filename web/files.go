@@ -288,6 +288,9 @@ func (s *Server) fileListJSON(root, full string) []fileEntry {
 	entries, _ := os.ReadDir(full)
 	out := []fileEntry{}
 	for _, e := range entries {
+		if e.Name() == ".trash" {
+			continue // trash is managed from the Storage page
+		}
 		info, _ := e.Info()
 		var size int64
 		if info != nil {

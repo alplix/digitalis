@@ -6,6 +6,7 @@ import (
 	"embed"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -53,10 +54,16 @@ func NewServer(engine *torrente.Engine, saveDir, cfgDir string) *Server {
 		s.broadcastNotice(kind, id, name)
 		switch kind {
 		case torrente.NoticeMetadata:
+			s.autoFileMagnet(id)
 			s.syncSmartCategory(id)
 		case torrente.NoticeRatio:
 			// a ratio-autoremoved torrent must not come back on restart
 			s.dropRecord(id)
+			s.sendTelegram(fmt.Sprintf("✅ %s reached its share goal.", name))
+		case torrente.NoticeComplete:
+			s.sendTelegram(fmt.Sprintf("⬇️ %s finished downloading.", name))
+		case torrente.NoticeDiskGuard:
+			s.sendTelegram(fmt.Sprintf("⚠️ Disk space low — downloads paused (min %s free).", name))
 		}
 	}
 
@@ -110,6 +117,8 @@ type torrentView struct {
 	DownloadLimit  int64         `json:"download_limit"`
 	SeedDays       int64         `json:"seed_days"`
 	Sequential     bool          `json:"sequential"`
+	GuardPaused    bool          `json:"guard_paused"`
+	Queued         bool          `json:"queued"`
 }
 
 type trackerView struct {
@@ -173,6 +182,8 @@ func (s *Server) snapshot(t *torrente.Torrent) torrentView {
 		DownloadLimit:  s.engine.TorrentDownloadLimit(t.ID),
 		SeedDays:       s.engine.TorrentSeedDays(t.ID),
 		Sequential:     s.engine.TorrentSequential(t.ID),
+		GuardPaused:    t.IsGuardPaused(),
+		Queued:         t.IsQueued(),
 	}
 	return v
 }
@@ -214,6 +225,10 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /api/disks", s.listDisks)
 	mux.HandleFunc("POST /api/disks", s.addDisk)
 	mux.HandleFunc("DELETE /api/disks", s.removeDisk)
+	mux.HandleFunc("POST /api/disks/trash/empty", s.emptyDiskTrash)
+	mux.HandleFunc("POST /api/files/share", s.createShare)
+	mux.HandleFunc("GET /s/{token}", s.serveShare)
+	mux.HandleFunc("POST /api/telegram/test", s.testTelegram)
 	mux.HandleFunc("POST /api/bulk", s.bulkOp)
 	mux.HandleFunc("GET /api/files", s.listFiles)
 	mux.HandleFunc("GET /api/files/download", s.downloadFile)
@@ -248,8 +263,12 @@ func (s *Server) Handler() http.Handler {
 }
 
 // authPublic routes never require the access token: the shell page and its
-// static assets carry no secrets, and /api/auth verifies the token itself.
+// static assets carry no secrets, /api/auth verifies the token itself, and
+// /s/ share links are deliberate handouts to other people/devices.
 func authPublic(p string) bool {
+	if strings.HasPrefix(p, "/s/") {
+		return true
+	}
 	switch p {
 	case "/", "/logo.svg", "/favicon.svg", "/manifest.webmanifest", "/sw.js", "/qrcode.min.js", "/api/auth":
 		return true
@@ -432,6 +451,14 @@ type settingsView struct {
 	RatioStop        bool    `json:"ratio_stop"`
 	RatioRemove      bool    `json:"ratio_remove"`
 	SeedDays         int64   `json:"seed_days"`
+	DiskGuard        bool    `json:"disk_guard"`
+	DiskGuardMinGB   int64   `json:"disk_guard_min_gb"`
+	MaxActiveDl      int     `json:"max_active_downloads"`
+	TelegramEnabled  bool    `json:"telegram_enabled"`
+	TelegramTokenSet bool    `json:"telegram_token_set"`
+	TelegramChat     string  `json:"telegram_chat"`
+	TrashDays        int     `json:"trash_days"`
+	CatRules         []torrente.CatRule `json:"cat_rules"`
 	ServerTokenSet   bool    `json:"server_token_set"`
 	PeerPort         int     `json:"peer_port"`
 	Version          string  `json:"version"`
@@ -455,6 +482,14 @@ func (s *Server) settingsView() settingsView {
 		RatioStop:        v.RatioStop,
 		RatioRemove:      v.RatioRemove,
 		SeedDays:         v.SeedDays,
+		DiskGuard:        v.DiskGuard,
+		DiskGuardMinGB:   v.DiskGuardMinGB,
+		MaxActiveDl:      v.MaxActiveDownloads,
+		TelegramEnabled:  v.TelegramEnabled,
+		TelegramTokenSet: v.TelegramToken != "",
+		TelegramChat:     v.TelegramChat,
+		TrashDays:        v.TrashDays,
+		CatRules:         catRuleList(v.CatRules),
 		ServerTokenSet:   v.ServerToken != "",
 		PeerPort:         s.engine.Port(),
 		Version:          "digitalis 0.9",
@@ -463,6 +498,30 @@ func (s *Server) settingsView() settingsView {
 
 func (s *Server) getSettings(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, s.settingsView())
+}
+
+// catRuleList always returns a non-nil slice so the JSON is an array.
+func catRuleList(rules []torrente.CatRule) []torrente.CatRule {
+	if rules == nil {
+		return []torrente.CatRule{}
+	}
+	return rules
+}
+
+// autoCategory picks the folder for a torrent: rule-based patterns win, then
+// the built-in heuristic classifier.
+func (s *Server) autoCategory(name string, files []metainfo.File) string {
+	if cat := s.engine.MatchCatRule(name); cat != "" {
+		return cat
+	}
+	return torrente.Categorize(name, files)
+}
+
+// autoFileMagnet assigns a rule-based/heuristic folder to a magnet torrent as
+// soon as its metadata arrives, so magnets land in the right library folder
+// without user action.
+func (s *Server) autoFileMagnet(id string) {
+	_ = s.engine.AutoFileMagnet(id, s.autoCategory)
 }
 
 func (s *Server) postSettings(w http.ResponseWriter, r *http.Request) {
@@ -740,7 +799,7 @@ func (s *Server) addTorrent(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if category == "" {
-			category = torrente.Categorize(t.Name, t.MetaInfo.Info.Files)
+			category = s.autoCategory(t.Name, t.MetaInfo.Info.Files)
 		}
 		t.SetCategory(category)
 		persist(t)
@@ -756,7 +815,7 @@ func (s *Server) addTorrent(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if category == "" {
-			category = torrente.Categorize(t.Name, t.MetaInfo.Info.Files)
+			category = s.autoCategory(t.Name, t.MetaInfo.Info.Files)
 		}
 		t.SetCategory(category)
 		persist(t)

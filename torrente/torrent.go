@@ -83,6 +83,10 @@ type Torrent struct {
 	Sequential      bool              `json:"sequential"`   // download pieces in order for early playback
 	SeedSince       time.Time         `json:"seed_since"`   // when seeding was last (re)started
 
+	// Automation flags (surface in the UI as badges).
+	GuardPaused bool `json:"guard_paused"` // paused by the disk guard; resumes when space recovers
+	Queued      bool `json:"queued"`       // waiting for a download slot
+
 	storage *storage.Storage
 	engine  *Engine
 	picker  *picker
@@ -182,6 +186,7 @@ const (
 	NoticeMetadata string = "metadata" // magnet resolved its metadata
 	NoticeRatio    string = "ratio"    // torrent reached its ratio target (stopped/removed)
 	NoticeRSS      string = "rss"      // an RSS feed item was added as a torrent
+	NoticeDiskGuard string = "diskguard" // downloads paused because a disk is nearly full
 )
 
 // Engine manages all torrents and peer connections.
@@ -221,6 +226,7 @@ type Engine struct {
 	downloadPaused bool
 	nightApplied bool
 	nightPaused  bool
+	trashMu      sync.Mutex // guards trash entry list (file on disk)
 
 	// absolute byte counters for this process
 	byteUpRun   int64
@@ -680,7 +686,7 @@ func (e *Engine) RemoveTorrentWithFiles(id string) error {
 		e.Logf("remove files %s: refusing %s (outside storage roots)", id, root)
 		return nil
 	}
-	if err := os.RemoveAll(root); err != nil {
+	if err := e.trashOrRemove(root, name); err != nil {
 		e.Logf("remove files %s: %v", id, err)
 		return err
 	}

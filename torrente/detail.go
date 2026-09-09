@@ -44,6 +44,8 @@ type Detail struct {
 	RatioTarget    float64   `json:"ratio_target"`
 	SeedDays       int64     `json:"seed_days"`
 	Sequential     bool      `json:"sequential"`
+	GuardPaused    bool      `json:"guard_paused"`
+	Queued         bool      `json:"queued"`
 	SeedSince      time.Time `json:"seed_since"`
 	SeededTo       int       `json:"seeded_to"`
 	SeededFirst    time.Time `json:"seeded_first"`
@@ -92,6 +94,8 @@ func (e *Engine) Detail(id string) (*Detail, error) {
 		RatioTarget:     t.RatioTarget,
 		SeedDays:        t.SeedDaysTarget,
 		Sequential:      t.Sequential,
+		GuardPaused:     t.GuardPaused,
+		Queued:          t.Queued,
 		SeedSince:       t.SeedSince,
 		SeededTo:        t.SeededTo,
 		SeededFirst:     t.SeededFirst,

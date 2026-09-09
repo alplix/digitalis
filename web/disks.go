@@ -7,84 +7,125 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"syscall"
+	"time"
 )
 
-// diskView is a single storage root with its space usage, per-category usage
-// and per-torrent disk footprint, so the Storage page can sort torrents by how
-// much space they occupy (largest first).
+// Storage roots API: every registered root with its volume-level usage
+// (total/free/used), the size of managed content (categories), the torrent
+// count, the trash footprint and the live disk-guard state.
+
 type diskView struct {
-	Path   string          `json:"path"`
-	Label  string          `json:"label"`
-	Total  int64           `json:"total"`
-	Free   int64           `json:"free"`
-	Usage  int64           `json:"usage"`
-	Cats   []categoryUsage `json:"categories"`
-	Items  []diskTorrent   `json:"torrents"`
+	Path             string          `json:"path"`
+	Label            string          `json:"label"`
+	Base             bool            `json:"base"`
+	Total            int64           `json:"total"`
+	Free             int64           `json:"free"`
+	Used             int64           `json:"used"`
+	Content          int64           `json:"content"`
+	Count            int             `json:"count"`
+	TrashBytes       int64           `json:"trash_bytes"`
+	Categories       []categoryUsage `json:"categories"`
+	Guard            bool            `json:"guard"`
+	GuardPausedCount int             `json:"guard_paused"`
 }
 
-// diskTorrent is one torrent's footprint on a storage root.
-type diskTorrent struct {
-	ID       string  `json:"id"`
-	Name     string  `json:"name"`
-	Category string  `json:"category"`
-	State    string  `json:"state"`
-	Progress float64 `json:"progress"`
-	Size     int64   `json:"size"`
+// diskCache caches the expensive on-disk walk (dirSize over every folder) for
+// a short while so the Storage page stays snappy.
+type diskCacheEntry struct {
+	at   time.Time
+	dv   diskView
 }
 
-// listDisks reports every registered storage root. Each root's torrent list is
-// sorted by on-disk size (largest first).
+var (
+	diskCacheMu sync.Mutex
+	diskCache   = map[string]diskCacheEntry{}
+)
+
+const diskCacheTTL = 30 * time.Second
+
 func (s *Server) listDisks(w http.ResponseWriter, r *http.Request) {
 	roots := s.engine.Disks()
 	out := make([]diskView, 0, len(roots))
-	for _, root := range roots {
-		out = append(out, s.diskSnapshot(root))
+	for i, root := range roots {
+		dv := s.cachedDiskView(root)
+		dv.Base = i == 0
+		s.applyLiveDiskState(&dv, root)
+		out = append(out, dv)
 	}
 	writeJSON(w, http.StatusOK, out)
 }
 
-// diskSnapshot builds the view for a single storage root.
-func (s *Server) diskSnapshot(root string) diskView {
-	dv := diskView{Path: filepath.Clean(root), Label: filepath.Base(filepath.Clean(root))}
+// cachedDiskView returns the disk view from cache when fresh, else rebuilds it.
+func (s *Server) cachedDiskView(root string) diskView {
+	key := filepath.Clean(root)
+	diskCacheMu.Lock()
+	if ent, ok := diskCache[key]; ok && time.Since(ent.at) < diskCacheTTL {
+		diskCacheMu.Unlock()
+		return ent.dv
+	}
+	diskCacheMu.Unlock()
+
+	dv := s.buildDiskView(root)
+
+	diskCacheMu.Lock()
+	diskCache[key] = diskCacheEntry{at: time.Now(), dv: dv}
+	diskCacheMu.Unlock()
+	return dv
+}
+
+// applyLiveDiskState overlays cheap, always-current numbers (counts, guard).
+func (s *Server) applyLiveDiskState(dv *diskView, root string) {
+	key := filepath.Clean(root)
+	v := s.engine.View()
+	minFree := v.DiskGuardMinGB << 30
+	for _, t := range s.engine.Torrents() {
+		sd := filepath.Clean(t.SaveDir)
+		if sd == "" || sd == "." || !underDir(key, sd) {
+			continue
+		}
+		dv.Count++
+		if t.IsGuardPaused() {
+			dv.GuardPausedCount++
+		}
+	}
+	dv.Guard = v.DiskGuard && v.DiskGuardMinGB > 0 && dv.Free >= 0 && dv.Free < minFree
+}
+
+// buildDiskView walks the root: volume stats, per-folder sizes, trash size.
+func (s *Server) buildDiskView(root string) diskView {
+	clean := filepath.Clean(root)
+	dv := diskView{
+		Path:       clean,
+		Label:      filepath.Base(clean),
+		Categories: []categoryUsage{},
+	}
 	var st syscall.Statfs_t
 	if err := syscall.Statfs(root, &st); err == nil {
 		dv.Total = int64(st.Blocks) * int64(st.Bsize)
 		dv.Free = int64(st.Bavail) * int64(st.Bsize)
+		dv.Used = dv.Total - dv.Free
 	}
 	entries, err := os.ReadDir(root)
-	if err == nil {
-		dirs := make([]string, 0, len(entries))
-		for _, e := range entries {
-			if e.IsDir() {
-				dirs = append(dirs, e.Name())
-			}
-		}
-		sort.Strings(dirs)
-		var total int64
-		for _, name := range dirs {
-			sz := dirSize(filepath.Join(root, name))
-			dv.Cats = append(dv.Cats, categoryUsage{Name: name, Size: sz})
-			total += sz
-		}
-		dv.Usage = total
+	if err != nil {
+		return dv
 	}
-	key := filepath.Clean(root)
-	for _, t := range s.engine.Torrents() {
-		sd := filepath.Clean(t.SaveDir)
-		if !underDir(key, sd) {
-			continue
+	dirs := make([]string, 0, len(entries))
+	for _, e := range entries {
+		if e.IsDir() && e.Name() != ".trash" {
+			dirs = append(dirs, e.Name())
 		}
-		dv.Items = append(dv.Items, diskTorrent{
-			ID:       t.ID,
-			Name:     t.Name,
-			Category: t.Category,
-			State:    string(t.State),
-			Progress: t.Progress() * 100,
-			Size:     dirSize(filepath.Join(sd, t.Name)),
-		})
 	}
-	sort.Slice(dv.Items, func(i, j int) bool { return dv.Items[i].Size > dv.Items[j].Size })
+	sort.Strings(dirs)
+	var total int64
+	for _, name := range dirs {
+		sz := dirSize(filepath.Join(root, name))
+		dv.Categories = append(dv.Categories, categoryUsage{Name: name, Size: sz})
+		total += sz
+	}
+	dv.Content = total
+	dv.TrashBytes = dirSize(filepath.Join(root, ".trash"))
 	return dv
 }
 
@@ -113,7 +154,10 @@ func (s *Server) addDisk(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusConflict, map[string]string{"error": err.Error()})
 		return
 	}
-	writeJSON(w, http.StatusOK, s.diskSnapshot(p))
+	dv := s.buildDiskView(p)
+	dv.Base = false
+	s.applyLiveDiskState(&dv, p)
+	writeJSON(w, http.StatusOK, dv)
 }
 
 func (s *Server) removeDisk(w http.ResponseWriter, r *http.Request) {
@@ -127,7 +171,41 @@ func (s *Server) removeDisk(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusConflict, map[string]string{"error": err.Error()})
 		return
 	}
+	diskCacheMu.Lock()
+	delete(diskCache, filepath.Clean(p))
+	diskCacheMu.Unlock()
 	writeJSON(w, http.StatusOK, map[string]string{"ok": "removed"})
+}
+
+// emptyDiskTrash deletes every trash entry under one root (base disk = all).
+func (s *Server) emptyDiskTrash(w http.ResponseWriter, r *http.Request) {
+	var req diskReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
+		return
+	}
+	p := strings.TrimSpace(req.Path)
+	roots := s.engine.Disks()
+	if len(roots) == 0 {
+		writeJSON(w, http.StatusConflict, map[string]string{"error": "no disks"})
+		return
+	}
+	if p == "" || filepath.Clean(p) == filepath.Clean(roots[0]) {
+		// the base view aggregates nothing special: empty only its own trash
+		p = roots[0]
+	}
+	n := s.engine.EmptyTrash(p)
+	diskCacheMu.Lock()
+	delete(diskCache, filepath.Clean(p))
+	diskCacheMu.Unlock()
+	writeJSON(w, http.StatusOK, map[string]interface{}{"ok": "emptied", "removed": n})
+}
+
+// invalidateDiskCache drops one root from the cache (used after mutations).
+func (s *Server) invalidateDiskCache(root string) {
+	diskCacheMu.Lock()
+	delete(diskCache, filepath.Clean(root))
+	diskCacheMu.Unlock()
 }
 
 // diskRootOf returns the registered storage root that contains saveDir, or ""

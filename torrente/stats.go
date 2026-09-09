@@ -134,6 +134,7 @@ func (e *Engine) InitStats(configDir string, fallbackBaseDir string) Settings {
 
 	go e.statsLoop()
 	go e.sequentialLoop()
+	go e.purgeTrash() // clean stale trash right after startup
 	return s
 }
 
@@ -147,6 +148,9 @@ func (e *Engine) statsLoop() {
 		if persistTick >= 2 {
 			persistTick = 0
 			e.persistStats()
+		}
+		if persistTick%20 == 10 {
+			go e.purgeTrash()
 		}
 	}
 }
@@ -204,6 +208,9 @@ func (e *Engine) statsTick() {
 
 	// apply the night schedule (rate caps) and ratio targets
 	e.applySchedule(cur)
+
+	// disk guard + download queue
+	e.automationTick(cur)
 }
 
 // applySchedule applies night-mode rate caps / full pauses and per-torrent

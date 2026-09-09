@@ -558,11 +558,19 @@
           <h1 class="text-xl md:text-2xl font-bold" data-i18n="storage">Storage</h1>
           <div class="flex gap-2">
             <button onclick="refreshDisks()" class="px-3 py-1.5 rounded-lg inp text-xs hover:border-[var(--border2)] transition" data-i18n="refresh">↻</button>
-            <button onclick="addDisk()" class="px-4 py-2 rounded-xl btn-primary text-sm font-medium shadow transition">＋ <span data-i18n="addDisk">Add disk</span></button>
+            <button onclick="toggleDiskForm()" class="px-4 py-2 rounded-xl btn-primary text-sm font-medium shadow transition">＋ <span data-i18n="addDisk">Add disk</span></button>
           </div>
         </div>
-        <div class="text-xs tx2 mb-4">
-          <span data-i18n="diskHint">Extra storage roots. Each root is its own volume.</span>
+        <div class="card rounded-2xl p-4 mb-4 hidden" id="diskForm">
+          <div class="flex flex-wrap items-end gap-3">
+            <div class="flex-1 min-w-[220px]">
+              <label class="block text-xs tx2 mb-1" data-i18n="diskPath">Disk path</label>
+              <input id="diskFormPath" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono" placeholder="/mnt/disk2" spellcheck="false">
+            </div>
+            <button onclick="addDiskSubmit()" class="px-5 py-2 rounded-xl btn-primary text-sm font-medium shadow" data-i18n="add">Add</button>
+            <button onclick="toggleDiskForm()" class="px-3 py-2 rounded-lg inp text-sm">✕</button>
+          </div>
+          <div class="text-xs tx3 mt-2" id="diskFormHint"></div>
         </div>
         <div id="diskList" class="space-y-4">
           <div class="card rounded-2xl p-6 text-center tx2 text-sm" data-i18n="loading">Loading...</div>
@@ -704,6 +712,55 @@
         </div>
 
         <div class="card rounded-2xl p-4 mt-4">
+          <h3 class="text-sm font-semibold mb-3" data-i18n="automationTitle">Automation &amp; protection</h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+            <div class="space-y-2">
+              <label class="flex items-center justify-between gap-3 cursor-pointer">
+                <span class="tx2" data-i18n="diskGuard">Disk guard (auto-pause when full)</span>
+                <input id="set-disk-guard" type="checkbox" class="selchk">
+              </label>
+              <div>
+                <label class="block text-xs tx2 mb-1" data-i18n="diskGuardMin">Pause downloads below free space (GB)</label>
+                <input id="set-disk-guard-min" type="number" min="0" value="5" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono">
+              </div>
+              <div>
+                <label class="block text-xs tx2 mb-1" data-i18n="trashDays">Trash retention (days, 0=delete now)</label>
+                <input id="set-trash-days" type="number" min="0" value="0" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono">
+              </div>
+            </div>
+            <div class="space-y-2">
+              <div>
+                <label class="block text-xs tx2 mb-1" data-i18n="maxActive">Max simultaneous downloads (0=∞)</label>
+                <input id="set-max-dl" type="number" min="0" value="0" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono">
+              </div>
+              <label class="flex items-center justify-between gap-3 cursor-pointer">
+                <span class="tx2" data-i18n="tgEnabled">Telegram notifications</span>
+                <input id="set-tg-enabled" type="checkbox" class="selchk">
+              </label>
+              <div>
+                <label class="block text-xs tx2 mb-1" data-i18n="tgToken">Bot token (blank = keep current)</label>
+                <input id="set-tg-token" type="password" autocomplete="new-password" class="w-full rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono">
+              </div>
+              <div>
+                <label class="block text-xs tx2 mb-1" data-i18n="tgChat">Chat ID</label>
+                <div class="flex gap-2">
+                  <input id="set-tg-chat" class="flex-1 rounded-xl px-3 py-2 inp text-sm focus:outline-none font-mono">
+                  <button onclick="testTelegram()" class="px-3 py-2 rounded-lg inp text-xs font-medium" data-i18n="tgTest">Test</button>
+                </div>
+              </div>
+            </div>
+            <div class="space-y-2">
+              <div class="flex items-center justify-between gap-2">
+                <span class="tx2" data-i18n="catRules">Auto-folder rules (regex → folder)</span>
+                <button onclick="addRuleRow('','')" class="px-2 py-1 rounded-lg inp text-[11px] font-medium">＋</button>
+              </div>
+              <div id="ruleRows" class="space-y-1.5"></div>
+              <p class="text-[11px] tx3" data-i18n="catRulesHint">First matching rule wins, applied before smart detection.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card rounded-2xl p-4 mt-4">
           <h3 class="text-sm font-semibold mb-3" data-i18n="peerInfo">Client</h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
             <div class="flex justify-between gap-2"><span class="tx2" data-i18n="peerPort">Peer port</span><span class="font-mono" id="set-port">—</span></div>
@@ -827,7 +884,15 @@ const I18N = {
     authSaved: 'Access protected', authCleared: 'Protection removed',
     upload: 'Upload', upDir: 'Up',
     rename: 'Rename', download: 'Download', delete: 'Delete', allTorrentsPage: 'All torrents',
-    catParent: 'Parent folder', catName: 'New folder name'
+    catParent: 'Parent folder', catName: 'New folder name',
+    automationTitle: 'Automation & protection', diskGuard: 'Disk guard (auto-pause when full)',
+    diskGuardMin: 'Pause downloads below free space (GB)', trashDays: 'Trash retention (days, 0=delete now)',
+    maxActive: 'Max simultaneous downloads (0=∞)', tgEnabled: 'Telegram notifications',
+    tgToken: 'Bot token (blank = keep current)', tgChat: 'Chat ID', tgTest: 'Test', tgKeep: '•••••••• (saved)',
+    catRules: 'Auto-folder rules (regex → folder)', catRulesHint: 'First matching rule wins, applied before smart detection.',
+    diskFull: 'Disk almost full', queued: 'Queued', guardPausedNote: 'torrent(s) paused — free up space to resume',
+    diskContent: 'Content', trash: 'Trash', emptyTrash: 'Empty trash', baseDisk: 'Base', diskPath: 'Disk path',
+    shareHours: 'Share link valid for how many hours?', shareCopied: 'Share link copied'
   },
   tr: {
     tagline: 'Yüksük Otu — sıfırdan yazılmış BitTorrent istemcisi', noDocker: 'Docker yok',
@@ -883,7 +948,15 @@ const I18N = {
     authSaved: 'Erişim korundu', authCleared: 'Koruma kaldırıldı',
     upload: 'Yükle', upDir: 'Üst',
     rename: 'Yeniden adlandır', download: 'İndir', delete: 'Sil', allTorrentsPage: 'Tüm torrentler',
-    catParent: 'Üst klasör', catName: 'Yeni klasör adı'
+    catParent: 'Üst klasör', catName: 'Yeni klasör adı',
+    automationTitle: 'Otomasyon ve koruma', diskGuard: 'Disk koruması (dolunca duraklat)',
+    diskGuardMin: 'Bu boş alanın altında indirmeleri duraklat (GB)', trashDays: 'Çöp kutusu süresi (gün, 0=hemen sil)',
+    maxActive: 'Aynı anda en fazla indirme (0=∞)', tgEnabled: 'Telegram bildirimleri',
+    tgToken: 'Bot token (boş = mevcut kalsın)', tgChat: 'Chat ID', tgTest: 'Test', tgKeep: '•••••••• (kayıtlı)',
+    catRules: 'Otomatik klasör kuralları (regex → klasör)', catRulesHint: 'İlk eşleşen kural kazanır, akıllı tespitten önce uygulanır.',
+    diskFull: 'Disk doluyor', queued: 'Sırada', guardPausedNote: 'torrent duraklatıldı — devam etmek için yer açın',
+    diskContent: 'İçerik', trash: 'Çöp kutusu', emptyTrash: 'Çöpe boşalt', baseDisk: 'Ana', diskPath: 'Disk yolu',
+    shareHours: 'Paylaşım linki kaç saat geçerli olsun?', shareCopied: 'Paylaşım linki kopyalandı'
   },
   de: {
     tagline: 'Ein von Grund auf geschriebener BitTorrent-Client', noDocker: 'Kein Docker',
@@ -1385,6 +1458,17 @@ function moveOptions(tr) {
     cats.map(c => `<option value="${esc(c.path)}" ${tr.category === c.path ? 'selected' : ''}>${'\u00A0'.repeat(c.depth*4)}${esc(c.path)}</option>`).join('');
 }
 
+// diskMoveOptions builds the storage-root select for the detail drawer,
+// preselecting the root that currently holds the torrent.
+function diskMoveOptions(d) {
+  const cur = (d.save_dir || '').toLowerCase();
+  let best = '';
+  (disksData || []).forEach(x => {
+    if (cur.startsWith(x.path.toLowerCase()) && x.path.length > best.length) best = x.path;
+  });
+  return (disksData || []).map(x => `<option value="${esc(x.path)}" ${x.path === best ? 'selected' : ''}>${esc(diskLabel(x.path))}</option>`).join('');
+}
+
 function renderTorrent(tr) {
   const have = tr.pieces_total > 0 ? `${tr.pieces_have}/${tr.pieces_total}` : '—';
   const trs = tr.trackers || [];
@@ -1401,6 +1485,8 @@ function renderTorrent(tr) {
           <div class="flex items-start gap-2 flex-wrap">
             <h3 class="font-semibold truncate" style="color:var(--txt)">${esc(tr.name)}</h3>
             ${stateBadge(tr.state)}
+            ${tr.guard_paused ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold" style="background:rgba(251,191,36,.15);color:#fbbf24" title="${esc(t('guardPausedNote'))}">⚠ ${esc(t('diskFull'))}</span>` : ''}
+            ${tr.queued ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold chip" title="${esc(t('maxActive'))}">⏳ ${esc(t('queued'))}</span>` : ''}
             <span class="px-2 py-0.5 rounded-full chip text-xs tx2">${catLabel}</span>
           </div>
           <p class="text-[11px] tx3 font-mono truncate mt-0.5">${esc(tr.info_hash)}</p>
@@ -1756,11 +1842,14 @@ async function moveTorrent(id) {
   const sel = document.getElementById('mv-' + id);
   if (!sel) return;
   const dir = sel.value;
+  const dsel = document.getElementById('mdisk-' + id);
+  const body = dsel ? {category: dir, disk: dsel.value} : {category: dir};
   try {
-    await api(`/torrents/${id}/move`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({category: dir}) });
+    await api(`/torrents/${id}/move`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
     const st = document.getElementById('addStatus');
     if (st) st.innerHTML = `<span style="color:var(--good)">${esc(t('moved'))}: 📁 ${esc(dir || t('root'))}</span>`;
     await refreshCats();
+    refreshDisks();
     refreshTorrentsFromAPI();
   } catch (e) { alert(e.message); }
 }
@@ -1787,43 +1876,71 @@ function renderDisks() {
     return;
   }
   box.innerHTML = disksData.map(d => {
-    const usedPct = d.total > 0 ? Math.min(100, ((d.total - d.free) / d.total) * 100) : 0;
-    const warn = d.total > 0 && (d.total - d.free) / d.total > 0.9;
-    const removable = !(disksData[0] && disksData[0].path === d.path);
+    const used = d.used !== undefined ? d.used : (d.total - d.free);
+    const usedPct = d.total > 0 ? Math.min(100, (used / d.total) * 100) : 0;
+    const warn = d.total > 0 && used / d.total > 0.9;
+    const removable = !d.base;
+    const cats = (d.categories || []).filter(c => c.size > 0).sort((a, b) => b.size - a.size);
+    const catChips = cats.slice(0, 8).map(c => `<span class="px-2 py-0.5 rounded-full chip text-[11px] tx2 whitespace-nowrap">📁 ${esc(c.name)} · ${fmtBytes(c.size)}</span>`).join('') +
+      (cats.length > 8 ? `<span class="px-2 py-0.5 rounded-full chip text-[11px] tx3">+${cats.length - 8}</span>` : '');
     return `
     <div class="card rounded-2xl p-4">
       <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
         <div class="flex items-center gap-2 min-w-0">
           <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" style="color:var(--accent2)"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4h16v16H4zM4 9h16M9 4v16"/></svg>
           <span class="font-semibold font-mono text-sm truncate">${esc(d.label)}</span>
+          ${d.base ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold" style="background:rgba(52,211,153,.15);color:var(--good)">${esc(t('baseDisk'))}</span>` : ''}
           <span class="px-2 py-0.5 rounded-full chip text-[10px] tx3 font-mono truncate">${esc(d.path)}</span>
+          ${d.guard ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold" style="background:rgba(251,191,36,.15);color:#fbbf24">⚠ ${esc(t('diskFull'))}</span>` : ''}
         </div>
         <div class="flex items-center gap-2">
-          <span class="text-[11px] chip px-2 py-0.5 rounded-full font-mono tx2">${fmtBytes(d.total - d.free)} / ${fmtBytes(d.total)} · ${fmtBytes(d.free)} ${esc(t('free'))}</span>
+          <span class="text-[11px] chip px-2 py-0.5 rounded-full font-mono tx2">${fmtBytes(used)} / ${fmtBytes(d.total)} · ${fmtBytes(d.free)} ${esc(t('free'))}</span>
           ${removable ? `<button onclick="removeDisk('${esc(d.path)}')" class="text-xs px-1.5" style="color:var(--bad)" title="${esc(t('removeDisk'))}">✕</button>` : ''}
         </div>
       </div>
-      <div class="h-2.5 rounded-full overflow-hidden mb-4" style="background:var(--bg0)">
+      <div class="h-2.5 rounded-full overflow-hidden mb-3" style="background:var(--bg0)">
         <div class="h-full rounded-full transition-all duration-700" style="width:${usedPct}%;background:${warn ? 'var(--bad)' : 'var(--ok-grad)'}"></div>
       </div>
-      <div class="flex flex-wrap gap-x-4 gap-y-1 mb-4 text-xs">
-        <span class="tx2" data-i18n="diskUsage">Usage</span> <b class="font-mono">${fmtBytes(d.usage)}</b>
-        <span class="tx2" data-i18n="torrents2">Torrents</span> <b class="font-mono">${d.torrents.length}</b>
+      <div class="flex flex-wrap gap-x-4 gap-y-1 mb-2 text-xs">
+        <span class="tx2">${esc(t('diskContent'))}</span> <b class="font-mono">${fmtBytes(d.content || 0)}</b>
+        <span class="tx2">${esc(t('torrents2'))}</span> <b class="font-mono">${d.count || 0}</b>
+        <span class="tx2">🗑 ${esc(t('trash'))}</span> <b class="font-mono">${fmtBytes(d.trash_bytes || 0)}</b>
+        ${(d.trash_bytes || 0) > 0 ? `<button onclick="emptyTrash('${esc(d.path)}')" class="px-2 py-0.5 rounded-md inp text-[11px] hover:border-[var(--border2)] transition">${esc(t('emptyTrash'))}</button>` : ''}
       </div>
-      ${(d.categories || []).filter(c=>c.size>0).length ? `
-      <div class="flex flex-wrap gap-2 mb-3">
-        ${(d.categories||[]).filter(c=>c.size>0).map(c => `<span class="px-2 py-0.5 rounded-full chip text-[11px] tx2">📁 ${esc(c.name)} · ${fmtBytes(c.size)}</span>`).join('')}
-      </div>` : ''}
-      <button onclick="show('torrents')" class="text-xs font-medium transition" style="color:var(--accent)">→ ${esc(t('allTorrentsPage'))} (${d.torrents.length})</button>
+      ${d.guard_paused ? `<div class="text-[11px] mb-2" style="color:#fbbf24">⚠ ${d.guard_paused} ${esc(t('guardPausedNote'))}</div>` : ''}
+      ${catChips ? `<div class="flex flex-wrap gap-1.5">${catChips}</div>` : ''}
     </div>`;
   }).join('');
 }
 
-async function addDisk() {
-  const p = prompt(t('addDisk') + ' — ' + t('diskPathHint'));
-  if (!p || !p.trim()) return;
+function toggleDiskForm() {
+  const f = document.getElementById('diskForm');
+  if (!f) return;
+  f.classList.toggle('hidden');
+  if (!f.classList.contains('hidden')) {
+    const inp = document.getElementById('diskFormPath');
+    if (inp) { inp.value = ''; inp.focus(); }
+    const hint = document.getElementById('diskFormHint');
+    if (hint) hint.textContent = '';
+  }
+}
+
+async function addDiskSubmit() {
+  const inp = document.getElementById('diskFormPath');
+  const hint = document.getElementById('diskFormHint');
+  const p = inp ? inp.value.trim() : '';
+  if (!p) return;
   try {
-    await api('/disks', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({path: p.trim()}) });
+    await api('/disks', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({path: p}) });
+    toggleDiskForm();
+    await refreshDisks();
+  } catch (e) { if (hint) hint.textContent = e.message; }
+}
+
+async function emptyTrash(path) {
+  if (!confirm(`${t('emptyTrash')} (${path})?`)) return;
+  try {
+    await api('/disks/trash/empty', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({disk: path}) });
     await refreshDisks();
   } catch (e) { alert(e.message); }
 }
@@ -2177,6 +2294,7 @@ function renderDetail(d) {
 
     <div class="flex flex-wrap items-center gap-2 text-sm mb-4">
       <span class="text-xs uppercase tracking-widest tx2">${t('move')}</span>
+      <select id="mdisk-${d.id}" class="inp rounded-lg px-3 py-1.5 text-xs font-mono focus:outline-none max-w-40">${diskMoveOptions(d)}</select>
       <select id="mv-${d.id}" class="inp rounded-lg px-3 py-1.5 text-xs focus:outline-none">${moveOptions(d)}</select>
       <button onclick="moveTorrent('${d.id}')" class="px-3 py-1.5 rounded-lg btn-primary text-xs font-medium transition">${t('move')}</button>
     </div>
@@ -2530,6 +2648,15 @@ async function loadSettings() {
     document.getElementById('set-ratio').value = s.ratio_target || 0;
     document.getElementById('set-ratio-stop').checked = !!s.ratio_stop;
     document.getElementById('set-ratio-remove').checked = !!s.ratio_remove;
+    document.getElementById('set-disk-guard').checked = !!s.disk_guard;
+    document.getElementById('set-disk-guard-min').value = s.disk_guard_min_gb || 0;
+    document.getElementById('set-trash-days').value = s.trash_days || 0;
+    document.getElementById('set-max-dl').value = s.max_active_downloads || 0;
+    document.getElementById('set-tg-enabled').checked = !!s.telegram_enabled;
+    document.getElementById('set-tg-token').value = '';
+    document.getElementById('set-tg-token').placeholder = s.telegram_token_set ? t('tgKeep') : '';
+    document.getElementById('set-tg-chat').value = s.telegram_chat || '';
+    renderRuleRows(s.cat_rules || []);
     document.getElementById('nightSwitch').classList.toggle('on', !!s.night_mode);
     document.getElementById('set-port').textContent = s.peer_port;
     document.getElementById('set-basedir').textContent = s.base_dir || '';
@@ -2556,7 +2683,15 @@ async function saveSettings() {
     night_pause: document.getElementById('set-night-pause').checked,
     ratio_target: parseFloat(document.getElementById('set-ratio').value) || 0,
     ratio_stop: document.getElementById('set-ratio-stop').checked,
-    ratio_remove: document.getElementById('set-ratio-remove').checked
+    ratio_remove: document.getElementById('set-ratio-remove').checked,
+    disk_guard: document.getElementById('set-disk-guard').checked,
+    disk_guard_min_gb: parseInt(document.getElementById('set-disk-guard-min').value) || 0,
+    trash_days: parseInt(document.getElementById('set-trash-days').value) || 0,
+    max_active_downloads: parseInt(document.getElementById('set-max-dl').value) || 0,
+    telegram_enabled: document.getElementById('set-tg-enabled').checked,
+    telegram_token: document.getElementById('set-tg-token').value.trim(),
+    telegram_chat: document.getElementById('set-tg-chat').value.trim(),
+    cat_rules: collectRuleRows()
   };
   try {
     await api('/settings', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
@@ -2567,6 +2702,40 @@ async function saveSettings() {
     const st = document.getElementById('setStatus');
     st.innerHTML = `<span style="color:var(--bad)">${esc(e.message)}</span>`;
   }
+}
+
+// ---------- automation: rule rows + telegram test ----------
+function renderRuleRows(rules) {
+  const box = document.getElementById('ruleRows');
+  if (!box) return;
+  box.innerHTML = '';
+  (rules.length ? rules : []).forEach(r => addRuleRow(r.pattern || '', r.category || ''));
+}
+function addRuleRow(pattern, category) {
+  const box = document.getElementById('ruleRows');
+  if (!box) return;
+  const row = document.createElement('div');
+  row.className = 'flex gap-1.5 items-center';
+  row.innerHTML = `<input class="rule-pat flex-1 min-w-0 rounded-lg px-2 py-1.5 inp text-[11px] font-mono focus:outline-none" placeholder="1080p|x265" value="${esc(pattern || '')}">` +
+    `<span class="tx3 text-[11px]">→</span>` +
+    `<input class="rule-cat w-24 rounded-lg px-2 py-1.5 inp text-[11px] font-mono focus:outline-none" placeholder="movies" value="${esc(category || '')}">` +
+    `<button onclick="this.parentElement.remove()" class="px-1.5 py-1 rounded-md text-[11px]" style="color:var(--bad)">✕</button>`;
+  box.appendChild(row);
+}
+function collectRuleRows() {
+  const box = document.getElementById('ruleRows');
+  if (!box) return [];
+  return [...box.querySelectorAll(':scope > div')].map(row => ({
+    pattern: (row.querySelector('.rule-pat') || {}).value || '',
+    category: (row.querySelector('.rule-cat') || {}).value || ''
+  })).filter(r => r.pattern.trim() && r.category.trim())
+    .map(r => ({ pattern: r.pattern.trim(), category: r.category.trim() }));
+}
+async function testTelegram() {
+  try {
+    await api('/telegram/test', { method: 'POST' });
+    toast('info', '', 'Telegram ✓');
+  } catch (e) { alert(e.message); }
 }
 
 // ---------- file manager ----------
@@ -2624,6 +2793,7 @@ async function fileList() {
         <span class="shrink-0 font-mono tx3 text-xs">${f.is_dir ? '' : fmtBytes(f.size)}</span>
         <span class="shrink-0 flex items-center gap-1">
           ${!f.is_dir ? `<button onclick="event.stopPropagation();fileDown('${esc(f.path)}')" class="px-1.5 text-xs" style="color:var(--accent2)" title="${esc(t('download'))}">↓</button>` : ''}
+          ${!f.is_dir ? `<button onclick="event.stopPropagation();fileShare('${esc(f.path)}')" class="px-1.5 text-xs tx2" title="${esc(t('share'))}">🔗</button>` : ''}
           <button onclick="event.stopPropagation();fileRename('${esc(f.path)}')" class="px-1.5 text-xs tx2" title="${esc(t('rename'))}">✎</button>
           <button onclick="event.stopPropagation();fileDel('${esc(f.path)}')" class="px-1.5 text-xs" style="color:var(--bad)" title="${esc(t('delete'))}">✕</button>
         </span>
@@ -2681,6 +2851,19 @@ async function fileDel(p) {
     await api('/api/files/delete', { method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ disk: fileDisk, path: p }) });
     await fileList();
+  } catch (e) { alert(e.message); }
+}
+async function fileShare(p) {
+  const h = parseInt(prompt(t('shareHours'), '24'), 10);
+  if (isNaN(h) || h <= 0) return;
+  try {
+    const r = await api('/api/files/share', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ disk: fileDisk, path: p, hours: h }) });
+    const abs = location.origin + r.url;
+    (navigator.clipboard ? navigator.clipboard.writeText(abs) : Promise.reject()).then(
+      () => toast('info', '', t('shareCopied')),
+      () => prompt(t('share'), abs)
+    );
   } catch (e) { alert(e.message); }
 }
 
