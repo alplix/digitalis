@@ -34,8 +34,8 @@ type diskView struct {
 // diskCache caches the expensive on-disk walk (dirSize over every folder) for
 // a short while so the Storage page stays snappy.
 type diskCacheEntry struct {
-	at   time.Time
-	dv   diskView
+	at time.Time
+	dv diskView
 }
 
 var (

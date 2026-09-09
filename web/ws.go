@@ -60,38 +60,38 @@ func (h *wsHub) broadcast(payload []byte) {
 
 // wsTorrent is the compact per-torrent live entry.
 type wsTorrent struct {
-	ID        string  `json:"id"`
-	Name      string  `json:"name"`
-	State     string  `json:"state"`
-	Progress  float64 `json:"progress"`
-	Downloaded int64  `json:"downloaded"`
-	Uploaded  int64   `json:"uploaded"`
-	Size      int64   `json:"size"`
-	DL        int64   `json:"dl"`
-	UL        int64   `json:"ul"`
-	Seeders   int     `json:"seeders"`
-	Leechers  int     `json:"leechers"`
-	Peers     int     `json:"peers"`
-	PH        int     `json:"ph"`
-	PT        int     `json:"pt"`
-	Ratio     float64 `json:"ratio"`
-	Cat       string  `json:"cat"`
+	ID         string  `json:"id"`
+	Name       string  `json:"name"`
+	State      string  `json:"state"`
+	Progress   float64 `json:"progress"`
+	Downloaded int64   `json:"downloaded"`
+	Uploaded   int64   `json:"uploaded"`
+	Size       int64   `json:"size"`
+	DL         int64   `json:"dl"`
+	UL         int64   `json:"ul"`
+	Seeders    int     `json:"seeders"`
+	Leechers   int     `json:"leechers"`
+	Peers      int     `json:"peers"`
+	PH         int     `json:"ph"`
+	PT         int     `json:"pt"`
+	Ratio      float64 `json:"ratio"`
+	Cat        string  `json:"cat"`
 }
 
 // wsMsg is the JSON payload broadcast every tick.
 type wsMsg struct {
-	Type       string       `json:"type"`
-	Up         int64        `json:"up"`
-	Down       int64        `json:"down"`
-	UpTotal    int64        `json:"up_total"`
-	DownTotal  int64        `json:"down_total"`
-	UpToday    int64        `json:"up_today"`
-	DownToday  int64        `json:"down_today"`
-	Conns      int64        `json:"conns"`
-	Active     int          `json:"active"`
-	Paused     bool         `json:"paused"`
-	DailyLimit int64        `json:"daily_limit"`
-	Torrents   []wsTorrent  `json:"torrents"`
+	Type       string      `json:"type"`
+	Up         int64       `json:"up"`
+	Down       int64       `json:"down"`
+	UpTotal    int64       `json:"up_total"`
+	DownTotal  int64       `json:"down_total"`
+	UpToday    int64       `json:"up_today"`
+	DownToday  int64       `json:"down_today"`
+	Conns      int64       `json:"conns"`
+	Active     int         `json:"active"`
+	Paused     bool        `json:"paused"`
+	DailyLimit int64       `json:"daily_limit"`
+	Torrents   []wsTorrent `json:"torrents"`
 }
 
 // wsTicker builds the live snapshot sent to connected clients.

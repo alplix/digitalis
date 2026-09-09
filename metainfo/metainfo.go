@@ -285,15 +285,15 @@ func FromTorrentFile(path string) (*MetaInfo, error) {
 
 // Magnet represents a parsed magnet URI (BEP-9 / BEP-53).
 type Magnet struct {
-	InfoHash   string   // hex
-	DisplayName string  // dn
-	Trackers   []string // tr
-	Xs         string   // exact source / webseed
-	Sources    []string
-	UIDs       []string
+	InfoHash          string   // hex
+	DisplayName       string   // dn
+	Trackers          []string // tr
+	Xs                string   // exact source / webseed
+	Sources           []string
+	UIDs              []string
 	AcceptedLanguages []string
-	PeerAddresses []string // x.pe
-	ExactLength int64    // xl
+	PeerAddresses     []string // x.pe
+	ExactLength       int64    // xl
 }
 
 // ParseMagnet parses a magnet: URI.

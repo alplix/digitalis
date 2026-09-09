@@ -22,14 +22,14 @@ type Peer struct {
 
 // Response is a tracker announce response.
 type Response struct {
-	Interval   int
+	Interval    int
 	MinInterval int
-	Leechers   int
-	Seeders    int
-	Peers      []Peer
-	Failure    string
-	Warning    string
-	TrackerID  string
+	Leechers    int
+	Seeders     int
+	Peers       []Peer
+	Failure     string
+	Warning     string
+	TrackerID   string
 }
 
 // Announce announces to a tracker.
@@ -203,9 +203,9 @@ func parseCompactPeers(s string) ([]Peer, error) {
 
 const (
 	udpProtocolID uint64 = 0x41727101980
-	udpConnect     = 0
-	udpAnnounce    = 1
-	udpScrape      = 2
+	udpConnect           = 0
+	udpAnnounce          = 1
+	udpScrape            = 2
 )
 
 func announceUDP(u *url.URL, infoHash []byte, peerID string, port int, uploaded, downloaded, left int64, event string, numwant int) (*Response, error) {

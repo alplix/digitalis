@@ -7,17 +7,17 @@ import (
 
 // TrackerStat tracks per-tracker announce status for a torrent.
 type TrackerStat struct {
-	URL           string    `json:"url"`
-	Working       bool      `json:"working"`
-	Announces     int       `json:"announces"`
-	Successes     int       `json:"successes"`
-	Failures      int       `json:"failures"`
-	LastSuccess   time.Time `json:"last_success"`
-	LastFailure   time.Time `json:"last_failure"`
-	LastError     string    `json:"last_error,omitempty"`
-	LastSeeders   int       `json:"last_seeders"`
-	LastLeechers  int       `json:"last_leechers"`
-	LastPeers     int       `json:"last_peers"`
+	URL          string    `json:"url"`
+	Working      bool      `json:"working"`
+	Announces    int       `json:"announces"`
+	Successes    int       `json:"successes"`
+	Failures     int       `json:"failures"`
+	LastSuccess  time.Time `json:"last_success"`
+	LastFailure  time.Time `json:"last_failure"`
+	LastError    string    `json:"last_error,omitempty"`
+	LastSeeders  int       `json:"last_seeders"`
+	LastLeechers int       `json:"last_leechers"`
+	LastPeers    int       `json:"last_peers"`
 }
 
 // trackerURLs returns the list of tracker announce URLs for a torrent.

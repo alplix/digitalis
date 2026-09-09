@@ -90,39 +90,39 @@ func NewServer(engine *torrente.Engine, saveDir, cfgDir string) *Server {
 
 // torrentView is the JSON representation of a torrent.
 type torrentView struct {
-	ID             string    `json:"id"`
-	Name           string    `json:"name"`
-	InfoHash       string    `json:"info_hash"`
-	State          string    `json:"state"`
-	Progress       float64   `json:"progress"`
-	Downloaded     int64     `json:"downloaded"`
-	Uploaded       int64     `json:"uploaded"`
-	Size           int64     `json:"size"`
-	DownloadSpeed  int64     `json:"download_speed"`
-	UploadSpeed    int64     `json:"upload_speed"`
-	Seeders        int       `json:"seeders"`
-	Leechers       int       `json:"leechers"`
-	PeersConnected int       `json:"peers_connected"`
-	PiecesHave     int       `json:"pieces_have"`
-	PiecesTotal    int       `json:"pieces_total"`
-	Ratio          float64   `json:"ratio"`
-	RatioTarget    float64   `json:"ratio_target"`
-	SeededTo       int       `json:"seeded_to"`
-	SeededFirst    time.Time `json:"seeded_first"`
-	LastSeen       time.Time `json:"last_seen"`
-	WorkingTrackers int      `json:"working_trackers"`
-	FailedTrackers  int      `json:"failed_trackers"`
-	Trackers       []trackerView `json:"trackers"`
-	Category       string        `json:"category"`
-	SaveDir        string        `json:"save_dir"`
-	AddedAt        time.Time     `json:"added_at"`
-	Comment        string        `json:"comment,omitempty"`
-	CreatedBy      string        `json:"created_by,omitempty"`
-	DownloadLimit  int64         `json:"download_limit"`
-	SeedDays       int64         `json:"seed_days"`
-	Sequential     bool          `json:"sequential"`
-	GuardPaused    bool          `json:"guard_paused"`
-	Queued         bool          `json:"queued"`
+	ID              string        `json:"id"`
+	Name            string        `json:"name"`
+	InfoHash        string        `json:"info_hash"`
+	State           string        `json:"state"`
+	Progress        float64       `json:"progress"`
+	Downloaded      int64         `json:"downloaded"`
+	Uploaded        int64         `json:"uploaded"`
+	Size            int64         `json:"size"`
+	DownloadSpeed   int64         `json:"download_speed"`
+	UploadSpeed     int64         `json:"upload_speed"`
+	Seeders         int           `json:"seeders"`
+	Leechers        int           `json:"leechers"`
+	PeersConnected  int           `json:"peers_connected"`
+	PiecesHave      int           `json:"pieces_have"`
+	PiecesTotal     int           `json:"pieces_total"`
+	Ratio           float64       `json:"ratio"`
+	RatioTarget     float64       `json:"ratio_target"`
+	SeededTo        int           `json:"seeded_to"`
+	SeededFirst     time.Time     `json:"seeded_first"`
+	LastSeen        time.Time     `json:"last_seen"`
+	WorkingTrackers int           `json:"working_trackers"`
+	FailedTrackers  int           `json:"failed_trackers"`
+	Trackers        []trackerView `json:"trackers"`
+	Category        string        `json:"category"`
+	SaveDir         string        `json:"save_dir"`
+	AddedAt         time.Time     `json:"added_at"`
+	Comment         string        `json:"comment,omitempty"`
+	CreatedBy       string        `json:"created_by,omitempty"`
+	DownloadLimit   int64         `json:"download_limit"`
+	SeedDays        int64         `json:"seed_days"`
+	Sequential      bool          `json:"sequential"`
+	GuardPaused     bool          `json:"guard_paused"`
+	Queued          bool          `json:"queued"`
 }
 
 type trackerView struct {
@@ -155,39 +155,39 @@ func trackerViews(ts []*torrente.TrackerStat) []trackerView {
 
 func (s *Server) snapshot(t *torrente.Torrent) torrentView {
 	v := torrentView{
-		ID:             t.ID,
-		Name:           t.Name,
-		InfoHash:       t.InfoHash,
-		State:          string(t.State),
-		Progress:       t.Progress(),
-		Downloaded:     t.Downloaded,
-		Uploaded:       t.Uploaded,
-		Size:           t.Size,
-		DownloadSpeed:  t.DownloadSpeed,
-		UploadSpeed:    t.UploadSpeed,
-		Seeders:        t.Seeders,
-		Leechers:       t.Leechers,
-		PeersConnected: t.PeersConnected,
-		PiecesHave:     t.PiecesHave,
-		PiecesTotal:    t.PiecesTotal,
-		Ratio:          t.Ratio(),
-		RatioTarget:    s.engine.TorrentRatioTarget(t.ID),
-		SeededTo:       t.SeededTo,
-		SeededFirst:    t.SeededFirst,
-		LastSeen:       t.LastSeen,
+		ID:              t.ID,
+		Name:            t.Name,
+		InfoHash:        t.InfoHash,
+		State:           string(t.State),
+		Progress:        t.Progress(),
+		Downloaded:      t.Downloaded,
+		Uploaded:        t.Uploaded,
+		Size:            t.Size,
+		DownloadSpeed:   t.DownloadSpeed,
+		UploadSpeed:     t.UploadSpeed,
+		Seeders:         t.Seeders,
+		Leechers:        t.Leechers,
+		PeersConnected:  t.PeersConnected,
+		PiecesHave:      t.PiecesHave,
+		PiecesTotal:     t.PiecesTotal,
+		Ratio:           t.Ratio(),
+		RatioTarget:     s.engine.TorrentRatioTarget(t.ID),
+		SeededTo:        t.SeededTo,
+		SeededFirst:     t.SeededFirst,
+		LastSeen:        t.LastSeen,
 		WorkingTrackers: t.WorkingTrackers,
 		FailedTrackers:  t.FailedTrackers,
-		Trackers:       trackerViews(t.Trackers),
-		Category:       t.Category,
-		SaveDir:        t.SaveDir,
-		AddedAt:        t.AddedAt,
-		Comment:        t.MetaInfoComment(),
-		CreatedBy:      t.MetaInfoCreatedBy(),
-		DownloadLimit:  s.engine.TorrentDownloadLimit(t.ID),
-		SeedDays:       s.engine.TorrentSeedDays(t.ID),
-		Sequential:     s.engine.TorrentSequential(t.ID),
-		GuardPaused:    t.IsGuardPaused(),
-		Queued:         t.IsQueued(),
+		Trackers:        trackerViews(t.Trackers),
+		Category:        t.Category,
+		SaveDir:         t.SaveDir,
+		AddedAt:         t.AddedAt,
+		Comment:         t.MetaInfoComment(),
+		CreatedBy:       t.MetaInfoCreatedBy(),
+		DownloadLimit:   s.engine.TorrentDownloadLimit(t.ID),
+		SeedDays:        s.engine.TorrentSeedDays(t.ID),
+		Sequential:      s.engine.TorrentSequential(t.ID),
+		GuardPaused:     t.IsGuardPaused(),
+		Queued:          t.IsQueued(),
 	}
 	return v
 }
@@ -449,34 +449,34 @@ func (s *Server) syncSmartCategory(id string) {
 
 // settingsView is the settings JSON used by the UI.
 type settingsView struct {
-	BaseDir          string   `json:"base_dir"`
-	Disks            []string `json:"disks"`
-	UploadLimit      int64   `json:"upload_limit"`
-	DownloadLimit    int64   `json:"download_limit"`
-	DailyUploadLimit int64   `json:"daily_upload_limit"`
-	NightMode        bool    `json:"night_mode"`
-	NightStart       string  `json:"night_start"`
-	NightEnd         string  `json:"night_end"`
-	NightUpload      int64   `json:"night_upload"`
-	NightDownload    int64   `json:"night_download"`
-	NightPause       bool    `json:"night_pause"`
-	RatioTarget      float64 `json:"ratio_target"`
-	RatioStop        bool    `json:"ratio_stop"`
-	RatioRemove      bool    `json:"ratio_remove"`
-	SeedDays         int64   `json:"seed_days"`
-	DiskGuard        bool    `json:"disk_guard"`
-	DiskGuardMinGB   int64   `json:"disk_guard_min_gb"`
-	MaxActiveDl      int     `json:"max_active_downloads"`
-	TelegramEnabled  bool    `json:"telegram_enabled"`
-	TelegramTokenSet bool    `json:"telegram_token_set"`
-	TelegramChat     string  `json:"telegram_chat"`
-	WebhookEnabled   bool    `json:"webhook_enabled"`
-	WebhookURL       string  `json:"webhook_url"`
-	TrashDays        int     `json:"trash_days"`
+	BaseDir          string             `json:"base_dir"`
+	Disks            []string           `json:"disks"`
+	UploadLimit      int64              `json:"upload_limit"`
+	DownloadLimit    int64              `json:"download_limit"`
+	DailyUploadLimit int64              `json:"daily_upload_limit"`
+	NightMode        bool               `json:"night_mode"`
+	NightStart       string             `json:"night_start"`
+	NightEnd         string             `json:"night_end"`
+	NightUpload      int64              `json:"night_upload"`
+	NightDownload    int64              `json:"night_download"`
+	NightPause       bool               `json:"night_pause"`
+	RatioTarget      float64            `json:"ratio_target"`
+	RatioStop        bool               `json:"ratio_stop"`
+	RatioRemove      bool               `json:"ratio_remove"`
+	SeedDays         int64              `json:"seed_days"`
+	DiskGuard        bool               `json:"disk_guard"`
+	DiskGuardMinGB   int64              `json:"disk_guard_min_gb"`
+	MaxActiveDl      int                `json:"max_active_downloads"`
+	TelegramEnabled  bool               `json:"telegram_enabled"`
+	TelegramTokenSet bool               `json:"telegram_token_set"`
+	TelegramChat     string             `json:"telegram_chat"`
+	WebhookEnabled   bool               `json:"webhook_enabled"`
+	WebhookURL       string             `json:"webhook_url"`
+	TrashDays        int                `json:"trash_days"`
 	CatRules         []torrente.CatRule `json:"cat_rules"`
-	ServerTokenSet   bool    `json:"server_token_set"`
-	PeerPort         int     `json:"peer_port"`
-	Version          string  `json:"version"`
+	ServerTokenSet   bool               `json:"server_token_set"`
+	PeerPort         int                `json:"peer_port"`
+	Version          string             `json:"version"`
 }
 
 func (s *Server) settingsView() settingsView {
@@ -565,9 +565,9 @@ type globalTrackerView struct {
 	URL          string    `json:"url"`
 	Working      bool      `json:"working"`
 	Torrents     int       `json:"torrents"`
-	Announces    int     `json:"announces"`
-	Successes    int     `json:"successes"`
-	Failures     int     `json:"failures"`
+	Announces    int       `json:"announces"`
+	Successes    int       `json:"successes"`
+	Failures     int       `json:"failures"`
 	LastSuccess  time.Time `json:"last_success"`
 	LastFailure  time.Time `json:"last_failure"`
 	LastSeeders  int       `json:"last_seeders"`

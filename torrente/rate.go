@@ -8,11 +8,11 @@ import (
 // rateLimiter is a simple token-bucket rate limiter. bytesPerSec <= 0
 // disables limiting.
 type rateLimiter struct {
-	mu         sync.Mutex
+	mu          sync.Mutex
 	bytesPerSec float64
-	tokens     float64
-	last       time.Time
-	burst      float64
+	tokens      float64
+	last        time.Time
+	burst       float64
 }
 
 func newRateLimiter(bytesPerSec int64) *rateLimiter {

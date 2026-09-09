@@ -57,12 +57,12 @@ type Handshake struct {
 
 // Conn represents a peer wire connection stream.
 type Conn struct {
-	conn      net.Conn
-	r         *bufio.Reader
-	w         *bufio.Writer
-	infoHash  [20]byte
-	peerID    [20]byte
-	readTimeout time.Duration
+	conn             net.Conn
+	r                *bufio.Reader
+	w                *bufio.Writer
+	infoHash         [20]byte
+	peerID           [20]byte
+	readTimeout      time.Duration
 	extensionEnabled bool
 }
 
@@ -70,19 +70,19 @@ type Conn struct {
 // by calling one of the Handshake methods.
 func NewConn(c net.Conn, infoHash [20]byte, peerID [20]byte) *Conn {
 	return &Conn{
-		conn:     c,
-		r:        bufio.NewReader(c),
-		w:        bufio.NewWriter(c),
-		infoHash: infoHash,
-		peerID:   peerID,
-		readTimeout: 60 * time.Second,
+		conn:             c,
+		r:                bufio.NewReader(c),
+		w:                bufio.NewWriter(c),
+		infoHash:         infoHash,
+		peerID:           peerID,
+		readTimeout:      60 * time.Second,
 		extensionEnabled: true,
 	}
 }
 
 // SetDeadline sets read/write deadline on the underlying connection.
-func (c *Conn) SetDeadline(d time.Time) error { return c.conn.SetDeadline(d) }
-func (c *Conn) SetReadDeadline(d time.Time) error { return c.conn.SetReadDeadline(d) }
+func (c *Conn) SetDeadline(d time.Time) error      { return c.conn.SetDeadline(d) }
+func (c *Conn) SetReadDeadline(d time.Time) error  { return c.conn.SetReadDeadline(d) }
 func (c *Conn) SetWriteDeadline(d time.Time) error { return c.conn.SetWriteDeadline(d) }
 
 // RemoteAddr returns the remote address.

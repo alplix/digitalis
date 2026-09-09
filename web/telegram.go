@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 )
+
 // Telegram notifications: a tiny client for the Bot API. Only three events
 // trigger messages today: download complete, share goal reached and the disk
 // guard engaging. Failures are logged and never affect torrent flow.

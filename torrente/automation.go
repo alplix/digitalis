@@ -83,7 +83,10 @@ func (e *Engine) diskGuardTick(cur Settings) {
 	minFree := cur.DiskGuardMinGB << 30
 	resumeFree := (cur.DiskGuardMinGB + guardHysteresisGB) << 30
 
-	type rootFree struct{ root string; free int64 }
+	type rootFree struct {
+		root string
+		free int64
+	}
 	var spaces []rootFree
 	for _, root := range e.Disks() {
 		if f := diskFreeBytes(root); f >= 0 {

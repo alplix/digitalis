@@ -17,17 +17,17 @@ import (
 type PieceState struct {
 	Present   bool
 	Verifying bool
-	InFlight  int // number of outstanding requests
+	InFlight  int   // number of outstanding requests
 	Pending   int32 // used by picker
 }
 
 // Storage manages in-memory piece state and file layout on disk.
 type Storage struct {
-	meta    *metainfo.MetaInfo
-	dir     string // root directory for files
-	pieces  []PieceState
-	mu      sync.Mutex
-	files   []*fileHandle
+	meta   *metainfo.MetaInfo
+	dir    string // root directory for files
+	pieces []PieceState
+	mu     sync.Mutex
+	files  []*fileHandle
 }
 
 type fileHandle struct {
@@ -39,8 +39,8 @@ type fileHandle struct {
 // New creates storage for a torrent.
 func New(meta *metainfo.MetaInfo, saveDir string) (*Storage, error) {
 	s := &Storage{
-		meta: meta,
-		dir:  saveDir,
+		meta:   meta,
+		dir:    saveDir,
 		pieces: make([]PieceState, meta.PieceCount()),
 	}
 

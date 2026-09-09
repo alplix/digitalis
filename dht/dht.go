@@ -25,10 +25,10 @@ var DefaultBootstrapNodes = []string{
 }
 
 const (
-	k             = 8    // nodes considered per round
-	maxRounds     = 7    // crawl depth
-	maxScrape     = 200  // maximum peers to gather
-	queryTimeout  = 1500 * time.Millisecond
+	k            = 8   // nodes considered per round
+	maxRounds    = 7   // crawl depth
+	maxScrape    = 200 // maximum peers to gather
+	queryTimeout = 1500 * time.Millisecond
 )
 
 // Client is a DHT node speaking KRPC over UDP.

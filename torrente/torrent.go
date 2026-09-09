@@ -33,25 +33,25 @@ const (
 type Torrent struct {
 	mu *sync.Mutex
 
-	ID string // deterministic short id (first 16 hex chars of info hash)
+	ID             string // deterministic short id (first 16 hex chars of info hash)
 	InfoHash, Name string
-	MetaInfo *metainfo.MetaInfo
-	Magnet   *metainfo.Magnet
+	MetaInfo       *metainfo.MetaInfo
+	Magnet         *metainfo.Magnet
 
 	// BEP-9 metadata exchange state (magnets). MetaChunks holds partial
 	// metadata pieces gathered from peers; MetaSize is the advertised size.
 	MetaSize   int64
 	MetaChunks map[int][]byte
 
-	State  State
-	SaveDir string
+	State    State
+	SaveDir  string
 	Category string // relative category folder under the base save dir ("" = root)
-	AddedAt time.Time
+	AddedAt  time.Time
 
-	Downloaded int64
-	Uploaded   int64
+	Downloaded  int64
+	Uploaded    int64
 	TotalWanted int64
-	Size       int64
+	Size        int64
 
 	DownloadSpeed int64
 	UploadSpeed   int64
@@ -65,23 +65,23 @@ type Torrent struct {
 	PiecesTotal int
 
 	// Advanced statistics
-	SeededTo     int       `json:"seeded_to"`     // number of distinct peers we have uploaded to
-	SeededFirst  time.Time `json:"seeded_first"`  // when we first uploaded any data
-	LastSeen     time.Time `json:"last_seen"`     // last time we uploaded or downloaded activity
-	FailedTrackers int     `json:"failed_trackers"` // trackers currently in a failing state
-	WorkingTrackers int   `json:"working_trackers"` // trackers currently working
-	Trackers     []*TrackerStat `json:"trackers"`   // per-tracker stats
+	SeededTo        int            `json:"seeded_to"`        // number of distinct peers we have uploaded to
+	SeededFirst     time.Time      `json:"seeded_first"`     // when we first uploaded any data
+	LastSeen        time.Time      `json:"last_seen"`        // last time we uploaded or downloaded activity
+	FailedTrackers  int            `json:"failed_trackers"`  // trackers currently in a failing state
+	WorkingTrackers int            `json:"working_trackers"` // trackers currently working
+	Trackers        []*TrackerStat `json:"trackers"`         // per-tracker stats
 
 	// CustomTrackers are user-added announce URLs; RemovedTrackers are
 	// announce URLs (own or custom) the user has disabled for this torrent.
-	CustomTrackers  []string          `json:"custom_trackers"`
-	RemovedTrackers map[string]bool   `json:"removed_trackers"`
-	AnnounceCount   map[string]int64   `json:"announce_count"`
-	DownloadLimit   int64             `json:"download_limit"`
-	RatioTarget     float64           `json:"ratio_target"` // per-torrent ratio goal; 0 = use global
-	SeedDaysTarget  int64             `json:"seed_days_target"` // per-torrent max seeding days; 0 = use global
-	Sequential      bool              `json:"sequential"`   // download pieces in order for early playback
-	SeedSince       time.Time         `json:"seed_since"`   // when seeding was last (re)started
+	CustomTrackers  []string         `json:"custom_trackers"`
+	RemovedTrackers map[string]bool  `json:"removed_trackers"`
+	AnnounceCount   map[string]int64 `json:"announce_count"`
+	DownloadLimit   int64            `json:"download_limit"`
+	RatioTarget     float64          `json:"ratio_target"`     // per-torrent ratio goal; 0 = use global
+	SeedDaysTarget  int64            `json:"seed_days_target"` // per-torrent max seeding days; 0 = use global
+	Sequential      bool             `json:"sequential"`       // download pieces in order for early playback
+	SeedSince       time.Time        `json:"seed_since"`       // when seeding was last (re)started
 
 	// Automation flags (surface in the UI as badges).
 	GuardPaused bool `json:"guard_paused"` // paused by the disk guard; resumes when space recovers
@@ -204,10 +204,10 @@ func (t *Torrent) setState(s State) {
 
 // Notice kinds delivered through Engine.OnNotice.
 const (
-	NoticeComplete string = "complete" // torrent finished downloading
-	NoticeMetadata string = "metadata" // magnet resolved its metadata
-	NoticeRatio    string = "ratio"    // torrent reached its ratio target (stopped/removed)
-	NoticeRSS      string = "rss"      // an RSS feed item was added as a torrent
+	NoticeComplete  string = "complete"  // torrent finished downloading
+	NoticeMetadata  string = "metadata"  // magnet resolved its metadata
+	NoticeRatio     string = "ratio"     // torrent reached its ratio target (stopped/removed)
+	NoticeRSS       string = "rss"       // an RSS feed item was added as a torrent
 	NoticeDiskGuard string = "diskguard" // downloads paused because a disk is nearly full
 )
 
@@ -219,10 +219,10 @@ type Engine struct {
 	prevDown map[string]int64
 	prevUp   map[string]int64
 
-	peerID        [20]byte
-	clientPeerID  string
-	port          int
-	listener      net.Listener
+	peerID       [20]byte
+	clientPeerID string
+	port         int
+	listener     net.Listener
 
 	connecting map[string]bool
 	selfAddrs  map[string]bool
@@ -236,19 +236,19 @@ type Engine struct {
 	downloadLimiter *rateLimiter
 
 	// global activity (dashboard stats), guarded by statsMu
-	statsMu       sync.Mutex
-	stats         stats
-	statsFile     string
-	lastStats     time.Time
+	statsMu   sync.Mutex
+	stats     stats
+	statsFile string
+	lastStats time.Time
 
 	// settings persistence
-	settingsFile string
-	settings     Settings
-	uploadPaused bool
+	settingsFile   string
+	settings       Settings
+	uploadPaused   bool
 	downloadPaused bool
-	nightApplied bool
-	nightPaused  bool
-	trashMu      sync.Mutex // guards trash entry list (file on disk)
+	nightApplied   bool
+	nightPaused    bool
+	trashMu        sync.Mutex // guards trash entry list (file on disk)
 
 	// absolute byte counters for this process
 	byteUpRun   int64
@@ -274,16 +274,16 @@ func NewEngine(port int) *Engine {
 		ts /= 10
 	}
 	e := &Engine{
-		torrents:        make(map[string]*Torrent),
-		sessions:        make(map[*peerSession]*Torrent),
-		prevDown:        make(map[string]int64),
-		prevUp:          make(map[string]int64),
-		connecting:      make(map[string]bool),
-		selfAddrs:       make(map[string]bool),
-		port:            port,
-		MaxConnections:  200,
-		clientPeerID:    string(pid),
-		lastStats:       time.Now(),
+		torrents:       make(map[string]*Torrent),
+		sessions:       make(map[*peerSession]*Torrent),
+		prevDown:       make(map[string]int64),
+		prevUp:         make(map[string]int64),
+		connecting:     make(map[string]bool),
+		selfAddrs:      make(map[string]bool),
+		port:           port,
+		MaxConnections: 200,
+		clientPeerID:   string(pid),
+		lastStats:      time.Now(),
 	}
 	copy(e.peerID[:], pid)
 	e.Logf = func(format string, a ...interface{}) {
@@ -325,18 +325,18 @@ func (e *Engine) SetDownloadLimit(n int64) {
 // AddTorrent adds a torrent from parsed metainfo and starts it.
 func (e *Engine) AddTorrent(mi *metainfo.MetaInfo, saveDir string) (*Torrent, error) {
 	t := &Torrent{
-		mu:          new(sync.Mutex),
-		InfoHash:    mi.InfoHash(),
-		Name:        mi.Info.Name,
-		MetaInfo:    mi,
-		SaveDir:     saveDir,
-		State:       StateQueued,
-		AddedAt:     time.Now(),
-		TotalWanted: mi.TotalLength(),
-		Size:        mi.TotalLength(),
+		mu:              new(sync.Mutex),
+		InfoHash:        mi.InfoHash(),
+		Name:            mi.Info.Name,
+		MetaInfo:        mi,
+		SaveDir:         saveDir,
+		State:           StateQueued,
+		AddedAt:         time.Now(),
+		TotalWanted:     mi.TotalLength(),
+		Size:            mi.TotalLength(),
 		RemovedTrackers: make(map[string]bool),
-		AnnounceCount: make(map[string]int64),
-		engine:      e,
+		AnnounceCount:   make(map[string]int64),
+		engine:          e,
 	}
 	if t.Name == "" {
 		t.Name = t.InfoHash[:16]
@@ -388,16 +388,16 @@ func (e *Engine) AddMagnet(m *metainfo.Magnet, saveDir string) (*Torrent, error)
 		return nil, fmt.Errorf("invalid infohash in magnet")
 	}
 	t := &Torrent{
-		mu:          new(sync.Mutex),
-		InfoHash:   ihHex,
-		Name:       m.DisplayName,
-		Magnet:     m,
-		SaveDir:    saveDir,
-		AddedAt:    time.Now(),
-		TotalWanted: m.ExactLength,
+		mu:              new(sync.Mutex),
+		InfoHash:        ihHex,
+		Name:            m.DisplayName,
+		Magnet:          m,
+		SaveDir:         saveDir,
+		AddedAt:         time.Now(),
+		TotalWanted:     m.ExactLength,
 		RemovedTrackers: make(map[string]bool),
-		AnnounceCount: make(map[string]int64),
-		engine:     e,
+		AnnounceCount:   make(map[string]int64),
+		engine:          e,
 	}
 	if t.Name == "" {
 		t.Name = ihHex[:16]

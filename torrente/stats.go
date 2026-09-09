@@ -37,9 +37,9 @@ type YearStat struct {
 
 // CountryStat ranks countries by connection count.
 type CountryStat struct {
-	Code string `json:"code"`
-	Name string `json:"name"`
-	Conns int64 `json:"conns"`
+	Code  string `json:"code"`
+	Name  string `json:"name"`
+	Conns int64  `json:"conns"`
 }
 
 // DiskPoint is one free-space sample of a storage root.
@@ -56,30 +56,30 @@ type DiskHistory struct {
 
 // PersistedStats is what gets written to disk.
 type PersistedStats struct {
-	Since     time.Time                `json:"since"`
-	Days      map[string]*DayStat      `json:"days"`
-	Years     map[string]*YearStat     `json:"years"`
-	Countries map[string]int64         `json:"countries"`
-	DiskFree  map[string][]DiskPoint   `json:"disk_free,omitempty"`
+	Since     time.Time              `json:"since"`
+	Days      map[string]*DayStat    `json:"days"`
+	Years     map[string]*YearStat   `json:"years"`
+	Countries map[string]int64       `json:"countries"`
+	DiskFree  map[string][]DiskPoint `json:"disk_free,omitempty"`
 }
 
 // StatsView is the JSON snapshot for the dashboard.
 type StatsView struct {
-	UpTotal          int64          `json:"up_total"`
-	DownTotal        int64          `json:"down_total"`
-	UpToday          int64          `json:"up_today"`
-	DownToday        int64          `json:"down_today"`
-	ConnActive       int            `json:"conn_active"`
-	ConnsToday       int64          `json:"conns_today"`
-	ConnsTotal       int64          `json:"conns_total"`
-	DailyUploadLimit int64          `json:"daily_upload_limit"`
-	UploadPaused     bool           `json:"upload_paused"`
-	Since            time.Time      `json:"since"`
-	Hourly           []StatPoint    `json:"hourly"`
-	Daily            []StatPoint    `json:"daily"`
-	Monthly          []StatPoint    `json:"monthly"`
-	Yearly           []StatPoint    `json:"yearly"`
-	Countries        []CountryStat  `json:"countries"`
+	UpTotal          int64         `json:"up_total"`
+	DownTotal        int64         `json:"down_total"`
+	UpToday          int64         `json:"up_today"`
+	DownToday        int64         `json:"down_today"`
+	ConnActive       int           `json:"conn_active"`
+	ConnsToday       int64         `json:"conns_today"`
+	ConnsTotal       int64         `json:"conns_total"`
+	DailyUploadLimit int64         `json:"daily_upload_limit"`
+	UploadPaused     bool          `json:"upload_paused"`
+	Since            time.Time     `json:"since"`
+	Hourly           []StatPoint   `json:"hourly"`
+	Daily            []StatPoint   `json:"daily"`
+	Monthly          []StatPoint   `json:"monthly"`
+	Yearly           []StatPoint   `json:"yearly"`
+	Countries        []CountryStat `json:"countries"`
 }
 
 // StatPoint is one plot point {label, up, down}.
@@ -91,10 +91,10 @@ type StatPoint struct {
 
 // stats internals guarded by statsMu.
 type stats struct {
-	minutes []MinuteStat // rolling 30s samples for the day chart (kept 48h)
-	day     DayStat      // today's live totals
-	dayKey  string
-	connsRun int64      // connections this run (unused but kept for later)
+	minutes  []MinuteStat // rolling 30s samples for the day chart (kept 48h)
+	day      DayStat      // today's live totals
+	dayKey   string
+	connsRun int64 // connections this run (unused but kept for later)
 
 	days      map[string]*DayStat
 	years     map[string]*YearStat
@@ -656,7 +656,10 @@ func (e *Engine) statsSince() time.Time {
 	return e.stats.since
 }
 
-type cnt struct{ cc string; n int64 }
+type cnt struct {
+	cc string
+	n  int64
+}
 
 func sortByConnsDesc(list []cnt) {
 	for i := 1; i < len(list); i++ {

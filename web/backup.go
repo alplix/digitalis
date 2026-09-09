@@ -13,11 +13,11 @@ import (
 // the endpoints require normal API authentication.
 
 type backupFile struct {
-	Version    string           `json:"version"`
-	ExportedAt time.Time        `json:"exported_at"`
-	Settings   interface{}      `json:"settings"`
-	Records    []torrentRecord  `json:"records"`
-	Feeds      []rssFeed        `json:"feeds"`
+	Version    string          `json:"version"`
+	ExportedAt time.Time       `json:"exported_at"`
+	Settings   interface{}     `json:"settings"`
+	Records    []torrentRecord `json:"records"`
+	Feeds      []rssFeed       `json:"feeds"`
 }
 
 // exportBackup streams the backup JSON.

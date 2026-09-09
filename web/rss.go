@@ -37,8 +37,8 @@ type rssFeed struct {
 	Interval  int       `json:"interval"`  // minutes, 0 = 15
 	SizeMax   int64     `json:"size_max"`  // bytes, 0 = unlimited
 	Enabled   bool      `json:"enabled"`
-	Seen      []string  `json:"seen"`    // item GUIDs already processed (capped)
-	Recent    []rssItem `json:"recent"`  // last matched items (capped)
+	Seen      []string  `json:"seen"`   // item GUIDs already processed (capped)
+	Recent    []rssItem `json:"recent"` // last matched items (capped)
 	LastPoll  time.Time `json:"last_poll"`
 	LastError string    `json:"last_error"`
 	LastOk    time.Time `json:"last_ok"`
@@ -54,7 +54,7 @@ type rssXMLDoc struct {
 	Channel struct {
 		Items []rssRSSItem `xml:"item"`
 	} `xml:"channel"`
-	RootItems []rssRSSItem `xml:"item"`
+	RootItems []rssRSSItem  `xml:"item"`
 	Atoms     []rssAtomItem `xml:"entry"`
 }
 
@@ -63,9 +63,9 @@ type atomLink struct {
 }
 
 type rssRSSItem struct {
-	Title    string `xml:"title"`
-	Link     string `xml:"link"`
-	GUID     string `xml:"guid"`
+	Title     string `xml:"title"`
+	Link      string `xml:"link"`
+	GUID      string `xml:"guid"`
 	Enclosure *struct {
 		URL    string `xml:"url,attr"`
 		Length int64  `xml:"length,attr"`

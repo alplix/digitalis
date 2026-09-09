@@ -1,4 +1,4 @@
-﻿package torrente
+package torrente
 
 import (
 	"math/rand"
@@ -12,10 +12,10 @@ import (
 type picker struct {
 	mu            sync.Mutex
 	t             *Torrent
-	reserved      map[int]*peerSession // piece index -> session downloading it
-	peerHaveCount map[int]int          // piece index -> count of connected peers that have it
+	reserved      map[int]*peerSession              // piece index -> session downloading it
+	peerHaveCount map[int]int                       // piece index -> count of connected peers that have it
 	coveredBy     map[*peerSession]map[int]struct{} // reverse index for cleanup
-	priorityLo    int // inclusive active streaming window (-1 = off)
+	priorityLo    int                               // inclusive active streaming window (-1 = off)
 	priorityHi    int
 	skip          []bool // piece -> not wanted (selective download); nil = all wanted
 }
@@ -161,7 +161,7 @@ func (p *picker) acquire(s *peerSession) int {
 	if s.peerBitfield == nil {
 		return -1
 	}
-p.mu.Lock()
+	p.mu.Lock()
 	defer p.mu.Unlock()
 
 	total := p.t.storage.PieceCount()

@@ -67,9 +67,9 @@ type Settings struct {
 	// NightUpload/NightDownload (0 = keep the daytime limit unchanged). When
 	// NightPause is set, transfers stop completely during the window.
 	NightMode     bool   `json:"night_mode"`
-	NightStart    string `json:"night_start"`   // "HH:MM"
-	NightEnd      string `json:"night_end"`     // "HH:MM", may wrap midnight
-	NightUpload   int64  `json:"night_upload"`  // bytes/sec during night
+	NightStart    string `json:"night_start"`  // "HH:MM"
+	NightEnd      string `json:"night_end"`    // "HH:MM", may wrap midnight
+	NightUpload   int64  `json:"night_upload"` // bytes/sec during night
 	NightDownload int64  `json:"night_download"`
 	NightPause    bool   `json:"night_pause"`
 

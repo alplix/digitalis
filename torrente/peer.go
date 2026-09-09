@@ -12,26 +12,26 @@ import (
 
 // peerSession represents a live connection to a peer for a specific torrent.
 type peerSession struct {
-	e             *Engine
-	t             *Torrent
-	conn          *peerwire.Conn
-	addr          string
-	peerBitfield  *bitfield
+	e            *Engine
+	t            *Torrent
+	conn         *peerwire.Conn
+	addr         string
+	peerBitfield *bitfield
 
-	amChoked       bool   // are we choked by the peer
-	peerInterested bool   // is the peer interested in our data
+	amChoked       bool // are we choked by the peer
+	peerInterested bool // is the peer interested in our data
 
-	currentPiece int               // piece being downloaded (-1 = none)
-	outstanding  map[int]struct{}  // block begins currently requested for currentPiece
+	currentPiece  int              // piece being downloaded (-1 = none)
+	outstanding   map[int]struct{} // block begins currently requested for currentPiece
 	pendingBlocks int
 
-	bytesDown int64
-	bytesUp   int64
+	bytesDown  int64
+	bytesUp    int64
 	seededPeer bool // we have uploaded at least one block to this peer
 
 	// BEP-10 extension state
-	peerMetaID byte    // peer's ut_metadata message id (0 = unsupported)
-	peerPexID  byte    // peer's ut_pex message id (0 = unsupported)
+	peerMetaID byte              // peer's ut_metadata message id (0 = unsupported)
+	peerPexID  byte              // peer's ut_pex message id (0 = unsupported)
 	metaReqAt  map[int]time.Time // metadata pieces we asked for, by requested time
 
 	stop chan struct{}
