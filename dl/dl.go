@@ -364,7 +364,8 @@ func (m *Manager) List() ([]*Task, Totals) {
 		tot.Bytes += atomic.LoadInt64(&t.Bytes)
 		tot.Loops += atomic.LoadInt64(&t.LoopsDone)
 		tot.Files += atomic.LoadInt64(&t.Files)
-		tot.Speed += t.currentSpeed()
+		t.Speed = t.currentSpeed()
+		tot.Speed += t.Speed
 	}
 	tot.Bytes += tot.BaseBytes
 	tot.Loops += tot.BaseLoops
@@ -645,7 +646,30 @@ func depthStr(d int) string {
 	return strconv.Itoa(d)
 }
 
-func httpGet(rawURL, proxy string, w io.Writer) error {
+// copyStop copies src→w in small chunks, aborting as soon as stopped() turns
+// true so a "stop" click interrupts a huge in-flight download within ~64 KB.
+func copyStop(w io.Writer, src io.Reader, stopped func() bool) error {
+	buf := make([]byte, 64*1024)
+	for {
+		if stopped != nil && stopped() {
+			return fmt.Errorf("stopped")
+		}
+		n, rerr := src.Read(buf)
+		if n > 0 {
+			if _, werr := w.Write(buf[:n]); werr != nil {
+				return werr
+			}
+		}
+		if rerr == io.EOF {
+			return nil
+		}
+		if rerr != nil {
+			return rerr
+		}
+	}
+}
+
+func httpGet(rawURL, proxy string, w io.Writer, stopped func() bool) error {
 	client := newClient(proxy)
 	resp, err := client.Get(rawURL)
 	if err != nil {
@@ -655,9 +679,7 @@ func httpGet(rawURL, proxy string, w io.Writer) error {
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return fmt.Errorf("HTTP %d", resp.StatusCode)
 	}
-	buf := make([]byte, 64*1024) // small fixed buffer: tiny RAM footprint
-	_, err = io.CopyBuffer(w, resp.Body, buf)
-	return err
+	return copyStop(w, resp.Body, stopped)
 }
 
 // newClient builds an HTTP client with an optional proxy and long timeouts
@@ -689,6 +711,9 @@ func (c *countingWriter) Write(p []byte) (int, error) {
 		atomic.AddInt64(&c.t.Bytes, int64(n))
 		atomic.AddInt64(&c.t.Current, int64(n))
 		c.t.winMu.Lock()
+		if c.t.winStarted.IsZero() {
+			c.t.winStarted = time.Now()
+		}
 		c.t.winBytes += int64(n)
 		c.t.winMu.Unlock()
 	}
@@ -793,7 +818,7 @@ func baseName(u *url.URL) string {
 
 // ---------- minimal FTP client (passive mode, binary transfers) ----------
 
-func ftpGet(u *url.URL, w io.Writer) error {
+func ftpGet(u *url.URL, w io.Writer, stopped func() bool) error {
 	c, err := ftpDial(u)
 	if err != nil {
 		return err
@@ -815,8 +840,7 @@ func ftpGet(u *url.URL, w io.Writer) error {
 	if _, err := c.cmd(0, "RETR "+u.Path); err != nil { // 125 or 150
 		return err
 	}
-	buf := make([]byte, 64*1024)
-	if _, err := io.CopyBuffer(w, data, buf); err != nil {
+	if err := copyStop(w, data, stopped); err != nil {
 		return err
 	}
 	_, _, _ = c.respText() // 226 transfer complete (best effort)

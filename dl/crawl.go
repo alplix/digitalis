@@ -118,6 +118,9 @@ func (m *Manager) fetchCrawlFile(t *Task, base, furl string) {
 			}
 			return
 		}
+		if t.stopped.Load() {
+			return
+		}
 		if attempt < tries && t.opts.RetryWait > 0 {
 			time.Sleep(time.Duration(t.opts.RetryWait) * time.Second)
 		}
@@ -182,9 +185,9 @@ func (m *Manager) fetchFileInto(t *Task, rawURL, base string) error {
 	var xferErr error
 	switch strings.ToLower(u.Scheme) {
 	case "ftp":
-		xferErr = ftpGet(u, cw)
+		xferErr = ftpGet(u, cw, func() bool { return t.stopped.Load() })
 	default:
-		xferErr = httpGet(rawURL, t.opts.Proxy, cw)
+		xferErr = httpGet(rawURL, t.opts.Proxy, cw, func() bool { return t.stopped.Load() })
 	}
 	if xferErr != nil {
 		return xferErr
