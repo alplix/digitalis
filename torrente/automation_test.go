@@ -3,6 +3,7 @@ package torrente
 import (
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 )
@@ -11,9 +12,9 @@ func TestQueueTick(t *testing.T) {
 	e := NewEngine(0)
 	base := time.Now().Add(-time.Hour)
 	e.mu.Lock()
-	e.torrents["a"] = &Torrent{ID: "a", State: StateDownloading, AddedAt: base}
-	e.torrents["b"] = &Torrent{ID: "b", State: StateDownloading, AddedAt: base.Add(time.Minute)}
-	e.torrents["c"] = &Torrent{ID: "c", State: StateDownloading, AddedAt: base.Add(2 * time.Minute), TotalWanted: 100}
+	e.torrents["a"] = &Torrent{mu: new(sync.Mutex), ID: "a", State: StateDownloading, AddedAt: base}
+	e.torrents["b"] = &Torrent{mu: new(sync.Mutex), ID: "b", State: StateDownloading, AddedAt: base.Add(time.Minute)}
+	e.torrents["c"] = &Torrent{mu: new(sync.Mutex), ID: "c", State: StateDownloading, AddedAt: base.Add(2 * time.Minute), TotalWanted: 100}
 	e.mu.Unlock()
 
 	e.queueTick(Settings{MaxActiveDownloads: 2})
@@ -47,8 +48,8 @@ func TestQueueTick(t *testing.T) {
 func TestQueueUnlimited(t *testing.T) {
 	e := NewEngine(0)
 	e.mu.Lock()
-	e.torrents["q1"] = &Torrent{ID: "q1", State: StatePaused, Queued: true, TotalWanted: 100}
-	e.torrents["q2"] = &Torrent{ID: "q2", State: StatePaused, Queued: true, TotalWanted: 100}
+	e.torrents["q1"] = &Torrent{mu: new(sync.Mutex), ID: "q1", State: StatePaused, Queued: true, TotalWanted: 100}
+	e.torrents["q2"] = &Torrent{mu: new(sync.Mutex), ID: "q2", State: StatePaused, Queued: true, TotalWanted: 100}
 	e.mu.Unlock()
 
 	e.queueTick(Settings{})
@@ -62,7 +63,7 @@ func TestDiskGuard(t *testing.T) {
 	tmp := t.TempDir()
 	e.mu.Lock()
 	e.settings = Settings{BaseDir: tmp}
-	e.torrents["d1"] = &Torrent{ID: "d1", State: StateDownloading, SaveDir: tmp, TotalWanted: 100}
+	e.torrents["d1"] = &Torrent{mu: new(sync.Mutex), ID: "d1", State: StateDownloading, SaveDir: tmp, TotalWanted: 100}
 	e.mu.Unlock()
 
 	// absurdly high threshold: everything must pause and flag

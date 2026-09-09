@@ -1,6 +1,7 @@
 package torrente
 
 import (
+	"sync"
 	"testing"
 	"time"
 )
@@ -38,9 +39,9 @@ func newTestEngine() *Engine {
 	e := NewEngine(0)
 	e.mu.Lock()
 	for id, t := range map[string]*Torrent{
-		"t1": {ID: "t1", Name: "s1", TotalWanted: 1000, Downloaded: 1000, Uploaded: 2000, State: StateSeeding},
-		"t2": {ID: "t2", Name: "s2", TotalWanted: 9000, Downloaded: 3000, Uploaded: 9000, State: StateSeeding},
-		"t3": {ID: "t3", Name: "d1", TotalWanted: 9999, Downloaded: 500, Uploaded: 0, State: StateDownloading},
+		"t1": {mu: new(sync.Mutex), ID: "t1", Name: "s1", TotalWanted: 1000, Downloaded: 1000, Uploaded: 2000, State: StateSeeding},
+		"t2": {mu: new(sync.Mutex), ID: "t2", Name: "s2", TotalWanted: 9000, Downloaded: 3000, Uploaded: 9000, State: StateSeeding},
+		"t3": {mu: new(sync.Mutex), ID: "t3", Name: "d1", TotalWanted: 9999, Downloaded: 500, Uploaded: 0, State: StateDownloading},
 	} {
 		e.torrents[id] = t
 	}

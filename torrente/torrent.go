@@ -31,7 +31,7 @@ const (
 
 // Torrent is a single torrent managed by the engine.
 type Torrent struct {
-	mu sync.Mutex
+	mu *sync.Mutex
 
 	ID string // deterministic short id (first 16 hex chars of info hash)
 	InfoHash, Name string
@@ -325,6 +325,7 @@ func (e *Engine) SetDownloadLimit(n int64) {
 // AddTorrent adds a torrent from parsed metainfo and starts it.
 func (e *Engine) AddTorrent(mi *metainfo.MetaInfo, saveDir string) (*Torrent, error) {
 	t := &Torrent{
+		mu:          new(sync.Mutex),
 		InfoHash:    mi.InfoHash(),
 		Name:        mi.Info.Name,
 		MetaInfo:    mi,
@@ -387,6 +388,7 @@ func (e *Engine) AddMagnet(m *metainfo.Magnet, saveDir string) (*Torrent, error)
 		return nil, fmt.Errorf("invalid infohash in magnet")
 	}
 	t := &Torrent{
+		mu:          new(sync.Mutex),
 		InfoHash:   ihHex,
 		Name:       m.DisplayName,
 		Magnet:     m,
@@ -848,10 +850,6 @@ func (e *Engine) Torrents() []*Torrent {
 
 		t.mu.Lock()
 		c := *t
-		// The copy embeds t.mu in LOCKED state (we hold it right now); any
-		// later Lock on the copy would deadlock forever. Reset it — the
-		// snapshot is read-only from here on.
-		c.mu = sync.Mutex{}
 		c.DownloadSpeed = rateD
 		c.UploadSpeed = rateU
 		ph, pt := t.PieceStats()
