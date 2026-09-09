@@ -172,6 +172,16 @@ func (s *Server) dlRemove(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"ok": "removed"})
 }
 
+// dlTaskLog serves the terminal-style event log of a task.
+func (s *Server) dlTaskLog(w http.ResponseWriter, r *http.Request) {
+	lines, ok := s.dl.TaskLog(r.PathValue("id"))
+	if !ok {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "task not found"})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]interface{}{"lines": lines})
+}
+
 // dlRAMPreview returns the newest bytes held in a RAM-mode task's ring buffer
 // (handy to sanity-check what a server actually sent).
 func (s *Server) dlRAMPreview(w http.ResponseWriter, r *http.Request) {

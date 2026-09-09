@@ -92,9 +92,44 @@ type Task struct {
 	manager *Manager
 	stopped atomic.Bool
 
+	logMu sync.Mutex
+	logs  []LogLine
+
 	winMu      sync.Mutex
 	winBytes   int64
 	winStarted time.Time
+}
+
+// LogLine is one terminal-style event line of a task.
+type LogLine struct {
+	Ts  string `json:"ts"`
+	Lvl string `json:"lvl"` // info | ok | warn | err
+	Msg string `json:"msg"`
+}
+
+const logMax = 300
+
+// log appends a timestamped event to the task's terminal ring buffer.
+func (t *Task) log(lvl, format string, args ...interface{}) {
+	t.logMu.Lock()
+	t.logs = append(t.logs, LogLine{
+		Ts:  time.Now().Format("15:04:05"),
+		Lvl: lvl,
+		Msg: fmt.Sprintf(format, args...),
+	})
+	if len(t.logs) > logMax {
+		t.logs = t.logs[len(t.logs)-logMax:]
+	}
+	t.logMu.Unlock()
+}
+
+// LogLines returns a copy of the task's terminal lines.
+func (t *Task) LogLines() []LogLine {
+	t.logMu.Lock()
+	defer t.logMu.Unlock()
+	out := make([]LogLine, len(t.logs))
+	copy(out, t.logs)
+	return out
 }
 
 // Totals aggregates every task for the dashboard strip.
@@ -251,7 +286,10 @@ func (m *Manager) Stop(id string) error {
 		return fmt.Errorf("task not found")
 	}
 	t.stopped.Store(true)
-	t.once.Do(func() { close(t.stop) })
+	t.once.Do(func() {
+		close(t.stop)
+		t.log("warn", "stopped by user")
+	})
 	return nil
 }
 
@@ -319,12 +357,34 @@ func (m *Manager) RAMPreview(id string) ([]byte, bool) {
 	return t.ring.Last(), true
 }
 
+// TaskLog returns the terminal lines of a task.
+func (m *Manager) TaskLog(id string) ([]LogLine, bool) {
+	m.mu.Lock()
+	t, ok := m.tasks[id]
+	m.mu.Unlock()
+	if !ok {
+		return nil, false
+	}
+	return t.LogLines(), true
+}
+
 // ---------- execution ----------
 
 func (m *Manager) run(t *Task) {
+	t.log("info", "task started · mode=%s dir=%s loops=%d conn=%d", t.opts.Mode, t.opts.Direction, t.opts.Loops, t.opts.Conn)
+	if t.opts.StartAt != "" {
+		t.log("warn", "scheduled: waiting for %s", t.opts.StartAt)
+	}
 	if err := t.waitScheduled(); err != nil {
 		t.finish("stopped", "")
+		t.log("warn", "stopped while waiting for schedule")
 		return
+	}
+	if t.opts.StartAt != "" {
+		t.log("ok", "schedule reached, starting")
+	}
+	if t.opts.VerifySHA != "" {
+		t.log("info", "sha256 verification enabled (%s…)", strings.ToLower(t.opts.VerifySHA)[:8])
 	}
 	conns := t.opts.Conn
 	if conns < 1 {
@@ -333,13 +393,21 @@ func (m *Manager) run(t *Task) {
 	if conns > 16 {
 		conns = 16
 	}
+	if t.opts.Mode == ModeDisk && conns > 1 {
+		// parallel streams would clobber the same output file
+		conns = 1
+		t.log("warn", "disk mode writes a single stream (parallel ignored)")
+	}
+	if conns > 1 {
+		t.log("info", "spawning %d parallel streams", conns)
+	}
 	if conns == 1 {
 		m.loopShard(t)
 	} else {
 		var wg sync.WaitGroup
 		for i := 0; i < conns; i++ {
 			wg.Add(1)
-			go func() { defer wg.Done(); m.loopShard(t) }()
+			go func(id int) { defer wg.Done(); t.log("info", "stream #%d open", id+1); m.loopShard(t) }(i)
 		}
 		wg.Wait()
 	}
@@ -355,6 +423,7 @@ func (m *Manager) run(t *Task) {
 	}
 	t.EndedAt = time.Now()
 	t.mu.Unlock()
+	t.log("info", "task finished: %s", t.State)
 	m.recordHistory(t)
 }
 
@@ -369,7 +438,17 @@ func (m *Manager) loopShard(t *Task) {
 		t.winBytes = 0
 		t.winStarted = time.Now()
 		t.winMu.Unlock()
+		action := "GET"
+		if t.opts.Direction == "up" {
+			action = "POST"
+		}
+		loopTag := fmt.Sprintf("#%d", loop)
+		if t.opts.Loops > 0 {
+			loopTag = fmt.Sprintf("#%d/%d", loop, t.opts.Loops)
+		}
+		t.log("info", "loop %s: %s %s", loopTag, action, t.opts.URL)
 
+		loopStart := time.Now()
 		var lastErr error
 		tries := t.opts.Retries + 1
 		for attempt := 1; attempt <= tries; attempt++ {
@@ -384,13 +463,18 @@ func (m *Manager) loopShard(t *Task) {
 				break
 			}
 			lastErr = err
-			if attempt < tries && t.opts.RetryWait > 0 {
-				for s := 0; s < t.opts.RetryWait; s++ {
-					if t.stopped.Load() {
-						return
+			if attempt < tries {
+				t.log("warn", "attempt %d/%d failed: %v — retrying in %ds", attempt, tries, err, t.opts.RetryWait)
+				if attempt < tries && t.opts.RetryWait > 0 {
+					for s := 0; s < t.opts.RetryWait; s++ {
+						if t.stopped.Load() {
+							return
+						}
+						time.Sleep(time.Second)
 					}
-					time.Sleep(time.Second)
 				}
+			} else {
+				t.log("err", "attempt %d/%d failed: %v", attempt, tries, err)
 			}
 		}
 		atomic.AddInt64(&t.LoopsDone, 1)
@@ -402,10 +486,25 @@ func (m *Manager) loopShard(t *Task) {
 			t.mu.Unlock()
 			return // shard dies; run() marks the final state
 		}
+		dur := time.Since(loopStart).Seconds()
+		cur := atomic.LoadInt64(&t.Current)
+		t.log("ok", "loop %s complete: %s in %.1fs", loopTag, humanBytes(cur), dur)
+		if t.opts.VerifySHA != "" {
+			t.mu.Lock()
+			v := t.Verified
+			t.mu.Unlock()
+			if v == "ok" {
+				t.log("ok", "sha256 verified")
+			} else if v == "mismatch" {
+				t.log("err", "sha256 MISMATCH")
+			}
+		}
 		if t.opts.DeleteEach && t.opts.Mode == ModeDisk && t.outPath != "" {
 			os.Remove(t.outPath)
+			t.log("info", "file removed (delete_each): %s", t.outPath)
 		}
 		if t.opts.Interval > 0 && (t.opts.Loops == 0 || loop < int64(t.opts.Loops)) {
+			t.log("info", "pausing %ds before next loop", t.opts.Interval)
 			for s := 0; s < t.opts.Interval; s++ {
 				if t.stopped.Load() {
 					return
@@ -414,6 +513,20 @@ func (m *Manager) loopShard(t *Task) {
 			}
 		}
 	}
+}
+
+// humanBytes renders a byte count compactly for terminal lines.
+func humanBytes(n int64) string {
+	const unit = 1024
+	if n < unit {
+		return fmt.Sprintf("%d B", n)
+	}
+	div, exp := int64(unit), 0
+	for x := n / unit; x >= unit; x /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB", float64(n)/float64(div), "KMGTPE"[exp])
 }
 
 // waitScheduled sleeps until the HH:MM start time, reacting to Stop.
@@ -500,6 +613,7 @@ func (m *Manager) fetchOnce(t *Task) error {
 			return ferr
 		}
 		defer f.Close()
+		t.log("info", "writing to %s", t.outPath)
 		w = f
 	default:
 		return fmt.Errorf("unknown mode")

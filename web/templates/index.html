@@ -135,6 +135,7 @@
 
   .pgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(8px, 1fr)); gap: 2px; }
   .pcell { aspect-ratio: 1 / 1; border-radius: 2px; }
+  .dlterm { background: #0a0f0a; color: #d1e7d1; max-height: 15rem; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
   .pcell.have { background: var(--accent2); }
   .pcell.active { background: var(--accent); animation: pulse 1s ease-in-out infinite; }
   .pcell.miss { background: transparent; border: 1px solid var(--txt3); opacity: .55; }
@@ -1074,7 +1075,8 @@ const I18N = {
     dlProxy: 'Proxy (http/socks5)', dlVerify: 'Verify SHA-256 (optional)', dlUpSize: 'Upload payload size (MB)',
     dlHistory: 'Run history', dlHistClear: 'Clear', dlRepos: 'Open-source repo browser',
     dlRepoPick: 'Repository', dlBrowse: 'Browse', dlSelected: 'selected',
-    dlTotalAll: 'Total (all time)', dlRepoCat: 'Category', dlRepoAll: 'All', dlRepoSearch: 'Search file'
+    dlTotalAll: 'Total (all time)', dlRepoCat: 'Category', dlRepoAll: 'All', dlRepoSearch: 'Search file',
+    dlTerminal: 'Terminal log'
   },
   tr: {
     tagline: 'Yüksük Otu — sıfırdan yazılmış BitTorrent istemcisi', noDocker: 'Docker yok',
@@ -1158,7 +1160,8 @@ const I18N = {
     dlProxy: 'Proxy (http/socks5)', dlVerify: 'SHA-256 doğrula (isteğe bağlı)', dlUpSize: 'Yüklenecek veri boyutu (MB)',
     dlHistory: 'Çalışma geçmişi', dlHistClear: 'Temizle', dlRepos: 'Açık kaynak repo tarayıcısı',
     dlRepoPick: 'Depo', dlBrowse: 'Gözat', dlSelected: 'seçildi',
-    dlTotalAll: 'Toplam (tüm zamanlar)', dlRepoCat: 'Kategori', dlRepoAll: 'Tümü', dlRepoSearch: 'Dosya ara'
+    dlTotalAll: 'Toplam (tüm zamanlar)', dlRepoCat: 'Kategori', dlRepoAll: 'Tümü', dlRepoSearch: 'Dosya ara',
+    dlTerminal: 'Terminal kaydı'
   },
   de: {
     tagline: 'Ein von Grund auf geschriebener BitTorrent-Client', noDocker: 'Kein Docker',
@@ -3496,6 +3499,7 @@ const dlModes = ['discard', 'ram', 'disk'];
 let dlTasks = [];
 let dlRepoSel = {};
 let dlRepoChecked = new Set();
+let dlLogOpen = new Set();
 
 function dlTokenQ() {
   const tok = localStorage.getItem('dg-token') || '';
@@ -3593,15 +3597,17 @@ async function dlRefresh() {
       const stateColor = tk.state === 'running' ? 'var(--accent2)' : (tk.state === 'error' ? 'var(--bad)' : (tk.state === 'scheduled' ? '#fbbf24' : 'var(--txt3)'));
       const dirTxt = tk.direction === 'up' ? '↑ ' + t('dlDirUp') : '↓ ' + t('dlDirDown');
       const modeTxt = { discard: '🚮 ' + t('dlDiscard'), ram: '🧠 RAM', disk: '💾 ' + t('dlDisk') }[tk.mode] || tk.mode;
+      const open = dlLogOpen.has(tk.id);
       return `<div class="card rounded-2xl p-3">
-        <div class="flex flex-wrap items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2 cursor-pointer" onclick="dlToggleLog('${esc(tk.id)}')">
           <span class="chip px-2 py-0.5 rounded-full text-[10px] font-semibold" style="color:${stateColor}">${esc(stateTxt)}</span>
           <span class="font-mono text-xs truncate flex-1 min-w-0" style="color:var(--txt)" title="${esc(tk.url)}">${esc(tk.url)}</span>
           <span class="shrink-0 px-2 py-0.5 rounded-full chip text-[10px] tx2">${esc(dirTxt)} · ${esc(modeTxt)}</span>
           <span class="shrink-0 text-xs font-mono tx2">${fmtBytes(tk.bytes)}</span>
           <span class="shrink-0 text-xs font-mono tx3">${fmtSpeed(tk.speed)}</span>
-          ${tk.state === 'running' || tk.state === 'scheduled' ? `<button onclick="dlStopTask('${esc(tk.id)}')" class="px-1.5 text-xs" style="color:var(--bad)" title="${esc(t('dlStop'))}">■</button>` : ''}
-          <button onclick="dlRemoveTask('${esc(tk.id)}')" class="px-1.5 text-xs tx3" title="${esc(t('delete'))}">✕</button>
+          ${tk.state === 'running' || tk.state === 'scheduled' ? `<button onclick="event.stopPropagation();dlStopTask('${esc(tk.id)}')" class="px-1.5 text-xs" style="color:var(--bad)" title="${esc(t('dlStop'))}">■</button>` : ''}
+          <button onclick="event.stopPropagation();dlRemoveTask('${esc(tk.id)}')" class="px-1.5 text-xs tx3" title="${esc(t('delete'))}">✕</button>
+          <span class="shrink-0 text-[10px] tx3">${open ? '▾' : '▸'} <span title="${esc(t('dlTerminal'))}">▤</span></span>
         </div>
         <div class="flex flex-wrap gap-x-4 gap-y-0.5 mt-1.5 text-[11px] tx3 font-mono">
           ${t('dlLoops')}: ${tk.loops_done}${tk.loops > 0 ? '/' + tk.loops : ''} · ${t('dlUptime')}: ${tk.uptime_sec}s
@@ -3611,11 +3617,32 @@ async function dlRefresh() {
           ${tk.speed_cap > 0 ? ` · ≤ ${fmtBytes(tk.speed_cap)}/s` : ''}
           ${tk.verified ? ` · ✅ ${esc(tk.verified)}` : ''}
           ${tk.error ? ` · <span style="color:var(--bad)">${esc(tk.error)}</span>` : ''}
+          ${tk.mode === 'ram' && tk.direction === 'down' && tk.bytes > 0 ? ` · <span class="cursor-pointer underline" onclick="event.stopPropagation();dlPreview('${esc(tk.id)}')">👁 head</span>` : ''}
         </div>
-        ${tk.mode === 'ram' && tk.direction === 'down' && tk.bytes > 0 ? `<button onclick="dlPreview('${esc(tk.id)}')" class="mt-1.5 px-2 py-0.5 rounded-md inp text-[10px]" style="color:var(--txt)">👁 head</button>` : ''}
+        ${open ? `<div id="dl-log-${esc(tk.id)}" class="dlterm mt-2 rounded-xl p-2 font-mono text-[11px] leading-relaxed" dir="ltr"><div class="tx3">${esc(t('loading'))}</div></div>` : ''}
       </div>`;
     }).join('');
+    // refresh any open terminal panels
+    dlLogOpen.forEach(id => dlPullLog(id));
   } catch (e) { /* transient */ }
+}
+
+async function dlPullLog(id) {
+  const el = document.getElementById('dl-log-' + id);
+  if (!el) return;
+  try {
+    const d = await api(`/dl/${id}/log`);
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+    el.innerHTML = (d.lines || []).map(l => {
+      const color = l.lvl === 'err' ? 'var(--bad)' : l.lvl === 'ok' ? 'var(--good)' : l.lvl === 'warn' ? '#fbbf24' : 'var(--txt2)';
+      return `<div><span class="tx3">[${l.ts}]</span> <span style="color:${color}">${esc(l.msg)}</span></div>`;
+    }).join('') || `<div class="tx3">—</div>`;
+    if (atBottom) el.scrollTop = el.scrollHeight;
+  } catch (e) { /* ignore */ }
+}
+function dlToggleLog(id) {
+  if (dlLogOpen.has(id)) dlLogOpen.delete(id); else dlLogOpen.add(id);
+  dlRefresh();
 }
 
 async function dlLoadHistory() {

@@ -252,6 +252,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("DELETE /api/dl/{id}", s.dlRemove)
 	mux.HandleFunc("POST /api/dl/{id}/stop", s.dlStop)
 	mux.HandleFunc("GET /api/dl/{id}/ram", s.dlRAMPreview)
+	mux.HandleFunc("GET /api/dl/{id}/log", s.dlTaskLog)
 	mux.HandleFunc("GET /api/dl/repos", s.dlRepos)
 	mux.HandleFunc("GET /api/dl/repos/browse", s.dlRepoBrowse)
 	mux.HandleFunc("GET /api/dl/history", s.dlHistory)
